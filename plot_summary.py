@@ -119,16 +119,24 @@ def make_dirs(output_dir):
         os.makedirs(output_dir)
 
 if __name__ == '__main__':
+    hemis   = []
+#    hemis.append('north')
+    hemis.append('south')
+
+    sDate       = datetime.datetime(2017,1,1)
+    eDate       = datetime.datetime(2018,1,1)
+    date_list   = [(sDate,eDate)]
+
     base_dir  = 'plots'
     make_dirs(base_dir)
 
-    date_list   = load_dates() 
+#    date_list   = load_dates() 
     radar_list  = gen_radar_list()
 
     for date_0, date_1 in date_list:
         event_str   = '{!s}-{!s}'.format(date_0.strftime('%Y%m%d'),date_1.strftime('%Y%m%d'))
         plot_dates = date_range(date_0,date_1)
-        for hemi in ['north','south']:
+        for hemi in hemis:
             output_dir  = os.path.join(base_dir,event_str,hemi)
             make_dirs(output_dir)
             for radar in radar_list[hemi]:
@@ -142,11 +150,19 @@ if __name__ == '__main__':
                     if len(fitacf) == 0:
                         continue
 
-                    result      = pydarn.RTP.plot_summary(fitacf,9,watermark=False)
-                    fig         = result[0]
                     sTime_str   = sTime.strftime('%Y%m%d.%H%M')
                     eTime_str   = eTime.strftime('%Y%m%d.%H%M')
                     fname       = '{!s}-{!s}_{!s}.summary.png'.format(sTime_str,eTime_str,radar)
                     fpath       = os.path.join(output_dir,fname)
+
+                    try:
+                        result      = pydarn.RTP.plot_summary(fitacf,9,watermark=False)
+                        fig         = result[0]
+                    except:
+                        fig         = plt.figure()
+                        ax          = fig.add_subplot(111)
+                        ax.text(0.5,0.5,'No Data / Plotting Error',ha='center',transform=ax.transAxes)
+                        ax.set_title(fname)
+
                     fig.savefig(fpath,bbox_inches='tight')
                     plt.close(fig)

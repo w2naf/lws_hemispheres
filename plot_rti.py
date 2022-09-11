@@ -13,7 +13,7 @@ mpl.use('Agg')
 from matplotlib import pyplot as plt
 
 
-def load_fitacf(sTime,eTime,radar,data_dir='data',fit_sfx='fitacf3'):
+def load_fitacf(sTime,eTime,radar,fit_sfx='fitacf'):
     """
     Load FITACF data from multiple FITACF files by specifying a date range.
 
@@ -32,6 +32,8 @@ def load_fitacf(sTime,eTime,radar,data_dir='data',fit_sfx='fitacf3'):
     fitacf_paths_0    = []
     for date in dates:
         date_str        = date.strftime('%Y%m%d')
+#        /sd-data/2021/fitacf/bks
+        data_dir    = os.path.join('/sd-data',date.strftime('%Y'),fit_sfx,radar)
         fpattern        = os.path.join(data_dir,'{!s}*{!s}*.{!s}.bz2'.format(date_str,radar,fit_sfx))
         fitacf_paths_0   += glob.glob(fpattern)
 
@@ -107,4 +109,5 @@ if __name__ == '__main__':
     eTime_str   = eTime.strftime('%Y%m%d.%H%M')
     fname       = '{!s}-{!s}_{!s}.rti.png'.format(sTime_str,eTime_str,radar)
     fpath       = os.path.join(output_dir,fname)
+    print('Saving: {!s}'.format(fpath))
     fig.savefig(fpath,bbox_inches='tight')

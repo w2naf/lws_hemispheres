@@ -21,26 +21,8 @@ for rid,radar in pydarn.SuperDARNRadars.radars.items():
         rads['south'].append(abr)
 
 
-fname   = 'study_periods.csv'
-with open(fname,'r') as fl:
-    lines   = fl.read()
-
-lines = lines.split('\n')
-lines.sort()
-
 date_list = []
-for line in lines:
-    if 'sDate' in line: continue
-    if line == '': continue
-
-    sd, ed   = line.split(',')
-    if ed == '':
-        ed = sd
-
-    sDate = datetime.datetime.strptime(sd,'%Y-%m-%d')
-    eDate = datetime.datetime.strptime(ed,'%Y-%m-%d')
-
-    date_list.append( (sDate,eDate) )
+date_list.append((datetime.datetime(2012,11,1),datetime.datetime(2013,1,1)))
 
 for sDate, eDate in date_list:
     # Build up a list of all the days we want to get the data.
