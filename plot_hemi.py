@@ -203,8 +203,8 @@ if __name__ == '__main__':
     multiproc   = True
     ncpus       = multiprocessing.cpu_count()
 
-    date_0      = datetime.datetime(2017,11,1)
-    date_1      = datetime.datetime(2017,11,11)
+    date_0      = datetime.datetime(2017,1,1)
+    date_1      = datetime.datetime(2022,1,1)
     dates       = date_range(date_0,date_1)
 
     hemisphere  = 'south'
