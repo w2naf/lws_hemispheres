@@ -193,6 +193,7 @@ def plot_hemisphere(sTime,eTime=None,hemisphere='south',beam=7,ymin=200,ymax=300
 
     print('Saving: {!s}'.format(fpath))
     fig.savefig(fpath,bbox_inches='tight')
+    plt.close(fig)
 
 def plot_hemisphere_dict(run_dict):
     return plot_hemisphere(**run_dict)
@@ -203,8 +204,8 @@ if __name__ == '__main__':
     multiproc   = True
     ncpus       = multiprocessing.cpu_count()
 
-    date_0      = datetime.datetime(2017,1,1)
-    date_1      = datetime.datetime(2022,1,1)
+    date_0      = datetime.datetime(2010,1,1)
+    date_1      = datetime.datetime(2017,1,1)
     dates       = date_range(date_0,date_1)
 
     hemisphere  = 'south'
