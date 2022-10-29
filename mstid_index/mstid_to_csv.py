@@ -85,8 +85,8 @@ attr_keys = []
 attr_keys.append('radar')
 attr_keys.append('lat')
 attr_keys.append('lon')
-attr_keys.append('gscat')
-attr_keys.append('height_km')
+#attr_keys.append('gscat')
+#attr_keys.append('height_km')
 
 seasons = []
 for lst in lists:
