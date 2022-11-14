@@ -36,8 +36,8 @@ mpl.rcParams['axes.xmargin']   = 0
 #driver_ylabel_fontdict  = ytick_major_fontdict
 #title_fontdict          = {'weight': 'bold', 'size':36}
 
-cbar_title_fontdict     = {'weight':'bold','size':30}
-cbar_ytick_fontdict     = {'size':30}
+cbar_title_fontdict     = {'weight':'bold','size':36}
+cbar_ytick_fontdict     = {'size':36}
 xtick_fontdict          = {'weight': 'bold', 'size':24}
 ytick_major_fontdict    = {'weight': 'bold', 'size':24}
 ytick_minor_fontdict    = {'weight': 'bold', 'size':24}
