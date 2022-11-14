@@ -43,38 +43,88 @@ ytick_major_fontdict    = {'weight': 'bold', 'size':24}
 ytick_minor_fontdict    = {'weight': 'bold', 'size':24}
 title_fontdict          = {'weight': 'bold', 'size':36}
 
-def plot_cbars(ax_list):
-    for ax_info in ax_list:
-        cbar_pcoll = ax_info.get('cbar_pcoll')
-        if cbar_pcoll is None:
-            continue
+#def plot_cbars(ax_list):
+#    for ax_info in ax_list:
+#        cbar_pcoll = ax_info.get('cbar_pcoll')
+#        if cbar_pcoll is None:
+#            continue
+#
+#        cbar_label      = ax_info.get('cbar_label')
+#        cbar_ticks      = ax_info.get('cbar_ticks')
+#        cbar_tick_fmt   = ax_info.get('cbar_tick_fmt','%0.3f')
+#        cbar_tb_vis     = ax_info.get('cbar_tb_vis',False)
+#        ax              = ax_info.get('ax')
+#
+#        fig = ax.get_figure()
+#
+#        box         = ax.get_position()
+#        axColor     = fig.add_axes([(box.x0 + box.width) * 1.01 , box.y0, 0.01, box.height])
+#        axColor.grid(False)
+#        cbar        = fig.colorbar(cbar_pcoll,orientation='vertical',cax=axColor,format=cbar_tick_fmt)
+#
+#        cbar.set_label(cbar_label,fontdict=cbar_title_fontdict)
+#        if cbar_ticks is not None:
+#            cbar.set_ticks(cbar_ticks)
+#
+#        labels = cbar.ax.get_yticklabels()
+#        fontweight  = cbar_ytick_fontdict.get('weight')
+#        fontsize    = cbar_ytick_fontdict.get('size')
+#        for label in labels:
+#            if fontweight:
+#                label.set_fontweight(fontweight)
+#            if fontsize:
+#                label.set_fontsize(fontsize)
+#
+#        if not cbar_tb_vis:
+#            for inx in [0,-1]:
+#                labels[inx].set_visible(False)
 
-        cbar_label      = ax_info.get('cbar_label')
-        cbar_ticks      = ax_info.get('cbar_ticks')
-        cbar_tick_fmt   = ax_info.get('cbar_tick_fmt','%0.3f')
-        cbar_tb_vis     = ax_info.get('cbar_tb_vis',False)
-        ax              = ax_info.get('ax')
+def plot_cbar(ax_info):
+    cbar_pcoll = ax_info.get('cbar_pcoll')
 
-        box         = ax.get_position()
-        axColor     = plt.axes([(box.x0 + box.width) * 1.01 , box.y0, 0.01, box.height])
-        cbar        = plt.colorbar(cbar_pcoll,orientation='vertical',cax=axColor,format=cbar_tick_fmt)
+    cbar_label      = ax_info.get('cbar_label')
+    cbar_ticks      = ax_info.get('cbar_ticks')
+    cbar_tick_fmt   = ax_info.get('cbar_tick_fmt','%0.3f')
+    cbar_tb_vis     = ax_info.get('cbar_tb_vis',False)
+    ax              = ax_info.get('ax')
 
-        cbar.set_label(cbar_label,fontdict=cbar_title_fontdict)
-        if cbar_ticks is not None:
-            cbar.set_ticks(cbar_ticks)
+    fig = ax.get_figure()
 
-        labels = cbar.ax.get_yticklabels()
-        fontweight  = cbar_ytick_fontdict.get('weight')
-        fontsize    = cbar_ytick_fontdict.get('size')
-        for label in labels:
-            if fontweight:
-                label.set_fontweight(fontweight)
-            if fontsize:
-                label.set_fontsize(fontsize)
+    box         = ax.get_position()
+#    axColor     = fig.add_axes([(box.x0 + box.width) * 1.01 , box.y0, 0.01, box.height])
+#    print( (box.x0 + box.width) * 1.01 , box.y0, 0.01, box.height)
 
-        if not cbar_tb_vis:
-            for inx in [0,-1]:
-                labels[inx].set_visible(False)
+#    axColor     = fig.add_axes([1.01, 0.25, 0.01, 0.50])
+#    axColor = fig.add_axes([0.9089999999999999 0.7472413793103448 0.01 0.13275862068965516])
+
+    x0  = 1.01
+    wdt = 0.015
+    y0  = 0.250
+    hgt = (1-2.*y0)
+    axColor = fig.add_axes([x0, y0, wdt, hgt])
+
+    axColor.grid(False)
+    cbar        = fig.colorbar(cbar_pcoll,orientation='vertical',cax=axColor,format=cbar_tick_fmt)
+
+    cbar.set_label(cbar_label,fontdict=cbar_title_fontdict)
+    if cbar_ticks is not None:
+        cbar.set_ticks(cbar_ticks)
+
+    axColor.set_ylim( *(cbar_pcoll.get_clim()) )
+
+    labels = cbar.ax.get_yticklabels()
+    fontweight  = cbar_ytick_fontdict.get('weight')
+    fontsize    = cbar_ytick_fontdict.get('size')
+    for label in labels:
+        if fontweight:
+            label.set_fontweight(fontweight)
+        if fontsize:
+            label.set_fontsize(fontsize)
+
+#    if not cbar_tb_vis:
+#        for inx in [0,-1]:
+#            labels[inx].set_visible(False)
+
 
 def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,
         fontdict=None):
@@ -161,7 +211,7 @@ def get_coords(radar,win_sDate,radars,sDate,eDate,st_uts,verts=True):
         return (x0, y0)
 
 def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
-        scale=[-0.03,0.03], st_uts=[14, 16, 18, 20],
+        scale=[-0.025,0.025], st_uts=[14, 16, 18, 20],
         xlabels=True, group_name=None,classification_colors=True,
         rasterized=False,**kwargs):
 
@@ -314,6 +364,7 @@ if __name__ == '__main__':
     param = 'meanSubIntSpect_by_rtiCnt'
 
     data_dict = {}
+    lat_lons  = []
 
     print('Generating Season CSV Files...')
     for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
@@ -325,6 +376,9 @@ if __name__ == '__main__':
             dsr = xr.open_dataset(fl)
             ds.append(dsr)
             attrs.append(dsr.attrs)
+
+            # Store radar lat / lons to creat a radar location file.
+            lat_lons.append({'radar':radar,'lat':dsr.attrs['lat'],'lon':dsr.attrs['lon']})
         dss = xr.concat(ds,dim='index')
 
         # Convert parameter of interest to a datafame.
@@ -367,11 +421,17 @@ if __name__ == '__main__':
 
         data_dict[season] = df
 
+    # Clean up lat_lon data table and save to disk.
+    ll_df       = pd.DataFrame(lat_lons).drop_duplicates()
+    csv_fpath   = os.path.join(output_dir,'radars.csv')
+    ll_df.to_csv(csv_fpath,index=False)
+
     nrows   = 5
     ncols   = 2
     print('Plotting Climatologies...')
     fig = plt.figure(figsize=(50,30))
 
+    ax_list = []
     for inx,season in enumerate(seasons):
         print(' -->',season)
         ax      = fig.add_subplot(nrows,ncols,inx+1)
@@ -380,7 +440,8 @@ if __name__ == '__main__':
 
 #        if season != '20121101_20130501':
 #            continue
-        plot_mstid_values(data_df,ax)
+        ax_info = plot_mstid_values(data_df,ax)
+        ax_list.append(ax_info)
 
         season_yr0 = season[:4]
         season_yr1 = season[9:13]
@@ -388,5 +449,10 @@ if __name__ == '__main__':
         ax.set_title(txt,fontdict=title_fontdict)
 
     fig.tight_layout(w_pad=2.25)
+
+    plot_cbar(ax_list[1])
+
     fpath = os.path.join(output_dir,'climo.png')
+    print('SAVING: ',fpath)
+#    fig.savefig(fpath)
     fig.savefig(fpath,bbox_inches='tight')
