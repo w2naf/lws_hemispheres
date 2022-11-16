@@ -36,48 +36,12 @@ mpl.rcParams['axes.xmargin']   = 0
 #driver_ylabel_fontdict  = ytick_major_fontdict
 #title_fontdict          = {'weight': 'bold', 'size':36}
 
-cbar_title_fontdict     = {'weight':'bold','size':36}
+cbar_title_fontdict     = {'weight':'bold','size':42}
 cbar_ytick_fontdict     = {'size':36}
 xtick_fontdict          = {'weight': 'bold', 'size':24}
 ytick_major_fontdict    = {'weight': 'bold', 'size':24}
 ytick_minor_fontdict    = {'weight': 'bold', 'size':24}
 title_fontdict          = {'weight': 'bold', 'size':36}
-
-#def plot_cbars(ax_list):
-#    for ax_info in ax_list:
-#        cbar_pcoll = ax_info.get('cbar_pcoll')
-#        if cbar_pcoll is None:
-#            continue
-#
-#        cbar_label      = ax_info.get('cbar_label')
-#        cbar_ticks      = ax_info.get('cbar_ticks')
-#        cbar_tick_fmt   = ax_info.get('cbar_tick_fmt','%0.3f')
-#        cbar_tb_vis     = ax_info.get('cbar_tb_vis',False)
-#        ax              = ax_info.get('ax')
-#
-#        fig = ax.get_figure()
-#
-#        box         = ax.get_position()
-#        axColor     = fig.add_axes([(box.x0 + box.width) * 1.01 , box.y0, 0.01, box.height])
-#        axColor.grid(False)
-#        cbar        = fig.colorbar(cbar_pcoll,orientation='vertical',cax=axColor,format=cbar_tick_fmt)
-#
-#        cbar.set_label(cbar_label,fontdict=cbar_title_fontdict)
-#        if cbar_ticks is not None:
-#            cbar.set_ticks(cbar_ticks)
-#
-#        labels = cbar.ax.get_yticklabels()
-#        fontweight  = cbar_ytick_fontdict.get('weight')
-#        fontsize    = cbar_ytick_fontdict.get('size')
-#        for label in labels:
-#            if fontweight:
-#                label.set_fontweight(fontweight)
-#            if fontsize:
-#                label.set_fontsize(fontsize)
-#
-#        if not cbar_tb_vis:
-#            for inx in [0,-1]:
-#                labels[inx].set_visible(False)
 
 def plot_cbar(ax_info):
     cbar_pcoll = ax_info.get('cbar_pcoll')
@@ -91,11 +55,6 @@ def plot_cbar(ax_info):
     fig = ax.get_figure()
 
     box         = ax.get_position()
-#    axColor     = fig.add_axes([(box.x0 + box.width) * 1.01 , box.y0, 0.01, box.height])
-#    print( (box.x0 + box.width) * 1.01 , box.y0, 0.01, box.height)
-
-#    axColor     = fig.add_axes([1.01, 0.25, 0.01, 0.50])
-#    axColor = fig.add_axes([0.9089999999999999 0.7472413793103448 0.01 0.13275862068965516])
 
     x0  = 1.01
     wdt = 0.015
@@ -212,8 +171,8 @@ def get_coords(radar,win_sDate,radars,sDate,eDate,st_uts,verts=True):
 
 def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
         scale=[-0.025,0.025], st_uts=[14, 16, 18, 20],
-        xlabels=True, group_name=None,classification_colors=True,
-        rasterized=False,**kwargs):
+        xlabels=True, group_name=None,classification_colors=False,
+        rasterized=False,radars=None,**kwargs):
 
     if sDate is None:
         sDate = data_df.index.min()
@@ -222,7 +181,11 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
         eDate = data_df.index.max()
         eDate = datetime.datetime(eDate.year,eDate.month,eDate.day) + datetime.timedelta(days=1)
 
-    radars  = list(data_df.keys())
+    if radars is None:
+        radars  = list(data_df.keys())
+
+    # Reverse radars list order so that the supplied list is plotted top-down.
+    radars  = radars[::-1]
 
     ymax    = len(st_uts) * len(radars)
 
@@ -398,6 +361,7 @@ if __name__ == '__main__':
         df  = pd.DataFrame(dfrs.values(),dfrs.keys())
         df  = df.sort_index()
         df.index.name   = 'datetime'
+
         csv_fname       = '{!s}_{!s}.csv'.format(season,param)
         csv_fpath       = os.path.join(output_dir,csv_fname)
         with open(csv_fpath,'w') as fl:
@@ -426,7 +390,7 @@ if __name__ == '__main__':
     csv_fpath   = os.path.join(output_dir,'radars.csv')
     ll_df.to_csv(csv_fpath,index=False)
 
-    nrows   = 5
+    nrows   = 6
     ncols   = 2
     print('Plotting Climatologies...')
     fig = plt.figure(figsize=(50,30))
@@ -440,7 +404,7 @@ if __name__ == '__main__':
 
 #        if season != '20121101_20130501':
 #            continue
-        ax_info = plot_mstid_values(data_df,ax)
+        ax_info = plot_mstid_values(data_df,ax,radars=radars)
         ax_list.append(ax_info)
 
         season_yr0 = season[:4]
