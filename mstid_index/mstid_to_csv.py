@@ -96,6 +96,9 @@ for lst in lists:
     spl = lst.split('_')
     seasons.append('{!s}_{!s}'.format(spl[2],spl[3]))
 
+with open('reject_codes.txt','w') as fl:
+    fl.write('')
+
 seasons = list(set(seasons))
 for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
     for radar in tqdm.tqdm(radar_dict.keys(),desc='Radars',dynamic_ncols=True,position=1,leave=False):
@@ -106,6 +109,7 @@ for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
 
         dates           = []
         data            = {x:[] for x in keys}
+        data['reject_code'] = []
 
         crsr = db.get_collection(lst).find()
         for item in crsr:
@@ -114,6 +118,27 @@ for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
 
             for key in keys:
                 data[key].append(item.get(key))
+
+            # Possible Reject Messages:
+            # ['No RTI Fraction', 'No Data', 'High Terminator Fraction', 'Failed Quality Check', 'No Terminator Fraction', 'Low RTI Fraction']
+            reject = item.get('reject_message')
+            if reject is None:
+                reject_code = 0 # Good period
+            elif 'High Terminator Fraction' in reject:
+                reject_code = 1 # Dawn/Dusk
+            elif 'No Data' in reject:
+                reject_code = 2 # No Data
+            elif ('Failed Quality Check' in reject) or ('Low RTI Fraction' in reject):
+                reject_code = 3 # Poor data quality
+            else:
+                reject_code = 4 # Other, including No RTI Fraction and No Terminator Fraction.
+            data['reject_code'].append(reject_code)
+
+            txt = '{!s}: {!s} {!s} {!s}\n'.format(reject_code, radar, date, reject)
+            print(txt)
+            with open('reject_codes.txt','a') as fl:
+                fl.write(txt)
+
         
         df      = pd.DataFrame(data,index=dates)
         attrs   = {'season':season}
@@ -128,6 +153,14 @@ for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
             hdr.append('#')
             for attr_key,attr in attrs.items():
                 hdr.append('# {!s}: {!s}'.format(attr_key,attr))
+            hdr.append('#')
+
+            hdr.append('# reject_code Explanations:')
+            hdr.append('#   0: Good Period (Not Rejected)')
+            hdr.append('#   1: High Terminator Fraction (Dawn/Dusk in Observational Window')
+            hdr.append('#   2: No Data')
+            hdr.append('#   3: Poor Data Quality (including "Low RTI Fraction" and "Failed Quality Check")')
+            hdr.append('#   4: Other (including "No RTI Fraction" and "No Terminator Fraction")')
             hdr.append('#')
 
             fl.write('\n'.join(hdr))

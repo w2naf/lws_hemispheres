@@ -43,6 +43,21 @@ ytick_major_fontdict    = {'weight': 'bold', 'size':24}
 ytick_minor_fontdict    = {'weight': 'bold', 'size':24}
 title_fontdict          = {'weight': 'bold', 'size':36}
 
+# Reject code colors.
+reject_codes = {}
+# 0: Good Period (Not Rejected)
+reject_codes[0] = {'color': mpl.colors.to_rgba('green'),  'label': 'Good Period'}
+# 1: High Terminator Fraction (Dawn/Dusk in Observational Window)
+reject_codes[1] = {'color': mpl.colors.to_rgba('blue'),   'label': 'Dawn / Dusk'}
+# 2: No Data
+reject_codes[2] = {'color': mpl.colors.to_rgba('red'),    'label': 'No Data'}
+# 3: Poor Data Quality (including "Low RTI Fraction" and "Failed Quality Check")
+reject_codes[3] = {'color': mpl.colors.to_rgba('gold'),   'label': 'Poor Data Quality'}
+# 4: Other (including "No RTI Fraction" and "No Terminator Fraction")
+reject_codes[4] = {'color': mpl.colors.to_rgba('purple'), 'label': 'Other'}
+# 5: Not Requested (Outside of requested daylight times)
+reject_codes[5] = {'color': mpl.colors.to_rgba('0.9'),   'label': 'Not Requested'}
+
 def plot_cbar(ax_info):
     cbar_pcoll = ax_info.get('cbar_pcoll')
 
@@ -84,6 +99,23 @@ def plot_cbar(ax_info):
 #        for inx in [0,-1]:
 #            labels[inx].set_visible(False)
 
+def reject_legend(fig):
+    x0  = 1.01
+    wdt = 0.015
+    y0  = 0.250
+    hgt = (1-2.*y0)
+
+    axl= fig.add_axes([x0, y0, wdt, hgt])
+    axl.axis('off')
+
+    legend_elements = []
+    for rej_code, rej_dct in reject_codes.items():
+        color = rej_dct['color']
+        label = rej_dct['label']
+        # legend_elements.append(mpl.lines.Line2D([0], [0], ls='',marker='s', color=color, label=label,markersize=15))
+        legend_elements.append(mpl.patches.Patch(facecolor=color,edgecolor=color,label=label))
+
+    axl.legend(handles=legend_elements, loc='center left', fontsize = 42)
 
 def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,
         fontdict=None):
@@ -172,7 +204,7 @@ def get_coords(radar,win_sDate,radars,sDate,eDate,st_uts,verts=True):
 def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
         scale=[-0.025,0.025], st_uts=[14, 16, 18, 20],
         xlabels=True, group_name=None,classification_colors=False,
-        rasterized=False,radars=None,**kwargs):
+        rasterized=False,radars=None,param=None,**kwargs):
 
     if sDate is None:
         sDate = data_df.index.min()
@@ -207,6 +239,7 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
         my_colors           = MyColors((scale_0, scale_1),my_cmap=my_cmap,truncate_cmap=truncate_cmap)
         cmap                = my_colors.cmap
         norm                = my_colors.norm
+                
 
     ################################################################################    
     current_date = sDate
@@ -222,15 +255,37 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
                 if not np.isfinite(val):
                     continue
 
+#                print(val, radar, win_sDate)
+#                import ipdb; ipdb.set_trace()
+
+                if param == 'reject_code':
+                    val = reject_codes.get(val,reject_codes[4])['color']
+
                 vals.append(val)
                 verts.append(get_coords(radar,win_sDate,radars,sDate,eDate,st_uts))
 
         current_date += datetime.timedelta(days=1)
 
-    pcoll = PolyCollection(np.array(verts),edgecolors='face',linewidths=0,closed=False,
-            cmap=cmap,norm=norm,zorder=99,rasterized=rasterized)
-    pcoll.set_array(np.array(vals))
-    ax.add_collection(pcoll,autolim=False)
+
+    if param == 'reject_code':
+#        for vert,val in zip(verts,vals):
+#            x0 = vert[0][0]
+#            wd = vert[1][0] - x0
+#            y0 = vert[0][1]
+#            ht = vert[2][1] - y0
+#            ptch = mpl.patches.Rectangle((x0,y0),wd,ht,color=val)
+#            ax.add_patch(ptch)
+#        pcoll = None
+
+        pcoll = PolyCollection(np.array(verts),edgecolors='0.75',linewidths=0.25,
+                cmap=cmap,norm=norm,zorder=99,rasterized=rasterized)
+        pcoll.set_facecolors(np.array(vals))
+        ax.add_collection(pcoll,autolim=False)
+    else:
+        pcoll = PolyCollection(np.array(verts),edgecolors='face',linewidths=0,closed=False,
+                cmap=cmap,norm=norm,zorder=99,rasterized=rasterized)
+        pcoll.set_array(np.array(vals))
+        ax.add_collection(pcoll,autolim=False)
 
     # Make gray missing data.
     ax.set_facecolor('0.90')
@@ -289,8 +344,11 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
     return ax_info
 
 if __name__ == '__main__':
+#    param = 'meanSubIntSpect_by_rtiCnt'
+    param = 'reject_code'
+
     # Generate Output Directory
-    output_dir  = os.path.join('output','climo')
+    output_dir  = os.path.join('output',param)
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     os.makedirs(output_dir)
@@ -306,6 +364,8 @@ if __name__ == '__main__':
     for fl in data_fls:
         spl     = os.path.basename(fl).split('_')
         season  = '{!s}_{!s}'.format(spl[1],spl[2])
+        if season == '20221101_20230501':
+            continue
         seasons.append(season)
     seasons = list(set(seasons))
     seasons.sort()
@@ -323,8 +383,6 @@ if __name__ == '__main__':
     radars.append('fhe')
     radars.append('bks')
     radars.append('wal')
-
-    param = 'meanSubIntSpect_by_rtiCnt'
 
     data_dict = {}
     lat_lons  = []
@@ -404,7 +462,7 @@ if __name__ == '__main__':
 
 #        if season != '20121101_20130501':
 #            continue
-        ax_info = plot_mstid_values(data_df,ax,radars=radars)
+        ax_info = plot_mstid_values(data_df,ax,radars=radars,param=param)
         ax_list.append(ax_info)
 
         season_yr0 = season[:4]
@@ -414,9 +472,12 @@ if __name__ == '__main__':
 
     fig.tight_layout(w_pad=2.25)
 
-    plot_cbar(ax_list[1])
+    if param == 'reject_code':
+        reject_legend(fig)
+    else:
+        plot_cbar(ax_list[1])
 
-    fpath = os.path.join(output_dir,'climo.png')
+    fpath = os.path.join(output_dir,'{!s}.png'.format(param))
     print('SAVING: ',fpath)
 #    fig.savefig(fpath)
     fig.savefig(fpath,bbox_inches='tight')
