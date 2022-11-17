@@ -345,7 +345,7 @@ if __name__ == '__main__':
     os.makedirs(output_dir)
 
     # Find all available data files.
-    data_dir    = 'mstid_index'
+    data_dir    = os.path.join('data','mstid_index')
     pattern     = '*.nc'
     data_fls    = glob.glob(os.path.join(data_dir,pattern))
     data_fls.sort()
