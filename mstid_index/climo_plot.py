@@ -268,15 +268,6 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
 
 
     if param == 'reject_code':
-#        for vert,val in zip(verts,vals):
-#            x0 = vert[0][0]
-#            wd = vert[1][0] - x0
-#            y0 = vert[0][1]
-#            ht = vert[2][1] - y0
-#            ptch = mpl.patches.Rectangle((x0,y0),wd,ht,color=val)
-#            ax.add_patch(ptch)
-#        pcoll = None
-
         pcoll = PolyCollection(np.array(verts),edgecolors='0.75',linewidths=0.25,
                 cmap=cmap,norm=norm,zorder=99,rasterized=rasterized)
         pcoll.set_facecolors(np.array(vals))

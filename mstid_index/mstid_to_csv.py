@@ -96,8 +96,8 @@ for lst in lists:
     spl = lst.split('_')
     seasons.append('{!s}_{!s}'.format(spl[2],spl[3]))
 
-with open('reject_codes.txt','w') as fl:
-    fl.write('')
+#with open('reject_codes.txt','w') as fl:
+#    fl.write('')
 
 seasons = list(set(seasons))
 for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
@@ -134,10 +134,10 @@ for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
                 reject_code = 4 # Other, including No RTI Fraction and No Terminator Fraction.
             data['reject_code'].append(reject_code)
 
-            txt = '{!s}: {!s} {!s} {!s}\n'.format(reject_code, radar, date, reject)
-            print(txt)
-            with open('reject_codes.txt','a') as fl:
-                fl.write(txt)
+#            txt = '{!s}: {!s} {!s} {!s}\n'.format(reject_code, radar, date, reject)
+#            print(txt)
+#            with open('reject_codes.txt','a') as fl:
+#                fl.write(txt)
 
         
         df      = pd.DataFrame(data,index=dates)
