@@ -10,7 +10,17 @@ import datetime
 import numpy as np
 import pandas as pd
 
+import matplotlib as mpl
+from matplotlib import pyplot as plt
+
 import netCDF4 as nc
+
+mpl.rcParams['font.size']      = 12
+mpl.rcParams['font.weight']    = 'bold'
+mpl.rcParams['axes.grid']      = True
+mpl.rcParams['grid.linestyle'] = ':'
+mpl.rcParams['figure.figsize'] = np.array([15, 8])
+mpl.rcParams['axes.xmargin']   = 0
 
 def generate_radar_dict():
     rad_list = []
@@ -115,8 +125,8 @@ for season in seasons:
             fl.write('\n'.join(hdr))
             fl.write('\n')
             
-            cols = ['datetime_ut'] + list(dft_1.keys())
-            fl.write(','.join(cols))
+            csv_cols = ['datetime_ut'] + list(dft_1.keys())
+            fl.write(','.join(csv_cols))
             fl.write('\n')
         dft_1.to_csv(csv_path,mode='a',header=False)
 
@@ -124,8 +134,33 @@ for season in seasons:
         dsr             = dft_1.to_xarray()
         dsr.attrs       = attrs
         dsr.to_netcdf(nc_path)
-        
+
         print(csv_path)
         print(nc_path)
+
+        nrows   = len(cols)
+        fig     = plt.figure(figsize=(15,8))
+
+        for axn,col in enumerate(cols):
+            ax  = fig.add_subplot(nrows,1,axn+1)
+
+            xx  = dft_0.index
+            yy  = dft_0[col]
+            ax.plot(xx,yy,label='Original',lw=2)
+            
+            xx  = dft_1.index
+            yy  = dft_1[col]
+            ax.plot(xx,yy,label='Resampled')
+
+            ax.set_xlabel('Date [UT]')
+            ax.set_ylabel(col)
+
+            ax.legend(loc='upper right',fontsize='small')
+
+        fig.tight_layout()
+        png_path = os.path.join(output_dir,fname+'.png')
+        fig.savefig(png_path,bbox_inches='tight')
+        print(png_path)
+        plt.close(fig)
 
 breakpoint()
