@@ -68,6 +68,9 @@ prmd['cbar_label']      = 'U 1 hPa [m/s]'
 prmd['title']           = 'MERRA2 Zonal Winds 1 hPa [m/s]'
 prmd['data_dir']        = os.path.join('data','merra2','preprocessed')
 
+prmd = prm_dct['reject_code'] = {}
+prmd['title']           = 'MSTID Index Data Quality Flag'
+
 # Reject code colors.
 reject_codes = {}
 # 0: Good Period (Not Rejected)
@@ -560,11 +563,50 @@ def stackplot(po_dct,params,season,radars=None,fpath='stackplot.png'):
         ax_info = plot_mstid_values(data_df,ax,radars=_radars,param=param,xlabels=xlabels)
         ax_list.append(ax_info)
 
+
+        txt = prmd.get('title',param)
+        left_title_fontdict  = {'weight': 'bold', 'size': 24}
+        ax.set_title('')
+        ax.set_title(txt,fontdict=left_title_fontdict,loc='left')
+
+        season_yr0 = season[:4]
+        season_yr1 = season[9:13]
+        txt = '{!s} - {!s} Northern Hemisphere Winter'.format(season_yr0,season_yr1)
+        fig.text(0.5,1.01,txt,ha='center',fontdict=title_fontdict)
+
+    fig.tight_layout()
+
+    for param,ax_info in zip(params,ax_list):
         # Plot Colorbar ################################################################
+        ax  = ax_info.get('ax')
         if param == 'reject_code':
-            reject_legend(fig)
+            ax_pos  = ax.get_position()
+            x0  = 1.005
+            wdt = 0.015
+            y0  = ax_pos.extents[1]
+            hgt = ax_pos.height
+
+            axl= fig.add_axes([x0, y0, wdt, hgt])
+            axl.axis('off')
+
+            legend_elements = []
+            for rej_code, rej_dct in reject_codes.items():
+                color = rej_dct['color']
+                label = rej_dct['label']
+                # legend_elements.append(mpl.lines.Line2D([0], [0], ls='',marker='s', color=color, label=label,markersize=15))
+                legend_elements.append(mpl.patches.Patch(facecolor=color,edgecolor=color,label=label))
+
+            axl.legend(handles=legend_elements, loc='center left', fontsize = 18)
         else:
-            cbar_pcoll = ax_info.get('cbar_pcoll')
+            ax_pos  = ax.get_position()
+            x0  = 1.01
+            wdt = 0.015
+            y0  = ax_pos.extents[1]
+            hgt = ax_pos.height
+            axColor = fig.add_axes([x0, y0, wdt, hgt])
+            axColor.grid(False)
+
+            cbar_pcoll      = ax_info.get('cbar_pcoll')
             cbar_label      = ax_info.get('cbar_label')
             cbar_ticks      = ax_info.get('cbar_ticks')
             cbar_tick_fmt   = prmd.get('cbar_tick_fmt')
@@ -582,8 +624,7 @@ def stackplot(po_dct,params,season,radars=None,fpath='stackplot.png'):
 			# pad : float, default: 0.05 if vertical, 0.15 if horizontal
 			#     Fraction of original axes between colorbar and new image axes.
             cbar  = fig.colorbar(cbar_pcoll,orientation='vertical',
-                    aspect = 8, pad=0.015,
-                    format=cbar_tick_fmt)
+                    cax=axColor,format=cbar_tick_fmt)
 
             cbar_label_fontdict = {'weight': 'bold', 'size': 24}
             cbar.set_label(cbar_label,fontdict=cbar_label_fontdict)
@@ -601,22 +642,7 @@ def stackplot(po_dct,params,season,radars=None,fpath='stackplot.png'):
                 if fontsize:
                     label.set_fontsize(fontsize)
 
-        txt = prmd.get('title',param)
-        left_title_fontdict  = {'weight': 'bold', 'size': 24}
-        ax.set_title('')
-        ax.set_title(txt,fontdict=left_title_fontdict,loc='left')
-
-        season_yr0 = season[:4]
-        season_yr1 = season[9:13]
-        txt = '{!s} - {!s} Northern Hemisphere Winter'.format(season_yr0,season_yr1)
-        fig.text(0.5,1.01,txt,ha='center',fontdict=title_fontdict)
-
-    fig.tight_layout()
-
-
     fig.savefig(fpath,bbox_inches='tight')
-
-    import ipdb; ipdb.set_trace()
 
 def prep_dir(path,clear=False):
     if clear:
@@ -644,6 +670,19 @@ if __name__ == '__main__':
     radars.append('bks')
     radars.append('wal')
 
+#    # Ordered by Longitude
+#    radars          = []
+#    radars.append('cvw')
+#    radars.append('pgr')
+#    radars.append('cve')
+#    radars.append('sas')
+#    radars.append('fhw')
+#    radars.append('fhe')
+#    radars.append('kap')
+#    radars.append('bks')
+#    radars.append('wal')
+#    radars.append('gbr')
+
     params = []
     params.append('meanSubIntSpect_by_rtiCnt')
     params.append('reject_code')
@@ -667,17 +706,22 @@ if __name__ == '__main__':
             po.plot_climatology()
 
     # Generate Stackplots
-    stack_code      = 'mstid_merra2'
-    stack_params    = []
-    stack_params.append('meanSubIntSpect_by_rtiCnt')
-    stack_params.append('U_1HPA')
-    stack_params.append('U_10HPA')
+    stack_sets  = {}
+    ss = stack_sets['mstid_merra2'] = []
+    ss.append('meanSubIntSpect_by_rtiCnt')
+    ss.append('U_1HPA')
+    ss.append('U_10HPA')
 
-    stack_dir  = os.path.join(output_base_dir,'stackplots',stack_code)
-    prep_dir(stack_dir,clear=True)
-    for season in seasons:
-        png_name    = '{!s}_stack_{!s}.png'.format(season,stack_code)
-        png_path    = os.path.join(stack_dir,png_name) 
+    ss = stack_sets['data_quality'] = []
+    ss.append('meanSubIntSpect_by_rtiCnt')
+    ss.append('reject_code')
 
-        stackplot(po_dct,stack_params,season,fpath=png_path)
+    for stack_code,stack_params in stack_sets.items():
+        stack_dir  = os.path.join(output_base_dir,'stackplots',stack_code)
+        prep_dir(stack_dir,clear=True)
+        for season in seasons:
+            png_name    = '{!s}_stack_{!s}.png'.format(season,stack_code)
+            png_path    = os.path.join(stack_dir,png_name) 
+
+            stackplot(po_dct,stack_params,season,fpath=png_path)
 
