@@ -45,24 +45,28 @@ title_fontdict          = {'weight': 'bold', 'size':36}
 
 prm_dct = {}
 prmd = prm_dct['meanSubIntSpect_by_rtiCnt'] = {}
-prmd['scale_0']     = -0.025
-prmd['scale_1']     =  0.025
-prmd['cmap']        = mpl.cm.jet
-prmd['cbar_label']  = 'MSTID Index'
+prmd['scale_0']         = -0.025
+prmd['scale_1']         =  0.025
+prmd['cmap']            = mpl.cm.jet
+prmd['cbar_label']      = 'MSTID Index'
+prmd['cbar_tick_fmt']   = '%0.3f'
+prmd['title']           = 'SuperDARN MSTID Index'
 
 prmd = prm_dct['U_10HPA'] = {}
-prmd['scale_0']     = -100.
-prmd['scale_1']     =  100.
-prmd['cmap']        = mpl.cm.RdYlGn
-prmd['cbar_label']  = 'U 10 hPa [m/s]'
-prmd['data_dir']    = os.path.join('data','merra2','preprocessed')
+prmd['scale_0']         = -100.
+prmd['scale_1']         =  100.
+prmd['cmap']            = mpl.cm.bwr
+prmd['cbar_label']      = 'U 10 hPa [m/s]'
+prmd['title']           = 'MERRA2 Zonal Winds 10 hPa [m/s]'
+prmd['data_dir']        = os.path.join('data','merra2','preprocessed')
 
 prmd = prm_dct['U_1HPA'] = {}
-prmd['scale_0']     = -100.
-prmd['scale_1']     =  100.
-prmd['cmap']        = mpl.cm.RdYlGn
-prmd['cbar_label']  = 'U 1 hPa [m/s]'
-prmd['data_dir']    = os.path.join('data','merra2','preprocessed')
+prmd['scale_0']         = -100.
+prmd['scale_1']         =  100.
+prmd['cmap']            = mpl.cm.bwr
+prmd['cbar_label']      = 'U 1 hPa [m/s]'
+prmd['title']           = 'MERRA2 Zonal Winds 1 hPa [m/s]'
+prmd['data_dir']        = os.path.join('data','merra2','preprocessed')
 
 # Reject code colors.
 reject_codes = {}
@@ -528,7 +532,103 @@ class ParameterObject(object):
     #    fig.savefig(fpath)
         fig.savefig(fpath,bbox_inches='tight')
 
+def stackplot(po_dct,params,season,radars=None,fpath='stackplot.png'):
+    print(' Plotting Stackplot: {!s}'.format(fpath))
+    nrows   = len(params)
+    ncols   = 1
+    fig = plt.figure(figsize=(25,nrows*5))
+
+    ax_list = []
+    for inx,param in enumerate(params):
+        ax      = fig.add_subplot(nrows,ncols,inx+1)
+
+        po      = po_dct.get(param)
+        prmd    = po.prmd
+        data_df = po.data[season]['df']
+
+        if radars is None:
+            _radars = po.radars
+        else:
+            _radars = radars
+
+        
+        if inx == nrows-1:
+            xlabels = True
+        else:
+            xlabels = False
+
+        ax_info = plot_mstid_values(data_df,ax,radars=_radars,param=param,xlabels=xlabels)
+        ax_list.append(ax_info)
+
+        # Plot Colorbar ################################################################
+        if param == 'reject_code':
+            reject_legend(fig)
+        else:
+            cbar_pcoll = ax_info.get('cbar_pcoll')
+            cbar_label      = ax_info.get('cbar_label')
+            cbar_ticks      = ax_info.get('cbar_ticks')
+            cbar_tick_fmt   = prmd.get('cbar_tick_fmt')
+            cbar_tb_vis     = ax_info.get('cbar_tb_vis',False)
+
+			# fraction : float, default: 0.15
+			#     Fraction of original axes to use for colorbar.
+			# 
+			# shrink : float, default: 1.0
+			#     Fraction by which to multiply the size of the colorbar.
+			# 
+			# aspect : float, default: 20
+			#     Ratio of long to short dimensions.
+			# 
+			# pad : float, default: 0.05 if vertical, 0.15 if horizontal
+			#     Fraction of original axes between colorbar and new image axes.
+            cbar  = fig.colorbar(cbar_pcoll,orientation='vertical',
+                    aspect = 8, pad=0.015,
+                    format=cbar_tick_fmt)
+
+            cbar_label_fontdict = {'weight': 'bold', 'size': 24}
+            cbar.set_label(cbar_label,fontdict=cbar_label_fontdict)
+            if cbar_ticks is not None:
+                cbar.set_ticks(cbar_ticks)
+
+            cbar.ax.set_ylim( *(cbar_pcoll.get_clim()) )
+
+            labels = cbar.ax.get_yticklabels()
+            fontweight  = cbar_ytick_fontdict.get('weight')
+            fontsize    = 18
+            for label in labels:
+                if fontweight:
+                    label.set_fontweight(fontweight)
+                if fontsize:
+                    label.set_fontsize(fontsize)
+
+        txt = prmd.get('title',param)
+        left_title_fontdict  = {'weight': 'bold', 'size': 24}
+        ax.set_title('')
+        ax.set_title(txt,fontdict=left_title_fontdict,loc='left')
+
+        season_yr0 = season[:4]
+        season_yr1 = season[9:13]
+        txt = '{!s} - {!s} Northern Hemisphere Winter'.format(season_yr0,season_yr1)
+        fig.text(0.5,1.01,txt,ha='center',fontdict=title_fontdict)
+
+    fig.tight_layout()
+
+
+    fig.savefig(fpath,bbox_inches='tight')
+
+    import ipdb; ipdb.set_trace()
+
+def prep_dir(path,clear=False):
+    if clear:
+        if os.path.exists(path):
+            shutil.rmtree(path)
+    if not os.path.exists(path):
+        os.makedirs(path)
+
 if __name__ == '__main__':
+
+    output_base_dir     = 'output'
+    plot_climatologies  = False
 
     radars          = []
     # 'High Latitude Radars'
@@ -550,17 +650,34 @@ if __name__ == '__main__':
     params.append('U_10HPA')
     params.append('U_1HPA')
 
+    seasons = list_seasons()
+
     po_dct  = {}
     for param in params:
         # Generate Output Directory
-        output_dir  = os.path.join('output',param)
-        if os.path.exists(output_dir):
-            shutil.rmtree(output_dir)
-        os.makedirs(output_dir)
+        output_dir  = os.path.join(output_base_dir,param)
+        prep_dir(output_dir,clear=True)
 
-        po = ParameterObject(param,radars=radars,output_dir=output_dir)
+        po = ParameterObject(param,radars=radars,seasons=seasons,output_dir=output_dir)
         po_dct[param]   = po
 
-    for param,po in po_dct.items():
-        print('Plotting Climatology: {!s}'.format(param))
-        po.plot_climatology()
+    if plot_climatologies:
+        for param,po in po_dct.items():
+            print('Plotting Climatology: {!s}'.format(param))
+            po.plot_climatology()
+
+    # Generate Stackplots
+    stack_code      = 'mstid_merra2'
+    stack_params    = []
+    stack_params.append('meanSubIntSpect_by_rtiCnt')
+    stack_params.append('U_1HPA')
+    stack_params.append('U_10HPA')
+
+    stack_dir  = os.path.join(output_base_dir,'stackplots',stack_code)
+    prep_dir(stack_dir,clear=True)
+    for season in seasons:
+        png_name    = '{!s}_stack_{!s}.png'.format(season,stack_code)
+        png_path    = os.path.join(stack_dir,png_name) 
+
+        stackplot(po_dct,stack_params,season,fpath=png_path)
+
