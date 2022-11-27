@@ -43,6 +43,27 @@ ytick_major_fontdict    = {'weight': 'bold', 'size':24}
 ytick_minor_fontdict    = {'weight': 'bold', 'size':24}
 title_fontdict          = {'weight': 'bold', 'size':36}
 
+prm_dct = {}
+prmd = prm_dct['meanSubIntSpect_by_rtiCnt'] = {}
+prmd['scale_0']     = -0.025
+prmd['scale_1']     =  0.025
+prmd['cmap']        = mpl.cm.jet
+prmd['cbar_label']  = 'MSTID Index'
+
+prmd = prm_dct['U_10HPA'] = {}
+prmd['scale_0']     = -100.
+prmd['scale_1']     =  100.
+prmd['cmap']        = mpl.cm.RdYlGn
+prmd['cbar_label']  = 'U 10 hPa [m/s]'
+prmd['data_dir']    = os.path.join('data','merra2','preprocessed')
+
+prmd = prm_dct['U_1HPA'] = {}
+prmd['scale_0']     = -100.
+prmd['scale_1']     =  100.
+prmd['cmap']        = mpl.cm.RdYlGn
+prmd['cbar_label']  = 'U 1 hPa [m/s]'
+prmd['data_dir']    = os.path.join('data','merra2','preprocessed')
+
 # Reject code colors.
 reject_codes = {}
 # 0: Good Period (Not Rejected)
@@ -202,9 +223,17 @@ def get_coords(radar,win_sDate,radars,sDate,eDate,st_uts,verts=True):
         return (x0, y0)
 
 def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
-        scale=[-0.025,0.025], st_uts=[14, 16, 18, 20],
+        st_uts=[14, 16, 18, 20],
         xlabels=True, group_name=None,classification_colors=False,
         rasterized=False,radars=None,param=None,**kwargs):
+
+    prmd        = prm_dct.get(param,{})
+    scale_0     = prmd.get('scale_0',-0.025)
+    scale_1     = prmd.get('scale_1', 0.025)
+    scale       = (scale_0, scale_1)
+
+    cmap        = prmd.get('cmap',mpl.cm.jet)
+    cbar_label  = prmd.get('cbar_label',param)
 
     if sDate is None:
         sDate = data_df.index.min()
@@ -222,10 +251,9 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
     ymax    = len(st_uts) * len(radars)
 
     cbar_info   = {}
-    cmap        = mpl.cm.jet
     bounds      = np.linspace(scale[0],scale[1],256)
     cbar_info['cbar_ticks'] = np.linspace(scale[0],scale[1],11)
-    cbar_info['cbar_label'] = 'MSTID Index'
+    cbar_info['cbar_label'] = cbar_label
 
     norm    = mpl.colors.BoundaryNorm(bounds,cmap.N)
 
@@ -335,140 +363,146 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
     return ax_info
 
 if __name__ == '__main__':
-#    param = 'meanSubIntSpect_by_rtiCnt'
-    param = 'reject_code'
 
-    # Generate Output Directory
-    output_dir  = os.path.join('output',param)
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
-    os.makedirs(output_dir)
+    params = []
+    params.append('meanSubIntSpect_by_rtiCnt')
+    params.append('reject_code')
+    params.append('U_10HPA')
+    params.append('U_1HPA')
 
-    # Find all available data files.
-    data_dir    = os.path.join('data','mstid_index')
-    pattern     = '*.nc'
-    data_fls    = glob.glob(os.path.join(data_dir,pattern))
-    data_fls.sort()
+    for param in params:
+        prmd        = prm_dct.get(param,{})
+        data_dir    = prmd.get('data_dir',os.path.join('data','mstid_index'))
 
-    # Identify unique seasons available
-    seasons = []
-    for fl in data_fls:
-        spl     = os.path.basename(fl).split('_')
-        season  = '{!s}_{!s}'.format(spl[1],spl[2])
-        if season == '20221101_20230501':
-            continue
-        seasons.append(season)
-    seasons = list(set(seasons))
-    seasons.sort()
+        # Generate Output Directory
+        output_dir  = os.path.join('output',param)
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
+        os.makedirs(output_dir)
 
-    radars          = []
-    # 'High Latitude Radars'
-    radars.append('pgr')
-    radars.append('sas')
-    radars.append('kap')
-    radars.append('gbr')
-    # 'Mid Latitude Radars'
-    radars.append('cvw')
-    radars.append('cve')
-    radars.append('fhw')
-    radars.append('fhe')
-    radars.append('bks')
-    radars.append('wal')
+        # Find all available data files.
+        pattern     = '*.nc'
+        data_fls    = glob.glob(os.path.join(data_dir,pattern))
+        data_fls.sort()
 
-    data_dict = {}
-    lat_lons  = []
+        # Identify unique seasons available
+        seasons = []
+        for fl in data_fls:
+            spl     = os.path.basename(fl).split('_')
+            season  = '{!s}_{!s}'.format(spl[1],spl[2])
+            if season == '20221101_20230501':
+                continue
+            seasons.append(season)
+        seasons = list(set(seasons))
+        seasons.sort()
 
-    print('Generating Season CSV Files...')
-    for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
-        # Load all data from a season into a single xarray dataset.
-        ds      = []
-        attrs   = []
-        for radar in radars:
-            fl  = os.path.join(data_dir,'sdMSTIDindex_{!s}_{!s}.nc'.format(season,radar))
-            dsr = xr.open_dataset(fl)
-            ds.append(dsr)
-            attrs.append(dsr.attrs)
+        radars          = []
+        # 'High Latitude Radars'
+        radars.append('pgr')
+        radars.append('sas')
+        radars.append('kap')
+        radars.append('gbr')
+        # 'Mid Latitude Radars'
+        radars.append('cvw')
+        radars.append('cve')
+        radars.append('fhw')
+        radars.append('fhe')
+        radars.append('bks')
+        radars.append('wal')
 
-            # Store radar lat / lons to creat a radar location file.
-            lat_lons.append({'radar':radar,'lat':dsr.attrs['lat'],'lon':dsr.attrs['lon']})
-        dss = xr.concat(ds,dim='index')
+        data_dict = {}
+        lat_lons  = []
 
-        # Convert parameter of interest to a datafame.
-        df      = dss[param].to_dataframe()
-        dfrs = {}
-        for radar in tqdm.tqdm(radars,desc='Radars',dynamic_ncols=True,position=1,leave=False):
-            tf      = df['radar'] == radar
-            dft     = df[tf]
-            dates   = dft.index
-            vals    = dft[param]
+        print('Generating Season CSV Files...')
+        for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
+            # Load all data from a season into a single xarray dataset.
+            ds      = []
+            attrs   = []
+            for radar in radars:
+    #            fl  = os.path.join(data_dir,'sdMSTIDindex_{!s}_{!s}.nc'.format(season,radar))
+                fl  = glob.glob(os.path.join(data_dir,'*{!s}_{!s}.nc'.format(season,radar)))[0]
+                dsr = xr.open_dataset(fl)
+                ds.append(dsr)
+                attrs.append(dsr.attrs)
 
-            for date,val in zip(dates,vals):
-                if date not in dfrs:
-                    dfrs[date] = {}
-                dfrs[date][radar] = val
+                # Store radar lat / lons to creat a radar location file.
+                lat_lons.append({'radar':radar,'lat':dsr.attrs['lat'],'lon':dsr.attrs['lon']})
+            dss = xr.concat(ds,dim='index')
 
-        df  = pd.DataFrame(dfrs.values(),dfrs.keys())
-        df  = df.sort_index()
-        df.index.name   = 'datetime'
+            # Convert parameter of interest to a datafame.
+            df      = dss[param].to_dataframe()
+            dfrs = {}
+            for radar in tqdm.tqdm(radars,desc='Radars',dynamic_ncols=True,position=1,leave=False):
+                tf      = df['radar'] == radar
+                dft     = df[tf]
+                dates   = dft.index
+                vals    = dft[param]
 
-        csv_fname       = '{!s}_{!s}.csv'.format(season,param)
-        csv_fpath       = os.path.join(output_dir,csv_fname)
-        with open(csv_fpath,'w') as fl:
-            hdr = []
-            hdr.append('# SuperDARN MSTID Index Datafile')
-            hdr.append('# Generated by Nathaniel Frissell, nathaniel.frissell@scranton.edu')
-            hdr.append('#')
-            hdr.append('# Parameter: {!s}'.format(param))
-            hdr.append('#')
-            for attr in attrs:
-                hdr.append('# {!s}'.format(attr))
-            hdr.append('#')
+                for date,val in zip(dates,vals):
+                    if date not in dfrs:
+                        dfrs[date] = {}
+                    dfrs[date][radar] = val
 
-            fl.write('\n'.join(hdr))
-            fl.write('\n')
-            
-    #        cols = ['datetime_ut'] + list(df.keys())
-    #        fl.write(','.join(cols))
-    #        fl.write('\n')
-        df.to_csv(csv_fpath,mode='a')
+            df  = pd.DataFrame(dfrs.values(),dfrs.keys())
+            df  = df.sort_index()
+            df.index.name   = 'datetime'
 
-        data_dict[season] = df
+            csv_fname       = '{!s}_{!s}.csv'.format(season,param)
+            csv_fpath       = os.path.join(output_dir,csv_fname)
+            with open(csv_fpath,'w') as fl:
+                hdr = []
+                hdr.append('# SuperDARN MSTID Index Datafile')
+                hdr.append('# Generated by Nathaniel Frissell, nathaniel.frissell@scranton.edu')
+                hdr.append('#')
+                hdr.append('# Parameter: {!s}'.format(param))
+                hdr.append('#')
+                for attr in attrs:
+                    hdr.append('# {!s}'.format(attr))
+                hdr.append('#')
 
-    # Clean up lat_lon data table and save to disk.
-    ll_df       = pd.DataFrame(lat_lons).drop_duplicates()
-    csv_fpath   = os.path.join(output_dir,'radars.csv')
-    ll_df.to_csv(csv_fpath,index=False)
+                fl.write('\n'.join(hdr))
+                fl.write('\n')
+                
+        #        cols = ['datetime_ut'] + list(df.keys())
+        #        fl.write(','.join(cols))
+        #        fl.write('\n')
+            df.to_csv(csv_fpath,mode='a')
 
-    nrows   = 6
-    ncols   = 2
-    print('Plotting Climatologies...')
-    fig = plt.figure(figsize=(50,30))
+            data_dict[season] = df
 
-    ax_list = []
-    for inx,season in enumerate(seasons):
-        print(' -->',season)
-        ax      = fig.add_subplot(nrows,ncols,inx+1)
+        # Clean up lat_lon data table and save to disk.
+        ll_df       = pd.DataFrame(lat_lons).drop_duplicates()
+        csv_fpath   = os.path.join(output_dir,'radars.csv')
+        ll_df.to_csv(csv_fpath,index=False)
 
-        data_df = data_dict[season]
+        nrows   = 6
+        ncols   = 2
+        print('Plotting Climatologies...')
+        fig = plt.figure(figsize=(50,30))
 
-#        if season != '20121101_20130501':
-#            continue
-        ax_info = plot_mstid_values(data_df,ax,radars=radars,param=param)
-        ax_list.append(ax_info)
+        ax_list = []
+        for inx,season in enumerate(seasons):
+            print(' -->',season)
+            ax      = fig.add_subplot(nrows,ncols,inx+1)
 
-        season_yr0 = season[:4]
-        season_yr1 = season[9:13]
-        txt = '{!s} - {!s} Northern Hemisphere Winter'.format(season_yr0,season_yr1)
-        ax.set_title(txt,fontdict=title_fontdict)
+            data_df = data_dict[season]
 
-    fig.tight_layout(w_pad=2.25)
+            ax_info = plot_mstid_values(data_df,ax,radars=radars,param=param)
+            ax_list.append(ax_info)
 
-    if param == 'reject_code':
-        reject_legend(fig)
-    else:
-        plot_cbar(ax_list[1])
+            season_yr0 = season[:4]
+            season_yr1 = season[9:13]
+            txt = '{!s} - {!s} Northern Hemisphere Winter'.format(season_yr0,season_yr1)
+            ax.set_title(txt,fontdict=title_fontdict)
 
-    fpath = os.path.join(output_dir,'{!s}.png'.format(param))
-    print('SAVING: ',fpath)
-#    fig.savefig(fpath)
-    fig.savefig(fpath,bbox_inches='tight')
+        fig.tight_layout(w_pad=2.25)
+
+        if param == 'reject_code':
+            reject_legend(fig)
+        else:
+            plot_cbar(ax_list[1])
+
+        fpath = os.path.join(output_dir,'{!s}.png'.format(param))
+        print('SAVING: ',fpath)
+    #    fig.savefig(fpath)
+        fig.savefig(fpath,bbox_inches='tight')

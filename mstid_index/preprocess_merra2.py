@@ -72,7 +72,7 @@ for key,val in ds.variables.items():
     data_dct[key] = np.array(val)
 
 df_0 = pd.DataFrame(data_dct,index=datetimes)
-df_0.index.name = 'datetime_ut'
+#df_0.index.name = 'datetime_ut'
 
 df_1 = df_0.resample('2H').interpolate()
 
@@ -92,18 +92,22 @@ for season in seasons:
     for radar in radars.keys():
         fname = 'merra2_{!s}_{!s}'.format(season,radar)
 
-        cols    = ['U_{!s}_{!s}'.format(radar.upper(),level) for level in levels]
+        cols_0  = ['U_{!s}_{!s}'.format(radar.upper(),level) for level in levels]
+        cols_1  = ['U_{!s}'.format(level) for level in levels]
+
 
         dt_0    = datetime.datetime.strptime(season[:8],'%Y%m%d')
         dt_1    = datetime.datetime.strptime(season[9:],'%Y%m%d')
 
         tf      = np.logical_and(df_0.index >= dt_0, df_0.index < dt_1) 
         dft_0   = df_0[tf]
-        dft_0   = dft_0[cols].copy()
+        dft_0   = dft_0[cols_0].copy()
+        dft_0   = dft_0.rename({col_0:col_1 for col_0,col_1 in zip(cols_0,cols_1)},axis=1)
 
         tf      = np.logical_and(df_1.index >= dt_0, df_1.index < dt_1) 
         dft_1   = df_1[tf]
-        dft_1   = dft_1[cols].copy()
+        dft_1   = dft_1[cols_0].copy()
+        dft_1   = dft_1.rename({col_0:col_1 for col_0,col_1 in zip(cols_0,cols_1)},axis=1)
 
         attrs   = {}
         attrs['radar']  = radar
@@ -132,16 +136,17 @@ for season in seasons:
 
         nc_path         = os.path.join(output_dir,fname+'.nc')
         dsr             = dft_1.to_xarray()
+        dsr             = dsr.assign_coords({'radar':radar})
         dsr.attrs       = attrs
         dsr.to_netcdf(nc_path)
 
         print(csv_path)
         print(nc_path)
 
-        nrows   = len(cols)
+        nrows   = len(cols_1)
         fig     = plt.figure(figsize=(15,8))
 
-        for axn,col in enumerate(cols):
+        for axn,col in enumerate(cols_1):
             ax  = fig.add_subplot(nrows,1,axn+1)
 
             xx  = dft_0.index
