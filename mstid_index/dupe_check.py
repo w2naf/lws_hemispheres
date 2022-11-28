@@ -17,7 +17,9 @@ import glob
 import pandas as pd
 import numpy as np
 
-data_dir    = os.path.join('output','climo')
+#param   = 'U_10HPA'
+param   = 'U_1HPA'
+data_dir    = os.path.join('output',param)
 files = glob.glob(os.path.join(data_dir,'20*.csv'))
 
 seasons = []
@@ -51,19 +53,25 @@ else:
 pct_dupes = (len(dupes)/len(df))*100
 print('N Rows: {!s} N Dupes: {!s} ({:0.1f}% Dupes)'.format(len(df),len(dupes),pct_dupes))
 
-fpath   = os.path.join(data_dir,'means.csv')
+fpath   = os.path.join(data_dir,'{!s}_means.csv'.format(param))
 means   = pd.DataFrame(means,index=seasons)
 means.to_csv(fpath)
 print('Saved: {!s}'.format(fpath))
 
-fpath   = os.path.join(data_dir,'stds.csv')
+fpath   = os.path.join(data_dir,'{!s}_stds.csv'.format(param))
 stds    = pd.DataFrame(stds,index=seasons)
 stds.to_csv(fpath)
 print('Saved: {!s}'.format(fpath))
 
-fpath   = os.path.join(data_dir,'n_observations.csv')
+fpath   = os.path.join(data_dir,'{!s}_n_observations.csv'.format(param))
 nobs    = pd.DataFrame(nobs,index=seasons)
 nobs.to_csv(fpath)
 print('Saved: {!s}'.format(fpath))
+
+describe= df.describe().T.sort_index()
+fpath   = os.path.join(data_dir,'{!s}_describe.csv'.format(param))
+describe.to_csv(fpath)
+print('Saved: {!s}'.format(fpath))
+
 
 import ipdb; ipdb.set_trace()
