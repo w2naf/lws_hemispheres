@@ -68,6 +68,81 @@ prmd['cbar_label']      = 'U 1 hPa [m/s]'
 prmd['title']           = 'MERRA2 Zonal Winds 1 hPa [m/s]'
 prmd['data_dir']        = os.path.join('data','merra2','preprocessed')
 
+# ['DAILY_SUNSPOT_NO_', 'DAILY_F10.7_', '1-H_DST_nT', '1-H_AE_nT']
+# DAILY_SUNSPOT_NO_  DAILY_F10.7_    1-H_DST_nT     1-H_AE_nT
+# count       40488.000000  40488.000000  40488.000000  40488.000000
+# mean           58.125963    103.032365    -10.984427    162.772167
+# std            46.528777     29.990254     16.764279    175.810863
+# min             0.000000     64.600000   -229.500000      3.500000
+# 25%            17.000000     76.400000    -18.000000     46.000000
+# 50%            50.000000     97.600000     -8.000000     92.000000
+# 75%            90.000000    122.900000     -0.500000    215.000000
+# max           220.000000    255.000000     64.000000   1637.000000
+
+prmd = prm_dct['DAILY_SUNSPOT_NO_'] = {}
+prmd['scale_0']         = 0
+prmd['scale_1']         = 175.
+prmd['cmap']            = mpl.cm.cividis
+prmd['cbar_label']      = 'Daily SN'
+prmd['title']           = 'Daily Sunspot Number'
+prmd['data_dir']        = os.path.join('data','cdaweb_omni','preprocessed')
+
+prmd = prm_dct['DAILY_F10.7_'] = {}
+prmd['scale_0']         = 50.
+prmd['scale_1']         = 200.
+prmd['cmap']            = mpl.cm.cividis
+prmd['cbar_label']      = 'Daily F10.7'
+prmd['title']           = 'Daily F10.7 Solar Flux'
+prmd['data_dir']        = os.path.join('data','cdaweb_omni','preprocessed')
+
+prmd = prm_dct['1-H_DST_nT'] = {}
+prmd['scale_0']         =  -75
+prmd['scale_1']         =   25
+prmd['cmap']            = mpl.cm.inferno_r
+prmd['cbar_label']      = 'Dst [nT]'
+prmd['title']           = 'Disturbance Storm Time Dst Index [nT]'
+prmd['data_dir']        = os.path.join('data','cdaweb_omni','preprocessed')
+
+prmd = prm_dct['1-H_AE_nT'] = {}
+prmd['scale_0']         = 0
+prmd['scale_1']         = 400
+prmd['cmap']            = mpl.cm.viridis
+prmd['cbar_label']      = 'AE [nT]'
+prmd['title']           = 'Auroral Electrojet AE Index [nT]'
+prmd['data_dir']        = os.path.join('data','cdaweb_omni','preprocessed')
+
+prmd = prm_dct['OMNI_R_Sunspot_Number'] = {}
+prmd['scale_0']         = 0
+prmd['scale_1']         = 175.
+prmd['cmap']            = mpl.cm.cividis
+prmd['cbar_label']      = 'Daily SN'
+prmd['title']           = 'Daily Sunspot Number'
+prmd['data_dir']        = os.path.join('data','omni','preprocessed')
+
+prmd = prm_dct['OMNI_F10.7'] = {}
+prmd['scale_0']         = 50.
+prmd['scale_1']         = 200.
+prmd['cmap']            = mpl.cm.cividis
+prmd['cbar_label']      = 'Daily F10.7'
+prmd['title']           = 'Daily F10.7 Solar Flux'
+prmd['data_dir']        = os.path.join('data','omni','preprocessed')
+
+prmd = prm_dct['OMNI_Dst'] = {}
+prmd['scale_0']         =  -75
+prmd['scale_1']         =   25
+prmd['cmap']            = mpl.cm.inferno_r
+prmd['cbar_label']      = 'Dst [nT]'
+prmd['title']           = 'Disturbance Storm Time Dst Index [nT]'
+prmd['data_dir']        = os.path.join('data','omni','preprocessed')
+
+prmd = prm_dct['OMNI_AE'] = {}
+prmd['scale_0']         = 0
+prmd['scale_1']         = 400
+prmd['cmap']            = mpl.cm.viridis
+prmd['cbar_label']      = 'AE [nT]'
+prmd['title']           = 'Auroral Electrojet AE Index [nT]'
+prmd['data_dir']        = os.path.join('data','omni','preprocessed')
+
 prmd = prm_dct['reject_code'] = {}
 prmd['title']           = 'MSTID Index Data Quality Flag'
 
@@ -85,6 +160,12 @@ reject_codes[3] = {'color': mpl.colors.to_rgba('gold'),   'label': 'Poor Data Qu
 reject_codes[4] = {'color': mpl.colors.to_rgba('purple'), 'label': 'Other'}
 # 5: Not Requested (Outside of requested daylight times)
 reject_codes[5] = {'color': mpl.colors.to_rgba('0.9'),   'label': 'Not Requested'}
+
+def season_to_datetime(season):
+    str_0, str_1 = season.split('_')
+    sDate   = datetime.datetime.strptime(str_0,'%Y%m%d')
+    eDate   = datetime.datetime.strptime(str_1,'%Y%m%d')
+    return (sDate,eDate)
 
 def plot_cbar(ax_info):
     cbar_pcoll = ax_info.get('cbar_pcoll')
@@ -297,7 +378,6 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
                 verts.append(get_coords(radar,win_sDate,radars,sDate,eDate,st_uts))
 
         current_date += datetime.timedelta(days=1)
-
 
     if param == 'reject_code':
         pcoll = PolyCollection(np.array(verts),edgecolors='0.75',linewidths=0.25,
@@ -514,8 +594,9 @@ class ParameterObject(object):
             ax      = fig.add_subplot(nrows,ncols,inx+1)
 
             data_df = self.data[season]['df']
-
-            ax_info = plot_mstid_values(data_df,ax,radars=radars,param=param)
+            
+            sDate, eDate = season_to_datetime(season)
+            ax_info = plot_mstid_values(data_df,ax,radars=radars,param=param,sDate=sDate,eDate=eDate)
             ax_list.append(ax_info)
 
             season_yr0 = season[:4]
@@ -654,7 +735,8 @@ def prep_dir(path,clear=False):
 if __name__ == '__main__':
 
     output_base_dir     = 'output'
-    plot_climatologies  = False
+    plot_climatologies  = True
+    plot_stackplots     = True
 
     radars          = []
     # 'High Latitude Radars'
@@ -689,6 +771,16 @@ if __name__ == '__main__':
     params.append('U_10HPA')
     params.append('U_1HPA')
 
+    params.append('OMNI_R_Sunspot_Number')
+    params.append('OMNI_Dst')
+    params.append('OMNI_F10.7')
+    params.append('OMNI_AE')
+
+#    params.append('1-H_AE_nT')
+#    params.append('1-H_DST_nT')
+#    params.append('DAILY_F10.7_')
+#    params.append('DAILY_SUNSPOT_NO_')
+
     seasons = list_seasons()
 
     po_dct  = {}
@@ -707,6 +799,20 @@ if __name__ == '__main__':
 
     # Generate Stackplots
     stack_sets  = {}
+##    ss = stack_sets['cdaweb_omni'] = []
+##    ss.append('meanSubIntSpect_by_rtiCnt')
+##    ss.append('1-H_AE_nT')
+##    ss.append('1-H_DST_nT')
+##    ss.append('DAILY_F10.7_')
+###    ss.append('DAILY_SUNSPOT_NO_')
+
+    ss = stack_sets['omni'] = []
+    ss.append('meanSubIntSpect_by_rtiCnt')
+    ss.append('OMNI_AE')
+    ss.append('OMNI_Dst')
+    ss.append('OMNI_F10.7')
+#    ss.append('OMNI_R_Sunspot_Number')
+
     ss = stack_sets['mstid_merra2'] = []
     ss.append('meanSubIntSpect_by_rtiCnt')
     ss.append('U_1HPA')
@@ -716,12 +822,15 @@ if __name__ == '__main__':
     ss.append('meanSubIntSpect_by_rtiCnt')
     ss.append('reject_code')
 
-    for stack_code,stack_params in stack_sets.items():
-        stack_dir  = os.path.join(output_base_dir,'stackplots',stack_code)
-        prep_dir(stack_dir,clear=True)
-        for season in seasons:
-            png_name    = '{!s}_stack_{!s}.png'.format(season,stack_code)
-            png_path    = os.path.join(stack_dir,png_name) 
+    ss = stack_sets['mstid_index'] = []
+    ss.append('meanSubIntSpect_by_rtiCnt')
 
-            stackplot(po_dct,stack_params,season,fpath=png_path)
+    if plot_stackplots:
+        for stack_code,stack_params in stack_sets.items():
+            stack_dir  = os.path.join(output_base_dir,'stackplots',stack_code)
+            prep_dir(stack_dir,clear=True)
+            for season in seasons:
+                png_name    = '{!s}_stack_{!s}.png'.format(season,stack_code)
+                png_path    = os.path.join(stack_dir,png_name) 
 
+                stackplot(po_dct,stack_params,season,fpath=png_path)
