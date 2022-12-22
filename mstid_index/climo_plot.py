@@ -889,7 +889,7 @@ def prep_dir(path,clear=False):
 if __name__ == '__main__':
 
     output_base_dir     = 'output'
-    plot_climatologies  = False
+    plot_climatologies  = True
     plot_stackplots     = True
 
     radars          = []
@@ -921,14 +921,14 @@ if __name__ == '__main__':
 
     params = []
     params.append('meanSubIntSpect_by_rtiCnt')
-#    params.append('reject_code')
-#    params.append('U_10HPA')
-#    params.append('U_1HPA')
-#
-#    params.append('OMNI_R_Sunspot_Number')
-#    params.append('OMNI_Dst')
-#    params.append('OMNI_F10.7')
-#    params.append('OMNI_AE')
+    params.append('reject_code')
+    params.append('U_10HPA')
+    params.append('U_1HPA')
+
+    params.append('OMNI_R_Sunspot_Number')
+    params.append('OMNI_Dst')
+    params.append('OMNI_F10.7')
+    params.append('OMNI_AE')
 
 #    params.append('1-H_AE_nT')
 #    params.append('1-H_DST_nT')
@@ -961,25 +961,28 @@ if __name__ == '__main__':
 ##    ss.append('DAILY_F10.7_')
 ###    ss.append('DAILY_SUNSPOT_NO_')
 
-#    ss = stack_sets['omni'] = []
-#    ss.append('meanSubIntSpect_by_rtiCnt')
-#    ss.append('OMNI_AE')
-#    ss.append('OMNI_Dst')
+    ss = stack_sets['omni'] = []
+    ss.append('meanSubIntSpect_by_rtiCnt')
+    ss.append('OMNI_AE')
+    ss.append('OMNI_Dst')
 #    ss.append('OMNI_F10.7')
-##    ss.append('OMNI_R_Sunspot_Number')
-#
-#    ss = stack_sets['mstid_merra2'] = []
-#    ss.append('meanSubIntSpect_by_rtiCnt')
-#    ss.append('U_1HPA')
-#    ss.append('U_10HPA')
-#
-#    ss = stack_sets['data_quality'] = []
-#    ss.append('meanSubIntSpect_by_rtiCnt')
-#    ss.append('reject_code')
+#    ss.append('OMNI_R_Sunspot_Number')
+
+    ss = stack_sets['mstid_merra2'] = []
+    ss.append('meanSubIntSpect_by_rtiCnt')
+    ss.append('U_1HPA')
+    ss.append('U_10HPA')
+
+    ss = stack_sets['data_quality'] = []
+    ss.append('meanSubIntSpect_by_rtiCnt')
+    ss.append('reject_code')
+
+    ss = stack_sets['mstid_index_reduced'] = []
+    ss.append('meanSubIntSpect_by_rtiCnt')
+    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
 
     ss = stack_sets['mstid_index'] = []
     ss.append('meanSubIntSpect_by_rtiCnt')
-    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
 
     if plot_stackplots:
         for stack_code,stack_params in stack_sets.items():
