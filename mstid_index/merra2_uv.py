@@ -15,7 +15,9 @@ import cartopy.crs as ccrs
 
 import netCDF4 as nc
 
-mpl.rcParams['font.size']      = 12
+import multiprocessing
+
+mpl.rcParams['font.size']      = 18
 mpl.rcParams['font.weight']    = 'bold'
 mpl.rcParams['axes.grid']      = True
 mpl.rcParams['grid.linestyle'] = ':'
@@ -26,25 +28,34 @@ uv      = {}
 uv['u'] = uvd   = {}
 uvd['title']    = 'Zonal Winds U'
 uvd['label']    = 'U [m/s]'
+uvd['vmin']     = -150
+uvd['vmax']     =  150
 uv['v'] = uvd   = {}
 uvd['title']    = 'Meridional Winds V'
 uvd['label']    = 'V [m/s]'
+uvd['vmin']     = -150
+uvd['vmax']     =  150
 
 levels	= {}
 levels['1P5HPA'] 	= lvl = {}
 lvl['label'] 		= '1.5 hPa (45 km alt)'
+lvl['2l_label'] 	= '1.5 hPa\n(45 km)'
 
 levels['3HPA'] 		= lvl = {}
 lvl['label'] 		= '3 hPa (40 km alt)'
+lvl['2l_label']     = '3 hPa\n(40 km)'
 
 levels['5HPA'] 		= lvl = {}
 lvl['label'] 		= '5 hPa (35 km alt)'
+lvl['2l_label']     = '5 hPa\n(35 km)'
 
 levels['10HPA'] 	= lvl = {}
 lvl['label'] 		= '10 hPa (30 km alt)'
+lvl['2l_label']     = '10 hPa\n(30 km)'
 
 levels['20HPA'] 	= lvl = {}
 lvl['label'] 		= '20 hPa (25 km alt)'
+lvl['2l_label']     = '20 hPa\n(25 km)'
 
 def prep_dir(output_dir,clear=False):
     if os.path.exists(output_dir) and (clear is True):
@@ -93,7 +104,7 @@ def load_uv(nc_fl):
     #dict_keys(['DATE', 'LONGITUDE', 'LATITUDE', 'U_20HPA', 'U_10HPA', 'U_5HPA', 'U_3HPA', 'U_1P5HPA'])
     """
     #ds  = nc.Dataset(nc_fl)
-    ds  = xr.open_dataset(nc_fl)
+    ds  = xr.load_dataset(nc_fl)
 
     dates   = np.array(ds['DATE'])
     datetimes = []
@@ -115,74 +126,71 @@ def load_uv(nc_fl):
 
     return ds
 
-def plot_dailies(dss,sDate,eDate,output_dir='.'):
-    hours   = [0, 12]
+def plot_dailies_dct(rd):
+    return plot_dailies(**rd)
 
+def plot_dailies(dss,date,output_dir='.'):
     nrows   = 5
-    ncols   = 4
+    ncols   = 2
 
-    figsize = 10*np.array([nrows,ncols])
+    figsize = 5*np.array([ncols,nrows])
+    figsize = (15,25)
 
-    dates   = [sDate]
-    while dates[-1] < eDate:
-        dates.append(dates[-1] + datetime.timedelta(days=1))
+    png_name    = '{!s}_uv.png'.format(date.strftime('%Y%m%d_%H%M'))
+    png_path    = os.path.join(output_dir,png_name)
 
-    for date in dates:
-        png_name    = '{!s}_uv.png'.format(date.strftime('%Y%m%d'))
-        png_path    = os.path.join(output_dir,png_name)
+    fig = plt.figure(figsize=figsize)
+    for uv_inx,(uv_key, uvd) in enumerate(uv.items()):
+        col = uv_inx
+        ds  = dss[uv_key]
+        
+        vmin    = uvd.get('vmin')
+        vmax    = uvd.get('vmax')
 
-        fig = plt.figure(figsize=figsize)
+        for lvl_inx,(level,lvld) in enumerate(levels.items()):
+            row     = lvl_inx
 
-        for hr_inx,hour in enumerate(hours):
+            param   = '{!s}_{!s}'.format(uv_key.upper(),level)
 
-            this_time   = date + datetime.timedelta(hours = hour)
+            dt_inx  = np.where(ds['noutput'] == np.datetime64(date))[0][0]
+            dst     = ds[param]
+            frame   = dst.values[dt_inx,:,:]
 
-            for uv_inx,(uv_key, uvd) in enumerate(uv.items()):
-                ds  = dss[uv_key]
+            lats    = dst.coords['nlat'].values
+            lons    = dst.coords['nlon'].values
 
-                col = 2*hr_inx + uv_inx
+            plt_inx = row*ncols + col + 1
 
-                for lvl_inx,(level,lvld) in enumerate(levels.items()):
+            ax      = fig.add_subplot(nrows,ncols,plt_inx, projection=ccrs.Orthographic(270,90))
+            mpbl    = ax.pcolormesh(lons,lats,frame,transform=ccrs.PlateCarree(),cmap='bwr',
+                        vmin=vmin,vmax=vmax)
 
-                    param   = '{!s}_{!s}'.format(uv_key.upper(),level)
+            cbar    = fig.colorbar(mpbl,aspect=15,shrink=0.8)
+            cbar.set_label(uvd.get('label',uv_key.upper()),fontdict={'weight':'bold','size':20})
 
-                    dt_inx  = np.where(ds['noutput'] == np.datetime64(this_time))[0][0]
-                    dst     = ds[param]
-                    frame   = dst.values[dt_inx,:,:]
+            ax.coastlines(zorder=100)
+            ax.gridlines()
 
-                    lats    = dst.coords['nlat'].values
-                    lons    = dst.coords['nlon'].values
+            label_fontdict  = {'weight':'bold','size':28}
+            if col == 0:
+                txt = lvld.get('2l_label',level)
+                ax.text(-0.25,0.5,txt,ha='center',va='center',fontdict=label_fontdict,transform=ax.transAxes)
 
-#                    if level == '3HPA':
-#                        import ipdb; ipdb.set_trace()
+            if row == 0:
+                txt = uvd.get('title',uv_key.upper())
+                ax.text(0.5,1.1,txt,ha='center',va='center',fontdict=label_fontdict,transform=ax.transAxes)
 
+    fig.text(0.5,1.01,date.strftime('%Y %b %d %H%M UT'),ha='center',fontdict={'weight':'bold','size':36})
 
-
-                    plt_inx = lvl_inx*ncols + col + 1
-
-                    ax      = fig.add_subplot(nrows,ncols,plt_inx, projection=ccrs.Orthographic(270,90))
-
-                    mpbl    = ax.pcolormesh(lons,lats,frame,transform=ccrs.PlateCarree(),cmap='bwr')
-                    fig.colorbar(mpbl,label=uvd.get('label',uv_key.upper()))
-
-
-                    ax.coastlines(zorder=100)
-                    ax.gridlines()
-
-                    title   = []
-                    title.append(this_time.strftime('%Y %b %d %H%M UT'))
-                    title.append(uvd.get('title',uv_key.upper()))
-                    title.append(lvld.get('label',level))
-                    ax.set_title('\n'.join(title))
-
-        fig.tight_layout()
-        fig.savefig(png_path,bbox_inches='tight')
-        print(png_path)
-        plt.close(fig)
-                    
-    import ipdb; ipdb.set_trace()
+    fig.tight_layout()
+    fig.savefig(png_path,bbox_inches='tight')
+    print(png_path)
+    plt.close(fig)
 
 if __name__ == '__main__':
+    multiproc   = True
+    ncpus       = multiprocessing.cpu_count()
+
     output_dir  = prep_dir(os.path.join('output','merra2_uv'))
 
     dss = {}
@@ -190,12 +198,37 @@ if __name__ == '__main__':
     for key in uv.keys():
         # Load Zonal and Meridional Winds
         nc_fl       = os.path.join('data','merra2','save_{!s}_5levs_merra2_2010010100-2022073112.nc'.format(key))
+        print('LOADING: {!s}'.format(nc_fl))
         dss[key]    = load_uv(nc_fl)
 
-    sDate   = datetime.datetime(2017,1,1)
-    eDate   = datetime.datetime(2017,1,5)
+#    sDate   = datetime.datetime(2017,1,1)
+#    eDate   = datetime.datetime(2017,1,2)
+
+    sDate   = datetime.datetime(2016,11,1)
+    eDate   = datetime.datetime(2017,5,1)
+
+    dt_hr   = 12
+
+    dates   = [sDate]
+    while dates[-1] < eDate:
+        dates.append(dates[-1] + datetime.timedelta(hours=dt_hr))
 
     dailies_dir = prep_dir(os.path.join(output_dir,'dailies'),clear=True)
-    plot_dailies(dss,sDate,eDate,output_dir=dailies_dir)
+    run_dcts    = []
+    for date in dates:
+        rd  = {}
+        rd['dss']           = dss
+        rd['date']          = date
+        rd['output_dir']    = dailies_dir
+        run_dcts.append(rd)
+
+    if multiproc:
+        print('Plotting using multiprocessing...')
+        with multiprocessing.Pool(ncpus) as pool:
+            pool.map(plot_dailies_dct,run_dcts)
+    else:
+        print('Plotting using for loops...')
+        for rd in run_dcts:
+            plot_dailies_dct(rd)
 
     import ipdb; ipdb.set_trace()
