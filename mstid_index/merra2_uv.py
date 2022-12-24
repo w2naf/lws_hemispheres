@@ -37,23 +37,28 @@ uvd['vmin']     = -150
 uvd['vmax']     =  150
 
 levels	= {}
-levels['1P5HPA'] 	= lvl = {}
+levels[1.5] 	    = lvl = {}
+lvl['km']           = 45
 lvl['label'] 		= '1.5 hPa (45 km alt)'
 lvl['2l_label'] 	= '1.5 hPa\n(45 km)'
 
-levels['3HPA'] 		= lvl = {}
+levels[3] 		    = lvl = {}
+lvl['km']           = 40
 lvl['label'] 		= '3 hPa (40 km alt)'
 lvl['2l_label']     = '3 hPa\n(40 km)'
 
-levels['5HPA'] 		= lvl = {}
+levels[5]           = lvl = {}
+lvl['km']           = 35
 lvl['label'] 		= '5 hPa (35 km alt)'
 lvl['2l_label']     = '5 hPa\n(35 km)'
 
-levels['10HPA'] 	= lvl = {}
+levels[10] 	        = lvl = {}
+lvl['km']           = 30
 lvl['label'] 		= '10 hPa (30 km alt)'
 lvl['2l_label']     = '10 hPa\n(30 km)'
 
-levels['20HPA'] 	= lvl = {}
+levels[20] 	        = lvl = {}
+lvl['km']           = 25
 lvl['label'] 		= '20 hPa (25 km alt)'
 lvl['2l_label']     = '20 hPa\n(25 km)'
 
@@ -103,7 +108,7 @@ def load_uv(nc_fl):
     #ipdb> ds.variables.keys()
     #dict_keys(['DATE', 'LONGITUDE', 'LATITUDE', 'U_20HPA', 'U_10HPA', 'U_5HPA', 'U_3HPA', 'U_1P5HPA'])
     """
-    #ds  = nc.Dataset(nc_fl)
+#    ds  = nc.Dataset(nc_fl)
     ds  = xr.load_dataset(nc_fl)
 
     dates   = np.array(ds['DATE'])
@@ -114,15 +119,32 @@ def load_uv(nc_fl):
         datetimes.append(dt)
 
     coords  = {}
-    coords['noutput']   = datetimes
-    coords['nlat']      = ds['LATITUDE']
-    coords['nlon']      = ds['LONGITUDE']
+    coords['ut']        = datetimes
+    coords['lats']      = ds['LATITUDE'].values
+    coords['lons']      = ds['LONGITUDE'].values
 
     ds = ds.assign_coords(coords)
 
     del ds['DATE']
     del ds['LATITUDE']
     del ds['LONGITUDE']
+
+    # Change level strings into hPa floats.
+    levels  = list(ds.data_vars)
+    hPas    = {}
+    for level in levels:
+        hPa = float(level.split('_')[1].rstrip('HPA').replace('P','.'))
+        hPas[level] = hPa
+    ds      = ds.rename(hPas)
+    ds      = ds.to_array()
+    
+    # Create a fresh XArray DataArray in order to eliminate uneeded/confusing exta data.
+    coords  = {}
+    coords['ut']    = ds['ut'].values
+    coords['lats']  = ds['lats'].values
+    coords['lons']  = ds['lons'].values
+    coords['hPa']   = list(hPas.values())
+    ds              = xr.DataArray(ds.values,coords=coords,dims=('hPa','ut','lats','lons'),attrs=ds.attrs)
 
     return ds
 
@@ -150,14 +172,11 @@ def plot_dailies(dss,date,output_dir='.'):
         for lvl_inx,(level,lvld) in enumerate(levels.items()):
             row     = lvl_inx
 
-            param   = '{!s}_{!s}'.format(uv_key.upper(),level)
+            dt_inx  = np.where(ds['ut'] == np.datetime64(date))[0][0]
+            frame   = ds.loc[{'hPa':level,'ut':np.datetime64(date)}]
 
-            dt_inx  = np.where(ds['noutput'] == np.datetime64(date))[0][0]
-            dst     = ds[param]
-            frame   = dst.values[dt_inx,:,:]
-
-            lats    = dst.coords['nlat'].values
-            lons    = dst.coords['nlon'].values
+            lats    = frame.coords['lats'].values
+            lons    = frame.coords['lons'].values
 
             plt_inx = row*ncols + col + 1
 
@@ -188,26 +207,31 @@ def plot_dailies(dss,date,output_dir='.'):
     plt.close(fig)
 
 if __name__ == '__main__':
-    multiproc   = True
+    multiproc   = False
     ncpus       = multiprocessing.cpu_count()
 
     output_dir  = prep_dir(os.path.join('output','merra2_uv'))
 
-    dss = {}
+    sDate   = datetime.datetime(2017,1,1)
+    eDate   = datetime.datetime(2017,1,2)
 
+#    sDate   = datetime.datetime(2016,11,1)
+#    eDate   = datetime.datetime(2017,5,1)
+
+    dt_hr   = 12
+
+    dss = {}
     for key in uv.keys():
         # Load Zonal and Meridional Winds
         nc_fl       = os.path.join('data','merra2','save_{!s}_5levs_merra2_2010010100-2022073112.nc'.format(key))
         print('LOADING: {!s}'.format(nc_fl))
         dss[key]    = load_uv(nc_fl)
 
-#    sDate   = datetime.datetime(2017,1,1)
-#    eDate   = datetime.datetime(2017,1,2)
-
-    sDate   = datetime.datetime(2016,11,1)
-    eDate   = datetime.datetime(2017,5,1)
-
-    dt_hr   = 12
+#    uu  = dss['u']
+#    vv  = dss['v']
+#
+#    print('Computing u_h...')
+#    u_h = np.sqrt(dss['u']**2 + dss['v']**2)
 
     dates   = [sDate]
     while dates[-1] < eDate:
