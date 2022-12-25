@@ -24,17 +24,37 @@ mpl.rcParams['grid.linestyle'] = ':'
 mpl.rcParams['figure.figsize'] = np.array([15, 8])
 mpl.rcParams['axes.xmargin']   = 0
 
+vscl    = 125
 uv      = {}
 uv['u'] = uvd   = {}
-uvd['title']    = 'Zonal Winds U'
+uvd['title']    = 'Zonal Winds $U$'
 uvd['label']    = 'U [m/s]'
-uvd['vmin']     = -150
-uvd['vmax']     =  150
+uvd['vmin']     = -vscl
+uvd['vmax']     =  vscl
+
 uv['v'] = uvd   = {}
-uvd['title']    = 'Meridional Winds V'
+uvd['title']    = 'Meridional Winds $V$'
 uvd['label']    = 'V [m/s]'
-uvd['vmin']     = -150
-uvd['vmax']     =  150
+uvd['vmin']     = -vscl
+uvd['vmax']     =  vscl
+
+uv['u_h'] = uvd   = {}
+uvd['title']    = 'Horizontal Winds $U_H$'
+uvd['label']    = '$U_H$ [m/s]'
+uvd['vmin']     = -vscl
+uvd['vmax']     =  vscl
+
+uv['dUdz'] = uvd   = {}
+uvd['title']    = '$dU/dz$'
+uvd['label']    = 'dU/dz [$s^{-1}$]'
+uvd['vmin']     = -0.005
+uvd['vmax']     =  0.005
+
+uv['dVdz'] = uvd   = {}
+uvd['title']    = '$dV/dz$'
+uvd['label']    = 'dV/dz [$s^{-1}$]'
+uvd['vmin']     = -0.0025
+uvd['vmax']     =  0.0025
 
 levels	= {}
 levels[1.5] 	    = lvl = {}
@@ -148,29 +168,66 @@ def load_uv(nc_fl):
 
     return ds
 
+def ddz(ds,dz=5000):
+    """
+    Calculate vertical wind shear and return as a XArray DataArray.
+    
+    ds:     Horizontal wind DataArray
+    dz:     Distance between horizontal wind levels [m]
+    """
+    result  = np.diff(ds,axis=0)/dz
+
+    coords  = {}
+    coords['ut']    = ds['ut'].values
+    coords['lats']  = ds['lats'].values
+    coords['lons']  = ds['lons'].values
+    coords['hPa']   = ds['hPa'].values[1:]
+    dXdz            = xr.DataArray(result,coords=coords,dims=('hPa','ut','lats','lons'))
+    return dXdz
+
 def plot_dailies_dct(rd):
     return plot_dailies(**rd)
 
-def plot_dailies(dss,date,output_dir='.'):
-    nrows   = 5
-    ncols   = 2
+def plot_dailies(dss,date,params=['u','v','u_h','dUdz','dVdz'],
+        output_dir='.'):
 
-    figsize = 5*np.array([ncols,nrows])
-    figsize = (15,25)
+#    params=['dUdz','dVdz']
+
+    nrows   = 5
+    ncols   = len(params)
+
+    figscl  = 5.
+    figsize = (1.2*figscl*ncols+5,figscl*nrows)
 
     png_name    = '{!s}_uv.png'.format(date.strftime('%Y%m%d_%H%M'))
     png_path    = os.path.join(output_dir,png_name)
 
     fig = plt.figure(figsize=figsize)
-    for uv_inx,(uv_key, uvd) in enumerate(uv.items()):
+    for uv_inx,uv_key in enumerate(params):
         col = uv_inx
+
+        uvd = uv.get(uv_key,{})
         ds  = dss[uv_key]
         
         vmin    = uvd.get('vmin')
         vmax    = uvd.get('vmax')
 
+        if (vmin is None) and (vmax is None):
+            vmean   = ds.mean()
+            vstd    = ds.std()
+            
+            std_scl = 3
+            vmn     = np.abs(vmean - std_scl*vstd)
+            vmx     = np.abs(vmean + std_scl*vstd)
+
+            vmax    = np.max([vmn,vmx])
+            vmin    = -vmax
+
         for lvl_inx,(level,lvld) in enumerate(levels.items()):
             row     = lvl_inx
+
+            if level not in ds['hPa']:
+                continue
 
             dt_inx  = np.where(ds['ut'] == np.datetime64(date))[0][0]
             frame   = ds.loc[{'hPa':level,'ut':np.datetime64(date)}]
@@ -221,17 +278,19 @@ if __name__ == '__main__':
     dt_hr   = 12
 
     dss = {}
-    for key in uv.keys():
+    for key in ['u','v']:
         # Load Zonal and Meridional Winds
         nc_fl       = os.path.join('data','merra2','save_{!s}_5levs_merra2_2010010100-2022073112.nc'.format(key))
         print('LOADING: {!s}'.format(nc_fl))
         dss[key]    = load_uv(nc_fl)
 
-#    uu  = dss['u']
-#    vv  = dss['v']
-#
-#    print('Computing u_h...')
-#    u_h = np.sqrt(dss['u']**2 + dss['v']**2)
+    print('Computing u_h...')
+    dss['u_h']      = np.sqrt(dss['u']**2 + dss['v']**2)
+
+    for key in ['u','v']:
+        print('Computing d{!s}/dz...'.format(key.upper()))
+        dz_key      = 'd{!s}dz'.format(key.upper())
+        dss[dz_key] = ddz(dss[key])
 
     dates   = [sDate]
     while dates[-1] < eDate:
