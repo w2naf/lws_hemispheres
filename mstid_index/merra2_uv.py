@@ -123,7 +123,7 @@ def season_to_datetime(season):
     eDate   = datetime.datetime.strptime(str_1,'%Y%m%d')
     return (sDate,eDate)
 
-def load_uv(nc_fl):
+def load_uv(nc_fl,hemi=None):
     """
     #Below are links to two netcdf files. One contains zonal winds, the other contains meridional winds. Each file contains winds at 5 pressure levels (20, 10, 5, 3, 1.5 hPa) that roughly correspond to (25, 30, 35, 40, and 45 km).
     #Each file has winds twice daily since 2010. Please let me know if you have any issues accessing or working with these data files.
@@ -133,6 +133,12 @@ def load_uv(nc_fl):
 
     #ipdb> ds.variables.keys()
     #dict_keys(['DATE', 'LONGITUDE', 'LATITUDE', 'U_20HPA', 'U_10HPA', 'U_5HPA', 'U_3HPA', 'U_1P5HPA'])
+
+    hemi:
+        None:       Return all data
+        'north':    Return latitudes >= 0
+        'south':    Return latitudes < 0
+
     """
 #    ds  = nc.Dataset(nc_fl)
     ds  = xr.load_dataset(nc_fl)
@@ -172,6 +178,13 @@ def load_uv(nc_fl):
     coords['hPa']   = list(hPas.values())
     ds              = xr.DataArray(ds.values,coords=coords,dims=('hPa','ut','lats','lons'),attrs=ds.attrs)
 
+    if hemi == 'north':
+        l_inx= np.where(ds['lats'] >= 0)[0]
+        ds  = ds[{'lats':l_inx}]
+    elif hemi == 'south':
+        l_inx= np.where(ds['lats'] < 0)[0]
+        ds  = ds[{'lats':l_inx}]
+
     return ds
 
 def ddz(ds,dz=5000):
@@ -207,6 +220,64 @@ def dUVpdz(dss,p=0.5):
 
     return dUVpdz
 
+class ZonalMean(object):
+    def __init__(self,ds,param=None):
+        """
+        Calculate zonal means for each altitude and time.
+        """
+        zm          = ds.mean(axis=3)       # Calculate zonal means.
+        zm_argmax   = zm.argmax(axis=2)     # Find latitude indices of maxima values.
+        zm_max      = zm[{'lats':zm_argmax}]# Find max zonal mean u_h.
+        zm_latmax   = zm['lats'][zm_argmax] # Find latitudes of maxima values.
+
+        # Store values to object.
+        self.zm         = zm
+        self.zm_argmax  = zm_argmax
+        self.zm_max     = zm_max
+        self.zm_latmax  = zm_latmax
+        self.param      = param
+
+    def plot_zm(self,png_path,xlim=None):
+        uvd         = uv.get(self.param)
+        prm_title   = uvd.get('title')
+
+
+        fig = plt.figure(figsize=(15,6))
+        ax  = fig.add_subplot(1,1,1)
+
+        zmlm    = self.zm_latmax
+
+        if xlim is not None:
+            if xlim[0] is not None:
+                tf      = zmlm['ut'] >= np.datetime64(xlim[0])
+                zmlm    = zmlm[:,tf]
+            if xlim[1] is not None:
+                tf      = zmlm['ut'] < np.datetime64(xlim[1])
+                zmlm    = zmlm[:,tf]
+
+        hPas    = list(zmlm['hPa'].values)
+        for hPa_inx,hPa in enumerate(hPas):
+            lvld    = levels.get(hPa)
+            label   = lvld.get('label')
+
+            xx      = zmlm['ut']
+            yy      = zmlm[hPa_inx,:]
+            ax.plot(xx,yy,label=label)
+        
+        ax.legend(loc='lower left',prop={'weight':'normal','size':'x-small'})
+
+        if prm_title is None:
+            ax.set_title('Latitude of Max Zonal Mean')
+        else:
+            ax.set_title('Latitude of Max Zonal Mean {!s}'.format(prm_title))
+
+        ax.set_ylabel('Latitude')
+        ax.set_xlabel('Date')
+        ax.set_xlim(xlim)
+
+        fig.tight_layout()
+        fig.savefig(png_path,bbox_inches='tight')
+
 def plot_dailies_dct(rd):
     return plot_dailies(**rd)
 
@@ -219,7 +290,7 @@ def plot_dailies(dss,date,params=['u','v','u_h','dUdz','dVdz','dUVpdz'],
     ncols   = len(params)
 
     figscl  = 5.
-    figsize = (1.2*figscl*ncols+5,figscl*nrows)
+    figsize = (1.25*figscl*ncols+5,figscl*nrows)
 
     png_name    = '{!s}_uv.png'.format(date.strftime('%Y%m%d_%H%M'))
     png_path    = os.path.join(output_dir,png_name)
@@ -263,6 +334,15 @@ def plot_dailies(dss,date,params=['u','v','u_h','dUdz','dVdz','dUVpdz'],
             mpbl    = ax.pcolormesh(lons,lats,frame,transform=ccrs.PlateCarree(),cmap='bwr',
                         vmin=vmin,vmax=vmax)
 
+            if 'zm_uh' in dss:
+                zm_uh   = dss['zm_uh']
+                zmlm    = float(zm_uh.zm_latmax.loc[{'hPa':level,'ut':np.datetime64(date)}].values)
+                zm_max  = float(zm_uh.zm_max.loc[   {'hPa':level,'ut':np.datetime64(date)}].values)
+
+                zm_xx   = np.arange(-180,181,1)
+                zm_yy   = np.ones_like(zm_xx)*zmlm
+                ax.plot(zm_xx,zm_yy,lw=3,color='purple',zorder=1000,transform=ccrs.PlateCarree())
+
             cbar    = fig.colorbar(mpbl,aspect=15,shrink=0.8)
             cbar.set_label(uvd.get('label',uv_key.upper()),fontdict={'weight':'bold','size':20})
 
@@ -272,6 +352,13 @@ def plot_dailies(dss,date,params=['u','v','u_h','dUdz','dVdz','dUVpdz'],
             label_fontdict  = {'weight':'bold','size':28}
             if col == 0:
                 txt = lvld.get('2l_label',level)
+                if 'zm_uh' in dss:
+                    txt = [txt]
+                    txt.append('')
+                    txt.append('max($U_H$)')
+                    txt.append('{:0.0f} m/s'.format(zm_max))
+                    txt.append('{!s}$^\circ$ N'.format(zmlm))
+                    txt = '\n'.join(txt)
                 ax.text(-0.25,0.5,txt,ha='center',va='center',fontdict=label_fontdict,transform=ax.transAxes)
 
             if row == 0:
@@ -290,21 +377,24 @@ if __name__ == '__main__':
     ncpus       = multiprocessing.cpu_count()
 
     output_dir  = prep_dir(os.path.join('output','merra2_uv'))
+    dailies_dir = prep_dir(os.path.join(output_dir,'dailies'),clear=True)
 
-    sDate   = datetime.datetime(2017,1,1)
-    eDate   = datetime.datetime(2017,1,2)
+#    sDate   = datetime.datetime(2017,1,1)
+#    eDate   = datetime.datetime(2017,1,2)
 
-#    sDate   = datetime.datetime(2016,11,1)
-#    eDate   = datetime.datetime(2017,5,1)
+    sDate   = datetime.datetime(2016,11,1)
+    eDate   = datetime.datetime(2017,5,1)
 
     dt_hr   = 12
+
+    hemi    = 'north'
 
     dss = {}
     for key in ['u','v']:
         # Load Zonal and Meridional Winds
         nc_fl       = os.path.join('data','merra2','save_{!s}_5levs_merra2_2010010100-2022073112.nc'.format(key))
         print('LOADING: {!s}'.format(nc_fl))
-        dss[key]    = load_uv(nc_fl)
+        dss[key]    = load_uv(nc_fl,hemi=hemi)
 
     print('Computing u_h...')
     dss['u_h']      = np.sqrt(dss['u']**2 + dss['v']**2)
@@ -317,11 +407,16 @@ if __name__ == '__main__':
     print('Computing [(dU/dz)**2 + (dV/dz)**2]**p...')
     dss['dUVpdz']   = dUVpdz(dss,p=0.5)
 
+    print('Computing U_H Zonal Mean')
+    zm_uh           = ZonalMean(dss['u_h'],param='u_h')
+    dss['zm_uh']    = zm_uh
+    png_path        = os.path.join(dailies_dir,'zm_uh.png')
+    zm_uh.plot_zm(png_path,xlim=(sDate,eDate))
+
     dates   = [sDate]
     while dates[-1] < eDate:
         dates.append(dates[-1] + datetime.timedelta(hours=dt_hr))
 
-    dailies_dir = prep_dir(os.path.join(output_dir,'dailies'),clear=True)
     run_dcts    = []
     for date in dates:
         rd  = {}
