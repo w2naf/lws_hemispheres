@@ -56,6 +56,12 @@ uvd['label']    = 'dV/dz [$s^{-1}$]'
 uvd['vmin']     = -0.0025
 uvd['vmax']     =  0.0025
 
+uv['dUVpdz']    = uvd   = {}
+uvd['title']    = '$[(dU/dz)^2 + (dV/dz)^2]^p$'
+uvd['label']    = '[$s^{-1}$]'
+uvd['vmin']     = -0.0075
+uvd['vmax']     =  0.0075
+
 levels	= {}
 levels[1.5] 	    = lvl = {}
 lvl['km']           = 45
@@ -185,10 +191,26 @@ def ddz(ds,dz=5000):
     dXdz            = xr.DataArray(result,coords=coords,dims=('hPa','ut','lats','lons'))
     return dXdz
 
+def dUVpdz(dss,p=0.5):
+    """
+    Calculate ( (dU/dz)**2 + (dV/dz)**2 ) ** p and 
+    return as a XArray DataArray.
+    
+    dss:    Dictionary containing dUdz and dVdz DataArrays.
+    p:      Power paramter
+    """
+
+    dUdz    = dss['dUdz']
+    dVdz    = dss['dVdz']
+    dUVpdz  = ( (dUdz)**2 + (dVdz)**2 ) ** p
+    dUVpdz.attrs['p']   = p
+
+    return dUVpdz
+
 def plot_dailies_dct(rd):
     return plot_dailies(**rd)
 
-def plot_dailies(dss,date,params=['u','v','u_h','dUdz','dVdz'],
+def plot_dailies(dss,date,params=['u','v','u_h','dUdz','dVdz','dUVpdz'],
         output_dir='.'):
 
 #    params=['dUdz','dVdz']
@@ -291,6 +313,9 @@ if __name__ == '__main__':
         print('Computing d{!s}/dz...'.format(key.upper()))
         dz_key      = 'd{!s}dz'.format(key.upper())
         dss[dz_key] = ddz(dss[key])
+
+    print('Computing [(dU/dz)**2 + (dV/dz)**2]**p...')
+    dss['dUVpdz']   = dUVpdz(dss,p=0.5)
 
     dates   = [sDate]
     while dates[-1] < eDate:
