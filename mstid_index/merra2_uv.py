@@ -179,7 +179,7 @@ def load_uv(nc_fl,hemi=None):
     ds              = xr.DataArray(ds.values,coords=coords,dims=('hPa','ut','lats','lons'),attrs=ds.attrs)
 
     if hemi == 'north':
-        l_inx= np.where(ds['lats'] >= 0)[0]
+        l_inx= np.where(ds['lats'] > 0)[0]
         ds  = ds[{'lats':l_inx}]
     elif hemi == 'south':
         l_inx= np.where(ds['lats'] < 0)[0]
@@ -237,7 +237,7 @@ class ZonalMean(object):
         self.zm_latmax  = zm_latmax
         self.param      = param
 
-    def plot_zm(self,png_path,xlim=None):
+    def plot_zm_maxlat(self,png_path,xlim=None):
         uvd         = uv.get(self.param)
         prm_title   = uvd.get('title')
 
@@ -274,6 +274,65 @@ class ZonalMean(object):
         ax.set_ylabel('Latitude')
         ax.set_xlabel('Date')
         ax.set_xlim(xlim)
+
+        fig.tight_layout()
+        fig.savefig(png_path,bbox_inches='tight')
+
+    def plot_zm(self,png_path,xlim=None,vmin=None,vmax=None):
+        uvd         = uv.get(self.param)
+        prm_title   = uvd.get('title')
+
+        zmlm        = self.zm_latmax
+        zm          = self.zm
+        hPas        = list(zm['hPa'].values)
+
+        nrows       = len(hPas)
+
+        fig = plt.figure(figsize=(15,nrows*4))
+
+        if xlim is not None:
+            if xlim[0] is not None:
+                tf      = zmlm['ut'] >= np.datetime64(xlim[0])
+                zmlm    = zmlm[:,tf]
+
+                tf      = zm['ut'] >= np.datetime64(xlim[0])
+                zm      = zm[:,tf,:]
+            if xlim[1] is not None:
+                tf      = zmlm['ut'] < np.datetime64(xlim[1])
+                zmlm    = zmlm[:,tf]
+
+                tf      = zm['ut'] < np.datetime64(xlim[1])
+                zm      = zm[:,tf,:]
+
+        vmax    = np.max(np.abs([zm.min(),zm.max()]))
+        vmin    = -vmax
+
+        for hPa_inx,hPa in enumerate(hPas):
+            ax      = fig.add_subplot(nrows,1,hPa_inx+1)
+
+            lvld    = levels.get(hPa)
+            label   = lvld.get('label')
+
+            xx      = zm['ut'].values
+            yy      = zm['lats'].values
+            zz      = zm[hPa_inx,:,:].values
+            ax.grid(False)
+            mpbl    = ax.pcolormesh(xx,yy,zz.T,vmin=vmin,vmax=vmax,cmap='bwr')
+            fig.colorbar(mpbl,label=uvd.get('label'))
+
+            xx      = zmlm['ut']
+            yy      = zmlm[hPa_inx,:]
+            ax.plot(xx,yy,color='k',ls=':',label='Maximum Value',zorder=100)
+
+            ax.set_xlim(xlim)
+            ax.set_ylabel('Latitude')
+            ax.set_title(label,loc='left',fontdict={'weight':'bold'})
+            ax.legend(loc='lower left',prop={'weight':'normal','size':'small'})
+
+        ax.set_xlabel('Date')
+
+        txt = 'Zonal Mean {!s}'.format(uvd.get('title'))
+        fig.text(0.5,1.01,txt,ha='center',fontdict={'weight':'bold','size':30})
 
         fig.tight_layout()
         fig.savefig(png_path,bbox_inches='tight')
@@ -363,6 +422,8 @@ def plot_dailies(dss,date,params=['u','v','u_h','dUdz','dVdz','dUVpdz'],
 
             if row == 0:
                 txt = uvd.get('title',uv_key.upper())
+                if uv_key == 'dUVpdz':
+                    txt = txt.replace('p','{'+str(ds.attrs.get('p'))+'}')
                 ax.text(0.5,1.1,txt,ha='center',va='center',fontdict=label_fontdict,transform=ax.transAxes)
 
     fig.text(0.5,1.01,date.strftime('%Y %b %d %H%M UT'),ha='center',fontdict={'weight':'bold','size':36})
@@ -412,6 +473,9 @@ if __name__ == '__main__':
     dss['zm_uh']    = zm_uh
     png_path        = os.path.join(dailies_dir,'zm_uh.png')
     zm_uh.plot_zm(png_path,xlim=(sDate,eDate))
+
+    png_path        = os.path.join(dailies_dir,'zm_uh_maxlat.png')
+    zm_uh.plot_zm_maxlat(png_path,xlim=(sDate,eDate))
 
     dates   = [sDate]
     while dates[-1] < eDate:
