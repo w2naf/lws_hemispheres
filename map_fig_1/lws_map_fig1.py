@@ -13,6 +13,8 @@ import cartopy.crs as ccrs
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 import cartopy.feature as cfeature
 
+import pickle
+
 #from hamsci_psws import geopack
 
 import pydarn
@@ -200,18 +202,46 @@ def fan_plot(dataObject,
 #              weight='bold',
 #              transform=axis.transAxes)
 
-def plot_map(output_dir='output'):
-    radar   = 'bks'
-    sDate   = datetime.datetime(2018,12,27,12)
-    eDate   = datetime.datetime(2018,12,27,14)
-    date    = sDate
+def plot_map(output_dir='output',fit_sfx="fitacf",data_dir='/sd-data/'):
+    radars  = {}
+    radars['pgr'] = {}
+    radars['sas'] = {}
+    radars['kap'] = {}
+    radars['gbr'] = {}
+    radars['cvw'] = {}
+    radars['cve'] = {}
+    radars['fhw'] = {}
+    radars['fhe'] = {}
+    radars['bks'] = {}
+    radars['wal'] = {}
 
-    fit_sfx = "fitacf"
-    data_dir = f'/sd-data/'
-    fitacf  = load_fitacf(radar,sDate,eDate,data_dir=data_dir)
-    dataObj = pyDARNmusic.music.musicArray(fitacf,sTime=sDate,eTime=eDate,fovModel='GS')
 
-    projection = ccrs.PlateCarree()
+#    sDate   = datetime.datetime(2018,12,27,12)
+#    eDate   = datetime.datetime(2018,12,27,14)
+
+    sDate   = datetime.datetime(2012,12,21,16)
+    eDate   = datetime.datetime(2012,12,21,17)
+    time    = datetime.datetime(2012,12,21,16,10)
+
+
+    cache_dir = 'cache'
+    prep_dir(cache_dir,clear=False)
+    for radar,dct in radars.items(): 
+        pname   = '{!s}_{!s}_{!s}.p'.format(radar,sDate.strftime('%Y%m%d.%H%M'),eDate.strftime('%Y%m%d.%H%M'))
+        ppath   = os.path.join(cache_dir,pname)
+
+        if not os.path.exists(ppath):
+            fitacf  = load_fitacf(radar,sDate,eDate,data_dir=data_dir)
+            dataObj = pyDARNmusic.music.musicArray(fitacf,sTime=sDate,eTime=eDate,fovModel='GS')
+            with open(ppath,'wb') as fl:
+                pickle.dump(dataObj,fl)
+        else:
+            with open(ppath,'rb') as fl:
+                dataObj = pickle.load(fl)
+
+        dct['dataObj'] = dataObj
+
+    projection = ccrs.Orthographic(-100,60)
     fig = plt.figure(figsize=(18,14))
     ax  = fig.add_subplot(1,1,1,projection=projection)
     ax.coastlines()
@@ -220,19 +250,23 @@ def plot_map(output_dir='output'):
     
     ax.gridlines(draw_labels=True)
 
-    fan_plot(dataObj,axis=ax,projection=projection)
+    for radar,dct in radars.items():
+        dataObj = dct.get('dataObj')
+        fan_plot(dataObj,axis=ax,projection=projection)
 
-    # # World Limits
-    # ax.set_xlim(-180,180)
-    # ax.set_ylim(-90,90)
+#    # # World Limits
+#    # ax.set_xlim(-180,180)
+#    # ax.set_ylim(-90,90)
+#
+#    # US Limits
+#    ax.set_xlim(-130,-60)
+#    ax.set_ylim(20,55)
 
-    # US Limits
-    ax.set_xlim(-130,-60)
-    ax.set_ylim(20,55)
+    ax.set_extent((-140,-45,20,70))
 
     fig.tight_layout()
 
-    fname = 'map_{!s}.png'.format(date.strftime('%Y%m%d.%H%M'))
+    fname = 'map_{!s}.png'.format(time.strftime('%Y%m%d.%H%M'))
     fpath   = os.path.join(output_dir,fname)
     fig.savefig(fpath,bbox_inches='tight')
 
