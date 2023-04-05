@@ -21,6 +21,8 @@ import pydarn
 from pyDARNmusic import load_fitacf
 import pyDARNmusic
 
+import mstid
+
 Re = 6371 # Radius of the Earth in km
 
 mpl.rcParams['font.size']      = 12
@@ -65,6 +67,7 @@ def fan_plot(dataObject,
     plot_title              = True,
     title                   = None,
     projection              = ccrs.PlateCarree(),
+    plot_fov                = True,
     **kwArgs):
 
     from pydarn import (SuperDARNRadars, Hemisphere)
@@ -77,6 +80,7 @@ def fan_plot(dataObject,
     sdate       = currentData.time[0]
     coords      = metadata['coords']
     stid        = metadata['stid']
+    radar       = metadata['code'].strip()
 
     # Get center of FOV.
     # Determine center beam.
@@ -122,7 +126,6 @@ def fan_plot(dataObject,
         timeInx = 1
     else:
         timeInx = (np.where(currentData.time >= time))[0]
-        # import ipdb;ipdb.set_trace()
         if np.size(timeInx) == 0:
             timeInx = -1
         else:
@@ -141,7 +144,6 @@ def fan_plot(dataObject,
     ngates = np.shape(currentData.data)[2]
     nbeams = np.shape(currentData.data)[1]
     data  = currentData.data[timeInx,:,:]
-    # import ipdb;ipdb.set_trace()
     verts = []
     scan  = []
     # data  = currentData.data[timeInx,:,:]
@@ -172,35 +174,47 @@ def fan_plot(dataObject,
     pcoll = mpl.collections.PolyCollection(np.array(verts),edgecolors='face',closed=False,cmap=cmap,norm=norm,zorder=99)
     pcoll.set_array(np.array(scan))
     axis.add_collection(pcoll,autolim=False)
+
+    if plot_fov:
+        # Left Edge
+        xx = lonFull[0,:]
+        yy = latFull[0,:]
+        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+
+        # Right Edge
+        xx = lonFull[-1,:]
+        yy = latFull[-1,:]
+        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+
+        # Bottom Edge 
+        xx = lonFull[:,0]
+        yy = latFull[:,0]
+        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+
+        # Top Edge
+        xx = lonFull[:,-1]
+        yy = latFull[:,-1]
+        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+
+        # Radar Location
+        axis.scatter(radar_lon,radar_lat,marker='o',color='k',s=40,transform=ccrs.PlateCarree())
+        fontdict = {'size':14,'weight':'bold'}
+        if radar == 'cvw' or radar == 'fhw':
+            ha      = 'right'
+            text    = radar.upper() + ' '
+        else:
+            ha      = 'left'
+            text    = ' ' + radar.upper()
+
+        axis.text(radar_lon,radar_lat,text,ha=ha,
+                fontdict=fontdict,transform=ccrs.PlateCarree())
     
-#    dataName = currentData.history[max(currentData.history.keys())] # Label the plot with the current level of data processing.
-#    if plot_title:
-#        if title is None:
-#            axis.set_title(metadata['name']+' - '+dataName+currentData.time[timeInx].strftime('\n%Y %b %d %H%M UT')) 
-#        else:
-#            axis.set_title(title)
-#
-#    if plot_cbar:
-#        cbar = fig.colorbar(pcoll,orientation='vertical',shrink=cbar_shrink,fraction=cbar_fraction)
-#        cbar.set_label(cbarLabel)
-#        if cbar_ticks is None:
-#            labels = cbar.ax.get_yticklabels()
-#            labels[-1].set_visible(False)
-#        else:
-#            cbar.set_ticks(cbar_ticks)
-#
-#        if 'gscat' in currentData.metadata:
-#            if currentData.metadata['gscat'] == 1:
-#                cbar.ax.text(0.5,cbar_gstext_offset,'Ground\nscat\nonly',ha='center',fontsize=cbar_gstext_fontsize,transform=cbar.ax.transAxes)
-#
-#    txt = 'Coordinates: ' + metadata['coords'] +', Model: ' + metadata['model']
-#    axis.text(1.01, 0, txt,
-#              horizontalalignment='left',
-#              verticalalignment='bottom',
-#              rotation='vertical',
-#              size=model_text_size,
-#              weight='bold',
-#              transform=axis.transAxes)
+    result  = {}
+    result['pcoll']     = pcoll
+    result['metadata']  = metadata
+    result['cbarLabel'] = cbarLabel
+
+    return result
 
 def plot_map(output_dir='output',fit_sfx="fitacf",data_dir='/sd-data/'):
     radars  = {}
@@ -215,54 +229,64 @@ def plot_map(output_dir='output',fit_sfx="fitacf",data_dir='/sd-data/'):
     radars['bks'] = {}
     radars['wal'] = {}
 
+#    sTime   = datetime.datetime(2018,12,27,12)
+#    eTime   = datetime.datetime(2018,12,27,14)
 
-#    sDate   = datetime.datetime(2018,12,27,12)
-#    eDate   = datetime.datetime(2018,12,27,14)
-
-    sDate   = datetime.datetime(2012,12,21,16)
-    eDate   = datetime.datetime(2012,12,21,17)
+    sTime   = datetime.datetime(2012,12,21,16)
+    eTime   = datetime.datetime(2012,12,21,18)
     time    = datetime.datetime(2012,12,21,16,10)
-
 
     cache_dir = 'cache'
     prep_dir(cache_dir,clear=False)
     for radar,dct in radars.items(): 
-        pname   = '{!s}_{!s}_{!s}.p'.format(radar,sDate.strftime('%Y%m%d.%H%M'),eDate.strftime('%Y%m%d.%H%M'))
-        ppath   = os.path.join(cache_dir,pname)
-
-        if not os.path.exists(ppath):
-            fitacf  = load_fitacf(radar,sDate,eDate,data_dir=data_dir)
-            dataObj = pyDARNmusic.music.musicArray(fitacf,sTime=sDate,eTime=eDate,fovModel='GS')
-            with open(ppath,'wb') as fl:
-                pickle.dump(dataObj,fl)
+        dataObj         = mstid.more_music.get_dataObj(radar,sTime,eTime,data_path='mstid_data/mstid_index')
+        if dataObj is not None:
+            print('Loaded: {!s}'.format(radar))
         else:
-            with open(ppath,'rb') as fl:
-                dataObj = pickle.load(fl)
-
-        dct['dataObj'] = dataObj
+            print('NO DATA for {!s}'.format(radar))
+        dct['dataObj']  = dataObj
 
     projection = ccrs.Orthographic(-100,60)
     fig = plt.figure(figsize=(18,14))
     ax  = fig.add_subplot(1,1,1,projection=projection)
     ax.coastlines()
+    ax.add_feature(cfeature.LAKES, color='lightgrey')
+    ax.add_feature(cfeature.RIVERS, color='lightgrey')
 #    ax.add_feature(cfeature.LAND, color='lightgrey')
 #    ax.add_feature(cfeature.OCEAN, color = 'white')
     
-    ax.gridlines(draw_labels=True)
+    ax.gridlines(draw_labels=['left','bottom'])
 
     for radar,dct in radars.items():
         dataObj = dct.get('dataObj')
-        fan_plot(dataObj,axis=ax,projection=projection)
+#        dataSet = 'DS000_originalFit'
+        dataSet = 'DS001_limitsApplied'
+        result = fan_plot(dataObj,dataSet=dataSet,
+                axis=ax,projection=projection,time=time,scale=(0,30))
 
-#    # # World Limits
-#    # ax.set_xlim(-180,180)
-#    # ax.set_ylim(-90,90)
-#
-#    # US Limits
-#    ax.set_xlim(-130,-60)
-#    ax.set_ylim(20,55)
+    cbar = fig.colorbar(result['pcoll'],orientation='vertical',shrink=0.60,fraction=0.15)
+    cbar.set_label(result['cbarLabel'])
+    labels = cbar.ax.get_yticklabels()
+    labels[-1].set_visible(False)
+
+    if 'gscat' in result['metadata']:
+        if result['metadata']['gscat'] == 1:
+            cbar.ax.text(0.5,-0.075,'Ground\nscat\nonly',ha='center',fontsize=None,transform=cbar.ax.transAxes)
+
+    txt = 'Coordinates: ' + result['metadata']['coords'] +', Model: ' + result['metadata']['model']
+    ax.text(1.01, 0, txt,
+              horizontalalignment='left',
+              verticalalignment='bottom',
+              rotation='vertical',
+              size='small',
+              weight='bold',
+              transform=ax.transAxes)
 
     ax.set_extent((-140,-45,20,70))
+
+    fontdict    = {'size':'x-large','weight':'bold'}
+    title       = time.strftime('%d %b %Y %H%M UTC')
+    ax.set_title(title,fontdict=fontdict)
 
     fig.tight_layout()
 
