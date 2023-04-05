@@ -12,6 +12,7 @@ from matplotlib import pyplot as plt
 import cartopy.crs as ccrs
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 import cartopy.feature as cfeature
+from cartopy.feature.nightshade import Nightshade
 
 import pickle
 
@@ -249,11 +250,12 @@ def plot_map(output_dir='output',fit_sfx="fitacf",data_dir='/sd-data/'):
     projection = ccrs.Orthographic(-100,60)
     fig = plt.figure(figsize=(18,14))
     ax  = fig.add_subplot(1,1,1,projection=projection)
-    ax.coastlines()
-    ax.add_feature(cfeature.LAKES, color='lightgrey')
-    ax.add_feature(cfeature.RIVERS, color='lightgrey')
-#    ax.add_feature(cfeature.LAND, color='lightgrey')
-#    ax.add_feature(cfeature.OCEAN, color = 'white')
+#    ax.coastlines()
+    ax.add_feature(cfeature.LAND, color='lightgrey')
+    ax.add_feature(cfeature.OCEAN, color = 'white')
+    ax.add_feature(cfeature.LAKES, color='white')
+#    ax.add_feature(cfeature.RIVERS, color='white')
+    ax.add_feature(Nightshade(time, alpha=0.2))
     
     ax.gridlines(draw_labels=['left','bottom'])
 
