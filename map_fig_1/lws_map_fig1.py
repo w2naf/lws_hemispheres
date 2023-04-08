@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import shutil
 import datetime
 import numpy as np
 import scipy as sp
@@ -217,36 +218,84 @@ def fan_plot(dataObject,
 
     return result
 
-def plot_map(output_dir='output',fit_sfx="fitacf",data_dir='/sd-data/'):
-    radars  = {}
-    radars['pgr'] = {}
-    radars['sas'] = {}
-    radars['kap'] = {}
-    radars['gbr'] = {}
-    radars['cvw'] = {}
-    radars['cve'] = {}
-    radars['fhw'] = {}
-    radars['fhe'] = {}
-    radars['bks'] = {}
-    radars['wal'] = {}
+def load_data(load_sTime=None,load_eTime=None,cache_dir='cache',clear_cache=False,
+        use_preprocessed = False,**kwargs):
+    radars_dct  = {}
+    radars_dct['pgr'] = {}
+    radars_dct['sas'] = {}
+    radars_dct['kap'] = {}
+    radars_dct['gbr'] = {}
+    radars_dct['cvw'] = {}
+    radars_dct['cve'] = {}
+    radars_dct['fhw'] = {}
+    radars_dct['fhe'] = {}
+    radars_dct['bks'] = {}
+    radars_dct['wal'] = {}
 
-#    sTime   = datetime.datetime(2018,12,27,12)
-#    eTime   = datetime.datetime(2018,12,27,14)
+    if load_sTime is None:
+        load_sTime = kwargs.get('sTime')
 
-    sTime   = datetime.datetime(2012,12,21,16)
-    eTime   = datetime.datetime(2012,12,21,18)
-    time    = datetime.datetime(2012,12,21,16,10)
+    if load_eTime is None:
+        load_eTime = kwargs.get('eTime')
 
-    cache_dir = 'cache'
-    prep_dir(cache_dir,clear=False)
-    for radar,dct in radars.items(): 
-        dataObj         = mstid.more_music.get_dataObj(radar,sTime,eTime,data_path='mstid_data/mstid_index')
+    prep_dir(cache_dir,clear=clear_cache)
+
+    for radar,dct in radars_dct.items(): 
+        if use_preprocessed:
+            dataObj         = mstid.more_music.get_dataObj(radar,load_sTime,load_eTime,data_path='mstid_data/mstid_index')
+        else:
+            cache_fname = '{!s}.{!s}-{!s}.p'.format(radar,load_sTime.strftime('%Y%m%d.%H%M'),load_eTime.strftime('%Y%m%d.%H%M'))
+            cache_fpath  = os.path.join(cache_dir,cache_fname)
+
+            if not os.path.exists(cache_fpath):
+                fitfilter               = True
+                fovModel                = 'GS'
+                gscat                   = 1
+                beam_limits             = (None, None)
+                gate_limits             = (0,80)
+                interp_resolution       = 60.
+                filter_numtaps          = 101.
+    #            process_level           = 'music'
+    #            auto_range_on           = True
+    #            bad_range_km            = None
+    #            filter_cutoff_low       = 0.0003
+    #            filter_cutoff_high      = 0.0012
+    #            detrend                 = True
+    #            hanning_window_space    = True
+    #            hanning_window_time     = True
+    #            zeropad                 = True
+    #            kx_max                  = 0.05
+    #            ky_max                  = 0.05
+    #            autodetect_threshold    = 0.35
+    #            neighborhood            = (10,10)
+
+                dataObj = mstid.more_music.create_music_obj(radar.lower(), load_sTime, load_eTime
+                    ,beam_limits                = beam_limits
+                    ,gate_limits                = gate_limits
+                    ,interp_resolution          = interp_resolution
+                    ,filterNumtaps              = filter_numtaps 
+                    ,fitfilter                  = fitfilter
+                    ,srcPath                    = None
+                    ,fovModel                   = fovModel
+                    ,gscat                      = gscat
+                    )
+
+                with open(cache_fpath,'wb') as fl:
+                    pickle.dump(dataObj,fl)
+
+            else:
+                print('Using cached file: {!s}'.format(cache_fpath))
+                with open(cache_fpath,'rb') as fl:
+                    dataObj = pickle.load(fl)
+
         if dataObj is not None:
             print('Loaded: {!s}'.format(radar))
         else:
             print('NO DATA for {!s}'.format(radar))
         dct['dataObj']  = dataObj
+    return radars_dct
 
+def plot_map(radars_dct,time,output_dir='output',**kwargs):
     projection = ccrs.Orthographic(-100,60)
     fig = plt.figure(figsize=(18,14))
     ax  = fig.add_subplot(1,1,1,projection=projection)
@@ -254,12 +303,11 @@ def plot_map(output_dir='output',fit_sfx="fitacf",data_dir='/sd-data/'):
     ax.add_feature(cfeature.LAND, color='lightgrey')
     ax.add_feature(cfeature.OCEAN, color = 'white')
     ax.add_feature(cfeature.LAKES, color='white')
-#    ax.add_feature(cfeature.RIVERS, color='white')
     ax.add_feature(Nightshade(time, alpha=0.2))
     
     ax.gridlines(draw_labels=['left','bottom'])
 
-    for radar,dct in radars.items():
+    for radar,dct in radars_dct.items():
         dataObj = dct.get('dataObj')
 #        dataSet = 'DS000_originalFit'
         dataSet = 'DS001_limitsApplied'
@@ -297,9 +345,59 @@ def plot_map(output_dir='output',fit_sfx="fitacf",data_dir='/sd-data/'):
     fig.savefig(fpath,bbox_inches='tight')
 
 
-if __name__ == '__main__':
-    output_dir = 'output'
-    prep_dir(output_dir)
+def plot_rtp(radars_dct,sTime,eTime,output_dir='output',**kwargs):
 
-    plot_map(output_dir=output_dir)
+    nrows   = len(radars_dct)
+    ncols   = 1
+    figsize = (20,4*nrows)
+    fig     = plt.figure(figsize=figsize)
+
+    ax_inx  = 0
+    for radar,dct in radars_dct.items():
+        dataObj = dct.get('dataObj')
+
+        ax_inx += 1
+        ax  = fig.add_subplot(nrows,ncols,ax_inx)
+        pyDARNmusic.plotting.rtp.musicRTP(dataObj,xlim=(sTime,eTime),axis=ax,
+                plot_info=False,plot_title=False)
+
+        fontdict    = {'fontsize':'x-large','weight':'bold'}
+        bbox        = {'boxstyle':'round','facecolor':'white','alpha':1.0}
+        ax.text(0.01,0.95,radar.upper(),va='top',
+                transform=ax.transAxes,fontdict=fontdict,bbox=bbox)
+
+        if ax_inx == 1:
+            fmt   = '%Y %b %d %H%M UTC'
+            title = '{!s} - {!s}'.format(sTime.strftime(fmt),eTime.strftime(fmt))
+            fontdict={'fontsize':'x-large','weight':'bold'}
+            ax.set_title(title,fontdict=fontdict)
+
+#    fig.tight_layout()
+    fname   = 'rtp_{!s}-{!s}.png'.format(sTime.strftime('%Y%m%d.%H%M'),eTime.strftime('%Y%m%d.%H%M'))
+    fpath   = os.path.join(output_dir,fname)
+    fig.savefig(fpath,bbox_inches='tight')
+
+if __name__ == '__main__':
+    rd = {}
+
+    rd['output_dir'] = 'output'
+    prep_dir(rd['output_dir'])
+
+#    sTime   = datetime.datetime(2018,12,27,12)
+#    eTime   = datetime.datetime(2018,12,27,14)
+
+#    sTime   = datetime.datetime(2012,12,21,16)
+#    eTime   = datetime.datetime(2012,12,21,18)
+#    time    = datetime.datetime(2012,12,21,16,10)
+
+    rd['load_sTime']    = datetime.datetime(2012,12,21)
+    rd['sTime']         = datetime.datetime(2012,12,21,12)
+    rd['eTime']         = datetime.datetime(2012,12,22)
+    rd['time']          = datetime.datetime(2012,12,21,16,10)
+    
+    rd['clear_cache']   = False
+    rd['radars_dct']    = load_data(**rd)
+
+    plot_map(**rd)
+    plot_rtp(**rd)
     import ipdb; ipdb.set_trace()
