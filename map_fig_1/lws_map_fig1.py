@@ -218,8 +218,8 @@ def fan_plot(dataObject,
 
     return result
 
-def load_data(load_sTime=None,load_eTime=None,cache_dir='cache',clear_cache=False,
-        use_preprocessed = False,**kwargs):
+def load_data(load_sTime=None,load_eTime=None,cache_base='cache',clear_cache=False,
+        data_dir='/data/sd-data_despeck',use_preprocessed = False,**kwargs):
     radars_dct  = {}
     radars_dct['pgr'] = {}
     radars_dct['sas'] = {}
@@ -238,6 +238,7 @@ def load_data(load_sTime=None,load_eTime=None,cache_dir='cache',clear_cache=Fals
     if load_eTime is None:
         load_eTime = kwargs.get('eTime')
 
+    cache_dir = os.path.join(cache_base,data_dir.lstrip('/'))
     prep_dir(cache_dir,clear=clear_cache)
 
     for radar,dct in radars_dct.items(): 
@@ -248,16 +249,16 @@ def load_data(load_sTime=None,load_eTime=None,cache_dir='cache',clear_cache=Fals
             cache_fpath  = os.path.join(cache_dir,cache_fname)
 
             if not os.path.exists(cache_fpath):
-                fitfilter               = True
                 fovModel                = 'GS'
-                gscat                   = 1
+                gscat                   = 1 # Ground scatter only.
+#                gscat                   = 0 # All scatter.
                 beam_limits             = (None, None)
-                gate_limits             = (0,80)
+                gate_limits             = (0,60)
                 interp_resolution       = 60.
                 filter_numtaps          = 101.
     #            process_level           = 'music'
     #            auto_range_on           = True
-    #            bad_range_km            = None
+                bad_range_km            = None
     #            filter_cutoff_low       = 0.0003
     #            filter_cutoff_high      = 0.0012
     #            detrend                 = True
@@ -274,11 +275,29 @@ def load_data(load_sTime=None,load_eTime=None,cache_dir='cache',clear_cache=Fals
                     ,gate_limits                = gate_limits
                     ,interp_resolution          = interp_resolution
                     ,filterNumtaps              = filter_numtaps 
-                    ,fitfilter                  = fitfilter
                     ,srcPath                    = None
                     ,fovModel                   = fovModel
                     ,gscat                      = gscat
+                    ,data_dir                   = data_dir
                     )
+
+                if len(dataObj.get_data_sets()) == 0:
+                    dataObj = None
+                else:
+                    gate_limits = mstid.more_music.auto_range(radar,load_sTime,load_eTime,dataObj,bad_range_km=bad_range_km)
+
+                    pyDARNmusic.boxcarFilter(dataObj)
+#                    pyDARNmusic.defineLimits(dataObj,gateLimits=gate_limits)
+
+                    dataObj.active.applyLimits()
+
+                    pyDARNmusic.beamInterpolation(dataObj,dataSet='limitsApplied')
+                    pyDARNmusic.determineRelativePosition(dataObj)
+
+                    pyDARNmusic.timeInterpolation(dataObj,timeRes=interp_resolution)
+                    pyDARNmusic.nan_to_num(dataObj)
+
+                    mstid.more_music.calculate_terminator_for_dataSet(dataObj)
 
                 with open(cache_fpath,'wb') as fl:
                     pickle.dump(dataObj,fl)
@@ -295,7 +314,7 @@ def load_data(load_sTime=None,load_eTime=None,cache_dir='cache',clear_cache=Fals
         dct['dataObj']  = dataObj
     return radars_dct
 
-def plot_map(radars_dct,time,output_dir='output',**kwargs):
+def plot_map(radars_dct,time,dataSet='active',output_dir='output',**kwargs):
     projection = ccrs.Orthographic(-100,60)
     fig = plt.figure(figsize=(18,14))
     ax  = fig.add_subplot(1,1,1,projection=projection)
@@ -309,8 +328,9 @@ def plot_map(radars_dct,time,output_dir='output',**kwargs):
 
     for radar,dct in radars_dct.items():
         dataObj = dct.get('dataObj')
-#        dataSet = 'DS000_originalFit'
-        dataSet = 'DS001_limitsApplied'
+        if dataObj is None:
+            continue
+
         result = fan_plot(dataObj,dataSet=dataSet,
                 axis=ax,projection=projection,time=time,scale=(0,30))
 
@@ -345,7 +365,7 @@ def plot_map(radars_dct,time,output_dir='output',**kwargs):
     fig.savefig(fpath,bbox_inches='tight')
 
 
-def plot_rtp(radars_dct,sTime,eTime,output_dir='output',**kwargs):
+def plot_rtp(radars_dct,sTime,eTime,dataSet='active',output_dir='output',**kwargs):
 
     nrows   = len(radars_dct)
     ncols   = 1
@@ -354,16 +374,15 @@ def plot_rtp(radars_dct,sTime,eTime,output_dir='output',**kwargs):
 
     ax_inx  = 0
     for radar,dct in radars_dct.items():
-        dataObj = dct.get('dataObj')
+        beam = dct.get('beam',7)
 
         ax_inx += 1
         ax  = fig.add_subplot(nrows,ncols,ax_inx)
-        pyDARNmusic.plotting.rtp.musicRTP(dataObj,xlim=(sTime,eTime),axis=ax,
-                plot_info=False,plot_title=False)
 
         fontdict    = {'fontsize':'x-large','weight':'bold'}
         bbox        = {'boxstyle':'round','facecolor':'white','alpha':1.0}
-        ax.text(0.01,0.95,radar.upper(),va='top',
+        text        = '{!s} Beam {!s}'.format(radar.upper(),beam)
+        ax.text(0.01,0.95,text,va='top',zorder=1000,
                 transform=ax.transAxes,fontdict=fontdict,bbox=bbox)
 
         if ax_inx == 1:
@@ -371,6 +390,14 @@ def plot_rtp(radars_dct,sTime,eTime,output_dir='output',**kwargs):
             title = '{!s} - {!s}'.format(sTime.strftime(fmt),eTime.strftime(fmt))
             fontdict={'fontsize':'x-large','weight':'bold'}
             ax.set_title(title,fontdict=fontdict)
+
+        dataObj = dct.get('dataObj')
+        if dataObj is None:
+            continue
+        pyDARNmusic.plotting.rtp.musicRTP(dataObj,xlim=(sTime,eTime),axis=ax,dataSet=dataSet,
+                beam=beam,plot_info=False,plot_title=False)
+
+
 
 #    fig.tight_layout()
     fname   = 'rtp_{!s}-{!s}.png'.format(sTime.strftime('%Y%m%d.%H%M'),eTime.strftime('%Y%m%d.%H%M'))
@@ -383,20 +410,28 @@ if __name__ == '__main__':
     rd['output_dir'] = 'output'
     prep_dir(rd['output_dir'])
 
-#    sTime   = datetime.datetime(2018,12,27,12)
-#    eTime   = datetime.datetime(2018,12,27,14)
+#    rd['sTime']         = datetime.datetime(2018,12,9,12)
+#    rd['eTime']         = datetime.datetime(2018,12,9,13)
+#    rd['time']          = datetime.datetime(2018,12,9,12,30)
+#    rd['eTime']         = datetime.datetime(2018,12,10)
+#    rd['time']          = datetime.datetime(2018,12,9,19,0)
 
-#    sTime   = datetime.datetime(2012,12,21,16)
-#    eTime   = datetime.datetime(2012,12,21,18)
-#    time    = datetime.datetime(2012,12,21,16,10)
+#    rd['sTime']         = datetime.datetime(2019,1,9,12)
+#    rd['eTime']         = datetime.datetime(2019,1,10)
+#    rd['time']          = datetime.datetime(2019,1,9,19,00)
 
-    rd['load_sTime']    = datetime.datetime(2012,12,21)
-    rd['sTime']         = datetime.datetime(2012,12,21,12)
-    rd['eTime']         = datetime.datetime(2012,12,22)
+    rd['sTime']         = datetime.datetime(2012,12,21,14)
+    rd['eTime']         = datetime.datetime(2012,12,21,22)
     rd['time']          = datetime.datetime(2012,12,21,16,10)
-    
+
+    rd['data_dir']      = '/data/sd-data'
+#    rd['data_dir']      = '/data/sd-data_despeck'
     rd['clear_cache']   = False
     rd['radars_dct']    = load_data(**rd)
+
+#    rd['dataSet']       = 'originalFit'
+    rd['dataSet']       = 'limitsApplied'
+#    rd['dataSet']       = 'active'
 
     plot_map(**rd)
     plot_rtp(**rd)
