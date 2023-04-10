@@ -23,6 +23,8 @@ import pydarn
 from pyDARNmusic import load_fitacf
 import pyDARNmusic
 
+from pydarn import (Re, time2datetime, Coords, SuperDARNRadars,RangeEstimation)
+
 import mstid
 
 Re = 6371 # Radius of the Earth in km
@@ -177,39 +179,39 @@ def fan_plot(dataObject,
     pcoll.set_array(np.array(scan))
     axis.add_collection(pcoll,autolim=False)
 
-    if plot_fov:
-        # Left Edge
-        xx = lonFull[0,:]
-        yy = latFull[0,:]
-        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
-
-        # Right Edge
-        xx = lonFull[-1,:]
-        yy = latFull[-1,:]
-        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
-
-        # Bottom Edge 
-        xx = lonFull[:,0]
-        yy = latFull[:,0]
-        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
-
-        # Top Edge
-        xx = lonFull[:,-1]
-        yy = latFull[:,-1]
-        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
-
-        # Radar Location
-        axis.scatter(radar_lon,radar_lat,marker='o',color='k',s=40,transform=ccrs.PlateCarree())
-        fontdict = {'size':14,'weight':'bold'}
-        if radar == 'cvw' or radar == 'fhw':
-            ha      = 'right'
-            text    = radar.upper() + ' '
-        else:
-            ha      = 'left'
-            text    = ' ' + radar.upper()
-
-        axis.text(radar_lon,radar_lat,text,ha=ha,
-                fontdict=fontdict,transform=ccrs.PlateCarree())
+#    if plot_fov:
+#        # Left Edge
+#        xx = lonFull[0,:]
+#        yy = latFull[0,:]
+#        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+#
+#        # Right Edge
+#        xx = lonFull[-1,:]
+#        yy = latFull[-1,:]
+#        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+#
+#        # Bottom Edge 
+#        xx = lonFull[:,0]
+#        yy = latFull[:,0]
+#        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+#
+#        # Top Edge
+#        xx = lonFull[:,-1]
+#        yy = latFull[:,-1]
+#        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+#
+#        # Radar Location
+#        axis.scatter(radar_lon,radar_lat,marker='o',color='k',s=40,transform=ccrs.PlateCarree())
+#        fontdict = {'size':14,'weight':'bold'}
+#        if radar == 'cvw' or radar == 'fhw':
+#            ha      = 'right'
+#            text    = radar.upper() + ' '
+#        else:
+#            ha      = 'left'
+#            text    = ' ' + radar.upper()
+#
+#        axis.text(radar_lon,radar_lat,text,ha=ha,
+#                fontdict=fontdict,transform=ccrs.PlateCarree())
     
     result  = {}
     result['pcoll']     = pcoll
@@ -218,18 +220,19 @@ def fan_plot(dataObject,
 
     return result
 
-def load_data(load_sTime=None,load_eTime=None,cache_base='cache',clear_cache=False,
+def load_data(load_sTime=None,load_eTime=None,fovModel='GS',
+        cache_base='cache',clear_cache=False,
         data_dir='/data/sd-data_despeck',use_preprocessed = False,**kwargs):
     radars_dct  = {}
     radars_dct['pgr'] = {}
     radars_dct['sas'] = {}
     radars_dct['kap'] = {}
     radars_dct['gbr'] = {}
-    radars_dct['cvw'] = {}
-    radars_dct['cve'] = {}
+    radars_dct['cvw'] = {'fov_beams':(3,25)}
+    radars_dct['cve'] = {'fov_beams':(0,21)}
     radars_dct['fhw'] = {}
     radars_dct['fhe'] = {}
-    radars_dct['bks'] = {}
+    radars_dct['bks'] = {'fov_beams':(3,25)}
     radars_dct['wal'] = {}
 
     if load_sTime is None:
@@ -249,7 +252,6 @@ def load_data(load_sTime=None,load_eTime=None,cache_base='cache',clear_cache=Fal
             cache_fpath  = os.path.join(cache_dir,cache_fname)
 
             if not os.path.exists(cache_fpath):
-                fovModel                = 'GS'
                 gscat                   = 1 # Ground scatter only.
 #                gscat                   = 0 # All scatter.
                 beam_limits             = (None, None)
@@ -314,7 +316,76 @@ def load_data(load_sTime=None,load_eTime=None,cache_base='cache',clear_cache=Fal
         dct['dataObj']  = dataObj
     return radars_dct
 
-def plot_map(radars_dct,time,dataSet='active',output_dir='output',**kwargs):
+def get_stid(radar):
+    """
+    Get the radar stid given the radar abbreviation.
+    """
+
+    for stid,rdr_tpl in pydarn.SuperDARNRadars.radars.items():
+        if radar == rdr_tpl.hardware_info.abbrev:
+            return stid
+
+def plot_radar_fov(radar,ax,time,fovModel='GS',fov_ranges=(0,50),fov_beams=None,rsep=45,frang=180):
+    """
+    rsep:  Range Seperation (km) (default: 45 km)
+    frang: Distance to first range gate (km) (default: 45 km)
+    """
+    #Calculate the field of view if it has not yet been calculated.
+    stid    = get_stid(radar)
+    coords  = pydarn.Coords.GEOGRAPHIC
+    radar_lat = SuperDARNRadars.radars[stid].hardware_info.geographic.lat
+    radar_lon = SuperDARNRadars.radars[stid].hardware_info.geographic.lon
+
+    if fovModel == "GS":
+        range_estimation = pydarn.RangeEstimation.HALF_SLANT
+    else:
+        range_estimation=RangeEstimation.SLANT_RANGE
+
+    latFull, lonFull = coords(stid=stid,rsep=rsep,frang=frang,
+                        gates=fov_ranges, date=time,range_estimation=range_estimation)
+
+    if fov_beams is not None:
+        beam_min = np.min(fov_beams)
+        beam_max = np.max(fov_beams)
+
+        latFull = latFull[:,beam_min:beam_max]
+        lonFull = lonFull[:,beam_min:beam_max]
+
+    # Left Edge
+    xx = lonFull[0,:]
+    yy = latFull[0,:]
+    ax.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+
+    # Right Edge
+    xx = lonFull[-1,:]
+    yy = latFull[-1,:]
+    ax.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+
+    # Bottom Edge 
+    xx = lonFull[:,0]
+    yy = latFull[:,0]
+    ax.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+
+    # Top Edge
+    xx = lonFull[:,-1]
+    yy = latFull[:,-1]
+    ax.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+
+    # Radar Location
+    ax.scatter(radar_lon,radar_lat,marker='o',color='k',s=40,transform=ccrs.PlateCarree())
+    fontdict = {'size':14,'weight':'bold'}
+    if radar == 'cvw' or radar == 'fhw':
+        ha      = 'right'
+        text    = radar.upper() + ' '
+    else:
+        ha      = 'left'
+        text    = ' ' + radar.upper()
+
+    ax.text(radar_lon,radar_lat,text,ha=ha,
+            fontdict=fontdict,transform=ccrs.PlateCarree())
+
+def plot_map(radars_dct,time,dataSet='active',output_dir='output',
+        fovModel='GS',**kwargs):
     projection = ccrs.Orthographic(-100,60)
     fig = plt.figure(figsize=(18,14))
     ax  = fig.add_subplot(1,1,1,projection=projection)
@@ -327,6 +398,11 @@ def plot_map(radars_dct,time,dataSet='active',output_dir='output',**kwargs):
     ax.gridlines(draw_labels=['left','bottom'])
 
     for radar,dct in radars_dct.items():
+        fov_ranges  = dct.get('fov_ranges',(0,60))
+        fov_beams   = dct.get('fov_beams',None)
+        plot_radar_fov(radar,ax,time=time,fovModel=fovModel,
+                fov_ranges=fov_ranges,fov_beams=fov_beams)
+
         dataObj = dct.get('dataObj')
         if dataObj is None:
             continue
@@ -363,6 +439,7 @@ def plot_map(radars_dct,time,dataSet='active',output_dir='output',**kwargs):
     fname = 'map_{!s}.png'.format(time.strftime('%Y%m%d.%H%M'))
     fpath   = os.path.join(output_dir,fname)
     fig.savefig(fpath,bbox_inches='tight')
+    print(fpath)
 
 
 def plot_rtp(radars_dct,sTime,eTime,dataSet='active',output_dir='output',**kwargs):
@@ -403,6 +480,7 @@ def plot_rtp(radars_dct,sTime,eTime,dataSet='active',output_dir='output',**kwarg
     fname   = 'rtp_{!s}-{!s}.png'.format(sTime.strftime('%Y%m%d.%H%M'),eTime.strftime('%Y%m%d.%H%M'))
     fpath   = os.path.join(output_dir,fname)
     fig.savefig(fpath,bbox_inches='tight')
+    print(fpath)
 
 if __name__ == '__main__':
     rd = {}
@@ -410,20 +488,19 @@ if __name__ == '__main__':
     rd['output_dir'] = 'output'
     prep_dir(rd['output_dir'])
 
-#    rd['sTime']         = datetime.datetime(2018,12,9,12)
-#    rd['eTime']         = datetime.datetime(2018,12,9,13)
-#    rd['time']          = datetime.datetime(2018,12,9,12,30)
-#    rd['eTime']         = datetime.datetime(2018,12,10)
-#    rd['time']          = datetime.datetime(2018,12,9,19,0)
+    rd['sTime']         = datetime.datetime(2018,12,9,12)
+    rd['eTime']         = datetime.datetime(2018,12,10)
+    rd['time']          = datetime.datetime(2018,12,9,19,0)
 
 #    rd['sTime']         = datetime.datetime(2019,1,9,12)
 #    rd['eTime']         = datetime.datetime(2019,1,10)
 #    rd['time']          = datetime.datetime(2019,1,9,19,00)
 
-    rd['sTime']         = datetime.datetime(2012,12,21,14)
-    rd['eTime']         = datetime.datetime(2012,12,21,22)
-    rd['time']          = datetime.datetime(2012,12,21,16,10)
-
+#    rd['sTime']         = datetime.datetime(2012,12,21,14)
+#    rd['eTime']         = datetime.datetime(2012,12,21,22)
+#    rd['time']          = datetime.datetime(2012,12,21,16,10)
+  
+    rd['fovModel']      = 'GS'
     rd['data_dir']      = '/data/sd-data'
 #    rd['data_dir']      = '/data/sd-data_despeck'
     rd['clear_cache']   = False
