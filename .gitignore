@@ -136,3 +136,7 @@ plots.old/
 *.swp
 
 mstid_index/data/
+mstid_index/output.old
+*/cache
+*/output
+*~
