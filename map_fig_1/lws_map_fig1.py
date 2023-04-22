@@ -280,7 +280,7 @@ def load_data(load_sTime=None,load_eTime=None,fovModel='GS',
                     ,srcPath                    = None
                     ,fovModel                   = fovModel
                     ,gscat                      = gscat
-                    ,data_dir                   = data_dir
+                    ,fitacf_dir                 = data_dir
                     )
 
                 if len(dataObj.get_data_sets()) == 0:
@@ -439,6 +439,7 @@ def plot_map(radars_dct,time,dataSet='active',output_dir='output',
     fname = 'map_{!s}.png'.format(time.strftime('%Y%m%d.%H%M'))
     fpath   = os.path.join(output_dir,fname)
     fig.savefig(fpath,bbox_inches='tight')
+    plt.close(fig)
     print(fpath)
 
 
@@ -480,7 +481,15 @@ def plot_rtp(radars_dct,sTime,eTime,dataSet='active',output_dir='output',**kwarg
     fname   = 'rtp_{!s}-{!s}.png'.format(sTime.strftime('%Y%m%d.%H%M'),eTime.strftime('%Y%m%d.%H%M'))
     fpath   = os.path.join(output_dir,fname)
     fig.savefig(fpath,bbox_inches='tight')
+    plt.close(fig)
     print(fpath)
+
+def time_vector(sTime,eTime,timedelta=datetime.timedelta(minutes=2),**kwargs):
+    tvec = [sTime]
+    while tvec[-1] < eTime:
+        tvec.append(tvec[-1] + timedelta)
+
+    return tvec
 
 if __name__ == '__main__':
     rd = {}
@@ -488,28 +497,31 @@ if __name__ == '__main__':
     rd['output_dir'] = 'output'
     prep_dir(rd['output_dir'])
 
-    rd['sTime']         = datetime.datetime(2018,12,9,12)
-    rd['eTime']         = datetime.datetime(2018,12,10)
-    rd['time']          = datetime.datetime(2018,12,9,19,0)
+#    rd['sTime']         = datetime.datetime(2018,12,9,12)
+#    rd['eTime']         = datetime.datetime(2018,12,10)
+#    rd['time']          = datetime.datetime(2018,12,9,19,0)
 
 #    rd['sTime']         = datetime.datetime(2019,1,9,12)
 #    rd['eTime']         = datetime.datetime(2019,1,10)
 #    rd['time']          = datetime.datetime(2019,1,9,19,00)
 
-#    rd['sTime']         = datetime.datetime(2012,12,21,14)
-#    rd['eTime']         = datetime.datetime(2012,12,21,22)
-#    rd['time']          = datetime.datetime(2012,12,21,16,10)
+    rd['sTime']         = datetime.datetime(2012,12,21,14)
+    rd['eTime']         = datetime.datetime(2012,12,21,22)
+    rd['time']          = datetime.datetime(2012,12,21,16,10)
   
     rd['fovModel']      = 'GS'
-    rd['data_dir']      = '/data/sd-data'
-#    rd['data_dir']      = '/data/sd-data_despeck'
-    rd['clear_cache']   = False
+#    rd['data_dir']      = '/data/sd-data'
+    rd['data_dir']      = '/data/sd-data_fitexfilter'
+    rd['clear_cache']   = True
     rd['radars_dct']    = load_data(**rd)
 
-#    rd['dataSet']       = 'originalFit'
-    rd['dataSet']       = 'limitsApplied'
+    rd['dataSet']       = 'originalFit'
+#    rd['dataSet']       = 'limitsApplied'
 #    rd['dataSet']       = 'active'
 
-    plot_map(**rd)
     plot_rtp(**rd)
+    times = time_vector(**rd)
+    for time in times:
+        rd['time'] = time
+        plot_map(**rd)
     import ipdb; ipdb.set_trace()

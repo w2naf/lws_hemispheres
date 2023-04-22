@@ -39,7 +39,8 @@ def generate_radar_dict():
 
 output_dir  = os.path.join('data','mstid_index')
 mongo_port  = 27017
-db_name     = 'mstid'
+#db_name     = 'mstid'
+db_name     = 'fitexfilter'
 prefix      = 'guc'
 
 radar_dict  = generate_radar_dict()

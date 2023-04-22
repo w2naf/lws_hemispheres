@@ -134,3 +134,5 @@ plots/
 plots.old/
 
 *.swp
+
+mstid_index/data/
