@@ -41,6 +41,7 @@ output_dir  = os.path.join('data','mstid_index')
 mongo_port  = 27017
 #db_name     = 'mstid'
 db_name     = 'fitexfilter'
+#db_name     = 'fitexfilter_using_mstid_2016_dates' # Database using modern processing with dates from 2016 processing.
 prefix      = 'guc'
 
 radar_dict  = generate_radar_dict()
