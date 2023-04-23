@@ -17,6 +17,8 @@ import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib.collections import PolyCollection
 
+import merra2CipsAirsTimeSeries
+
 pd.set_option('display.max_rows', None)
 
 mpl.rcParams['font.size']      = 12
@@ -150,6 +152,14 @@ prmd['cmap']            = mpl.cm.viridis
 prmd['cbar_label']      = 'AE [nT]'
 prmd['title']           = 'Auroral Electrojet AE Index [nT]'
 prmd['data_dir']        = os.path.join('data','omni','preprocessed')
+
+prmd = prm_dct['merra2CipsAirsTimeSeries'] = {}
+prmd['scale_0']         = -20
+prmd['scale_1']         = 100
+prmd['levels']          = 11
+prmd['cmap']            = 'jet'
+prmd['cbar_label']      = 'MERRA-2 Zonal Wind\n[m/s] (50\N{DEGREE SIGN} N)'
+prmd['title']           = 'MERRA-2 Zonal Winds + CIPS & AIRS GW Variance'
 
 prmd = prm_dct['reject_code'] = {}
 prmd['title']           = 'MSTID Index Data Quality Flag'
@@ -723,7 +733,14 @@ class ParameterObject(object):
     #    fig.savefig(fpath)
         fig.savefig(fpath,bbox_inches='tight')
 
-def stackplot(po_dct,params,season,radars=None,fpath='stackplot.png'):
+def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stackplot.png'):
+
+    _sDate, _eDate = season_to_datetime(season)
+    if sDate is None:
+        sDate = _sDate
+    if eDate is None:
+        eDate = _eDate
+
     print(' Plotting Stackplot: {!s}'.format(fpath))
     nrows   = len(params)
     ncols   = 1
@@ -736,8 +753,11 @@ def stackplot(po_dct,params,season,radars=None,fpath='stackplot.png'):
         if param.endswith('_reducedIndex'):
             base_param      = param.rstrip('_reducedIndex')
             plotType        = 'reducedIndex'
+        elif param == 'merra2CipsAirsTimeSeries':
+            base_param      = param
+            plotType        = param
         else:
-            base_param  = param
+            base_param      = param
             plotType        = 'climo'
 
         # Get Parameter Object
@@ -745,14 +765,12 @@ def stackplot(po_dct,params,season,radars=None,fpath='stackplot.png'):
         if plotType == 'reducedIndex':
             data_df = po.data[season]['reducedIndex']
             prmd    = prm_dct.get(param,{})
+        elif plotType == 'merra2CipsAirsTimeSeries':
+            data_df = None
+            prmd    = prm_dct.get(param,{})
         else:
             data_df = po.data[season]['df']
             prmd    = po.prmd
-
-        if radars is None:
-            _radars = po.radars
-        else:
-            _radars = radars
 
         if inx == nrows-1:
             xlabels = True
@@ -785,10 +803,35 @@ def stackplot(po_dct,params,season,radars=None,fpath='stackplot.png'):
 
             ax.legend(handles=handles,loc='lower left',ncols=3,prop=reduced_legend_fontdict)
 
+            ax.set_xlim(sDate,eDate)
+
             ax_info = {}
             ax_info['ax']           = ax
+        elif plotType == 'merra2CipsAirsTimeSeries':
+            mca     = merra2CipsAirsTimeSeries.Merra2CipsAirsTS()
+            if 'scale_0' in prmd:
+                prmd['vmin'] = prmd['scale_0']
+            if 'scale_1' in prmd:
+                prmd['vmax'] = prmd['scale_1']
+            result  = mca.plot_ax(ax,plot_cbar=False,ylabel_fontdict=ylabel_fontdict,**prmd)
+
+            ax.set_xlim(sDate,eDate)
+
+            if xlabels is False:
+                ax.set_xlabel('')
+
+            ax_info = {}
+            ax_info['ax']           = ax
+            ax_info['cbar_pcoll']   = result['cbar_pcoll']
+            ax_info['cbar_label']   = prmd.get('cbar_label')
         else: 
-            ax_info = plot_mstid_values(data_df,ax,radars=_radars,param=param,xlabels=xlabels)
+            if radars is None:
+                _radars = po.radars
+            else:
+                _radars = radars
+
+            ax_info = plot_mstid_values(data_df,ax,radars=_radars,param=param,xlabels=xlabels,
+                    sDate=sDate,eDate=eDate)
         ax_list.append(ax_info)
 
         ylim    = prmd.get('ylim')
@@ -936,7 +979,8 @@ if __name__ == '__main__':
 #    params.append('DAILY_SUNSPOT_NO_')
 
     seasons = list_seasons()
-    seasons = ['20121101_20130501']
+#    seasons = ['20121101_20130501']
+    seasons = ['20181101_20190501']
 
     po_dct  = {}
     for param in params:
@@ -977,12 +1021,17 @@ if __name__ == '__main__':
 #    ss.append('meanSubIntSpect_by_rtiCnt')
 #    ss.append('reject_code')
 
-    ss = stack_sets['mstid_index_reduced'] = []
+#    ss = stack_sets['mstid_index_reduced'] = []
+#    ss.append('meanSubIntSpect_by_rtiCnt')
+#    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
+#
+##    ss = stack_sets['mstid_index'] = []
+##    ss.append('meanSubIntSpect_by_rtiCnt')
+
+    ss = stack_sets['figure_3'] = []
+    ss.append('merra2CipsAirsTimeSeries')
     ss.append('meanSubIntSpect_by_rtiCnt')
     ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
-
-#    ss = stack_sets['mstid_index'] = []
-#    ss.append('meanSubIntSpect_by_rtiCnt')
 
     if plot_stackplots:
         for stack_code,stack_params in stack_sets.items():

@@ -43,7 +43,7 @@ class Merra2CipsAirsTS(object):
         fig.savefig(png_fpath,bbox_inches='tight')
         plt.close(fig)
     
-    def plot_ax(self,ax,vmin=-20,vmax=100,levels=11,**kwargs):
+    def plot_ax(self,ax,vmin=-20,vmax=100,levels=11,cmap='jet',plot_cbar=True,ylabel_fontdict={},**kwargs):
         fig     = ax.get_figure()
 
         ds      = self.ds
@@ -54,14 +54,15 @@ class Merra2CipsAirsTS(object):
         xx  = dates
         yy  = np.arange(zz.shape[0])
 
-        mpbl    = ax.contourf(xx,yy,zz,levels=levels,vmin=vmin,vmax=vmax,cmap='jet')
-        cntr    = ax.contour(xx,yy,zz,levels=levels,colors='0.3')
+        cbar_pcoll  = ax.contourf(xx,yy,zz,levels=levels,vmin=vmin,vmax=vmax,cmap=cmap)
+        cntr        = ax.contour(xx,yy,zz,levels=levels,colors='0.3')
         ax.set_xlabel('UTC Date')
-        ax.set_ylabel('Vertical Level')
+        ax.set_ylabel('Vertical Level',fontdict=ylabel_fontdict)
         ax.grid(False)
 
-        lbl     = 'MERRA-2 Zonal Wind (m/s) (50N)'
-        cbar    = fig.colorbar(mpbl,label=lbl)
+        if plot_cbar:
+            lbl     = 'MERRA-2 Zonal Wind (m/s) (50\N{DEGREE SIGN} N)'
+            cbar    = fig.colorbar(cbar_pcoll,label=lbl)
 
         # Plot CIPS GW Variance
         ax1     = ax.twinx()
@@ -77,14 +78,15 @@ class Merra2CipsAirsTS(object):
         lbl     = 'CIPS (50 km)'
         ax1.plot(xx,yy,color='fuchsia',lw=airs_cips_lw,zorder=100,label=lbl)
         
-        lbl     = 'CIPS (%$^{2}$) and AIRS (K$^{2}$) GW Variance'
-        ax1.set_ylabel(lbl)
+        lbl     = 'CIPS (%$^{2}$) and AIRS (K$^{2}$)\nGW Variance'
+        ax1.set_ylabel(lbl,fontdict=ylabel_fontdict)
         ax1.grid(False)
         ax1.set_ylim(0,0.25)
 
-        ax1.legend(loc='upper right',ncols=2)
+        ax1.legend(loc='upper right',ncols=2,fontsize='large')
 
         result  = {}
+        result['cbar_pcoll']    = cbar_pcoll
         return result
 
 if __name__ == '__main__':
