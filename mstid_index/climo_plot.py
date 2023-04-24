@@ -19,6 +19,7 @@ from matplotlib.collections import PolyCollection
 
 import merra2CipsAirsTimeSeries
 import gnss_dtec_gw
+import lstid_ham
 
 pd.set_option('display.max_rows', None)
 
@@ -166,6 +167,9 @@ prmd = prm_dct['gnss_dtec_gw'] = {}
 prmd['cmap']            = 'jet'
 prmd['cbar_label']      = 'aTEC Amplitude (TECu)'
 prmd['title']           = 'GNSS aTEC Amplitude at 115\N{DEGREE SIGN} W'
+
+prmd = prm_dct['lstid_ham'] = {}
+prmd['title']           = 'Amateur Radio 14 MHz LSTID Observations'
 
 prmd = prm_dct['reject_code'] = {}
 prmd['title']           = 'MSTID Index Data Quality Flag'
@@ -759,7 +763,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         if param.endswith('_reducedIndex'):
             base_param      = param.rstrip('_reducedIndex')
             plotType        = 'reducedIndex'
-        elif param == 'merra2CipsAirsTimeSeries' or param == 'gnss_dtec_gw':
+        elif param == 'merra2CipsAirsTimeSeries' or param == 'gnss_dtec_gw' or param == 'lstid_ham':
             base_param      = param
             plotType        = param
         else:
@@ -771,7 +775,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         if plotType == 'reducedIndex':
             data_df = po.data[season]['reducedIndex']
             prmd    = prm_dct.get(param,{})
-        elif plotType == 'merra2CipsAirsTimeSeries' or plotType == 'gnss_dtec_gw':
+        elif plotType == 'merra2CipsAirsTimeSeries' or plotType == 'gnss_dtec_gw' or plotType == 'lstid_ham':
             data_df = None
             prmd    = prm_dct.get(param,{})
         else:
@@ -843,6 +847,17 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
             ax_info['ax']           = ax
             ax_info['cbar_pcoll']   = result['cbar_pcoll']
             ax_info['cbar_label']   = prmd.get('cbar_label')
+        elif plotType == 'lstid_ham':
+            lstid = lstid_ham.LSTID_HAM()
+            result  = lstid.plot_ax(ax,legend_fontsize='x-large',ylabel_fontdict=ylabel_fontdict,**prmd)
+
+            ax.set_xlim(sDate,eDate)
+
+            if xlabels is False:
+                ax.set_xlabel('')
+
+            ax_info = {}
+            ax_info['ax']           = ax
         else: 
             if radars is None:
                 _radars = po.radars
@@ -1050,6 +1065,7 @@ if __name__ == '__main__':
     ss = stack_sets['figure_3'] = []
     ss.append('merra2CipsAirsTimeSeries')
     ss.append('gnss_dtec_gw')
+    ss.append('lstid_ham')
     ss.append('meanSubIntSpect_by_rtiCnt')
     ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
 
