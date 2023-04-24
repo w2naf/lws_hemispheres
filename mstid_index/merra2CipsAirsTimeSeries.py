@@ -48,16 +48,25 @@ class Merra2CipsAirsTS(object):
 
         ds      = self.ds
         dates   = [datetime.datetime.strptime(str(int(x)),'%Y%m%d') for x in ds['DATE']]
+        sDate   = min(dates)
+        eDate   = max(dates)
+
 
         # Plot MERRA-2 Zonal Winds
         zz  = np.array(ds['ZONAL_WIND'])
+
         xx  = dates
-        yy  = np.arange(zz.shape[0])
+        yy  = np.nanmean(np.array(ds['GEOPOTENTIAL_HEIGHT']),axis=1)
+
+        # Keep only finite values of height.
+        tf  = np.isfinite(yy)
+        yy  = yy[tf]
+        zz  = zz[tf,:]
 
         cbar_pcoll  = ax.contourf(xx,yy,zz,levels=levels,vmin=vmin,vmax=vmax,cmap=cmap)
         cntr        = ax.contour(xx,yy,zz,levels=levels,colors='0.3')
         ax.set_xlabel('UTC Date')
-        ax.set_ylabel('Vertical Level',fontdict=ylabel_fontdict)
+        ax.set_ylabel('Geopot. Height [km]',fontdict=ylabel_fontdict)
         ax.grid(False)
 
         if plot_cbar:
