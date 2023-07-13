@@ -59,103 +59,113 @@ class Merra2AirsMaps(object):
         self.ds         = ds
         return ds
 
-    def plot_figure(self,png_fpath='output.png',figsize=(16,8),**kwargs):
+    def _date2inx(self,date=None):
+        """
+        Check to see if the date is in the data set.
+        Return the closest date in the dataset as a datetime object and the index.
+        """
+        ds = self.ds
 
-        fig     = plt.figure(figsize=figsize)
-        ax      = fig.add_subplot(1,1,1, projection=ccrs.Orthographic(270,90))
-
-        result  = self.plot_ax(ax,**kwargs)
-
-        fig.tight_layout()
-        fig.savefig(png_fpath,bbox_inches='tight')
-        plt.close(fig)
-    
-#    def plot_ax(self,ax,vmin=-20,vmax=100,levels=11,cmap='jet',plot_cbar=True,ylabel_fontdict={},**kwargs):
-    def plot_ax(self,ax,date=None,vmin=None,vmax=None,cmap='jet',**kwargs):
-        fig     = ax.get_figure()
-
-        ds      = self.ds
-
-        date = datetime.datetime(2019,1,12)
         if date is None:
             date_inx = 0
         else:
             date_int = int(date.strftime('%Y%m%d'))
             date_inx = np.argmin(np.abs(ds['DATE'].values-date_int))
 
+        date_0 = datetime.datetime.strptime(str(ds['DATE'].values[date_inx]),'%Y%m%d')
+
+        return (date_0, date_inx)
+
+
+    def get_dates(self,sDate=None,eDate=None):
+        """
+        Return a list of all of the dates available in the dataset.
+        """
+        ds      = self.ds
+
+        dates   = []
+        for date_nr in ds['DATE'].values:
+            date = datetime.datetime.strptime(str(date_nr),'%Y%m%d')
+
+            if sDate is not None:
+                if date < sDate:
+                    continue
+
+            if eDate is not None:
+                if date >= eDate:
+                    continue
+
+            dates.append(date)
+
+        return dates
+
+    def plot_figure(self,date=None,png_fpath='output.png',figsize=(16,8),**kwargs):
+
+        date_0, date_inx = self._date2inx(date)
+
+        fig     = plt.figure(figsize=figsize)
+#        ax      = fig.add_subplot(1,1,1, projection=ccrs.Orthographic(270,90))
+        ax      = fig.add_subplot(1,1,1, projection=ccrs.Orthographic(0,90))
+
+        result  = self.plot_ax(ax,date=date,**kwargs)
+
+        date_str    = date_0.strftime('%Y %b %d')
+        ax.set_title(date_str)
+
+        fig.tight_layout()
+        fig.savefig(png_fpath,bbox_inches='tight')
+        plt.close(fig)
+    
+    def plot_ax(self,ax,date=None,vmin=0.,vmax=0.8,cmap='jet',**kwargs):
+        date_0, date_inx = self._date2inx(date)
+        ds      = self.ds
+
+        fig     = ax.get_figure()
 
         # Plot AIRS Variances
         airs_lons       = ds['AIRS_LONS']
         airs_lats       = ds['AIRS_LATS']
         airs_gw_var     = ds['AIRS_GW_VARIANCE'].values[date_inx,:,:]
-
         
-        mpbl    = ax.pcolormesh(airs_lons,airs_lats,airs_gw_var,transform=ccrs.PlateCarree(),cmap=cmap,
-                    vmin=vmin,vmax=vmax)
+#        mpbl    = ax.pcolormesh(airs_lons,airs_lats,airs_gw_var,transform=ccrs.PlateCarree(),cmap=cmap, vmin=vmin,vmax=vmax)
+        mpbl    = ax.contourf(airs_lons,airs_lats,airs_gw_var,transform=ccrs.PlateCarree(),cmap=cmap,levels=np.arange(vmin,vmax+0.01,0.01))
         cbar    = fig.colorbar(mpbl,aspect=15,shrink=0.8)
         cbar.set_label('AIRS GW Variance [K^2]',fontdict={'weight':'bold','size':20})
 
+        merra2_lons             = ds['MERRA2_LONS']
+        merra2_lats             = ds['MERRA2_LATS']
+        merra2_streamfunction   = ds['MERRA2_STREAMFUNCTION'].values[date_inx,:,:]
+        merra2_windspeed        = ds['MERRA2_WINDSPEED'].values[date_inx,:,:]
+        merra2_vortex           = ds['MERRA2_VORTEX'].values[date_inx,:,:]
+
+
+        ax.contour(merra2_lons,merra2_lats,merra2_streamfunction,colors='white',transform=ccrs.PlateCarree())
+        ax.contour(merra2_lons,merra2_lats,merra2_vortex,colors='white',linewidths=2.5,transform=ccrs.PlateCarree())
+        ax.contour(merra2_lons,merra2_lats,merra2_windspeed,levels=[50,70,90],colors=['yellow','orange','red'],transform=ccrs.PlateCarree())
+        
         ax.coastlines(zorder=100)
         ax.gridlines()
 
-#        dates   = [datetime.datetime.strptime(str(int(x)),'%Y%m%d') for x in ds['DATE']]
-#        sDate   = min(dates)
-#        eDate   = max(dates)
-#
-#
-#        # Plot MERRA-2 Zonal Winds
-#        zz  = np.array(ds['ZONAL_WIND'])
-#
-#        xx  = dates
-#        yy  = np.nanmean(np.array(ds['GEOPOTENTIAL_HEIGHT']),axis=1)
-#
-#        # Keep only finite values of height.
-#        tf  = np.isfinite(yy)
-#        yy  = yy[tf]
-#        zz  = zz[tf,:]
-#
-#        cbar_pcoll  = ax.contourf(xx,yy,zz,levels=levels,vmin=vmin,vmax=vmax,cmap=cmap)
-#        cntr        = ax.contour(xx,yy,zz,levels=levels,colors='0.3')
-#        ax.set_xlabel('UTC Date')
-#        ax.set_ylabel('Geopot. Height [km]',fontdict=ylabel_fontdict)
-#        ax.grid(False)
-#
-#        if plot_cbar:
-#            lbl     = 'MERRA-2 Zonal Wind (m/s) (50\N{DEGREE SIGN} N)'
-#            cbar    = fig.colorbar(cbar_pcoll,label=lbl)
-#
-#        # Plot CIPS GW Variance
-#        ax1     = ax.twinx()
-#
-#        airs_cips_lw = 4
-#        xx      = dates
-#        yy      = np.array(ds['AIRS_GW_VARIANCE'])
-#        lbl     = 'AIRS (30 km)'
-#        ax1.plot(xx,yy,color='black',lw=airs_cips_lw,zorder=100,label=lbl)
-#
-#        xx      = dates
-#        yy      = np.array(ds['CIPS_GW_VARIANCE'])
-#        lbl     = 'CIPS (50 km)'
-#        ax1.plot(xx,yy,color='fuchsia',lw=airs_cips_lw,zorder=100,label=lbl)
-#        
-#        lbl     = 'CIPS (%$^{2}$) and AIRS (K$^{2}$)\nGW Variance'
-#        ax1.set_ylabel(lbl,fontdict=ylabel_fontdict)
-#        ax1.grid(False)
-#        ax1.set_ylim(0,0.25)
-#
-#        ax1.legend(loc='upper right',ncols=2,fontsize='large')
-#
         result  = {}
 #        result['cbar_pcoll']    = cbar_pcoll
         return result
 
 if __name__ == '__main__':
     output_dir = os.path.join('output','merra2AirsMaps')
+    shutil.rmtree(output_dir)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    png_fname   = 'merra2AirsMap.png'
-    png_fpath   = os.path.join(output_dir,png_fname)
+    sDate       = datetime.datetime(2018,11,1)
+    eDate       = datetime.datetime(2019,5,1)
 
     mca = Merra2AirsMaps()
-    mca.plot_figure(png_fpath=png_fpath)
+
+    dates       = mca.get_dates(sDate,eDate)
+    for date in dates:
+        date_str    = date.strftime('%Y%m%d')
+        png_fname   = 'merra2AirsMap_{!s}.png'.format(date_str)
+        png_fpath   = os.path.join(output_dir,png_fname)
+
+        mca.plot_figure(date=date,png_fpath=png_fpath)
+        print(png_fpath)

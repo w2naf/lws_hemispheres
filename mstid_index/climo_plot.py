@@ -1067,7 +1067,7 @@ if __name__ == '__main__':
     ss.append('gnss_dtec_gw')
     ss.append('lstid_ham')
     ss.append('meanSubIntSpect_by_rtiCnt')
-    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
+#    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
 
     if plot_stackplots:
         for stack_code,stack_params in stack_sets.items():
