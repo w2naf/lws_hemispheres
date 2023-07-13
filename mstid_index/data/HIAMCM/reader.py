@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+"""
+This script will load in a HIAMCM Fortran binary output file, create an XArray dataset,
+and save it as a netCDF, and make a sample plot.
+"""
 import datetime
 import numpy as np
 from array import array
@@ -144,6 +148,11 @@ for idat_inx,(prm,prmd) in enumerate(prms.items()):
 
 ds  = xr.merge(ds)
 
+# Save to netCDF.
+ncPath = '{!s}.nc'.format(fpath)
+ds.to_netcdf(ncPath)
+
+
 fig     = plt.figure(figsize=(10,8))
 ax      = fig.add_subplot(1,1,1)
 prm     = 'u'
@@ -164,5 +173,4 @@ fig.tight_layout()
 png_name    = 'hiamcm_{!s}.png'.format(prm)
 fig.savefig(png_name,bbox_inches='tight')
 print(png_name)
-
 import ipdb; ipdb.set_trace()
