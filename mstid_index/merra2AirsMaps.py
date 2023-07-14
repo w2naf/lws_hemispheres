@@ -8,6 +8,8 @@ import datetime
 
 import numpy as np
 import pandas as pd
+import scipy as sp
+import scipy.ndimage
 
 import xarray as xr
 
@@ -179,7 +181,7 @@ class Merra2AirsMaps(object):
 
         cyc_zz, cyc_lons = add_cyclic_point(zz,coord=airs_lons)
         mpbl    = ax.contourf(cyc_lons,airs_lats,cyc_zz,transform=ccrs.PlateCarree(),
-                cmap=cmap,levels=np.arange(vmin,vmax+0.01,0.01),extend='max')
+                cmap=cmap,levels=np.arange(vmin,vmax+0.005,0.005),extend='max')
         cbar    = fig.colorbar(mpbl,aspect=15,shrink=0.8)
         cbar.set_label('AIRS GW Variance [K^2]',fontdict={'weight':'bold','size':20})
 
@@ -191,10 +193,13 @@ class Merra2AirsMaps(object):
 
 
         ax.contour(merra2_lons,merra2_lats,merra2_streamfunction,colors='white',transform=ccrs.PlateCarree())
-        ax.contour(merra2_lons,merra2_lats,merra2_vortex,colors='white',linewidths=2.5,transform=ccrs.PlateCarree())
+
+        cyc_zz, cyc_lons = add_cyclic_point(merra2_vortex,coord=merra2_lons)
+        ax.contour(cyc_lons,merra2_lats,cyc_zz,colors='white',linewidths=2,transform=ccrs.PlateCarree())
+
         ax.contour(merra2_lons,merra2_lats,merra2_windspeed,levels=[50,70,90],colors=['yellow','orange','red'],transform=ccrs.PlateCarree())
         
-        ax.coastlines(zorder=100)
+        ax.coastlines(zorder=100,color='0.45')
         ax.gridlines()
 
         result  = {}
