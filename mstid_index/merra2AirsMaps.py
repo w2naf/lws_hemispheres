@@ -14,7 +14,10 @@ import xarray as xr
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 
+from PIL import Image
+
 import cartopy.crs as ccrs
+from cartopy.util import add_cyclic_point
 
 mpl.rcParams['font.size']      = 12
 mpl.rcParams['font.weight']    = 'bold'
@@ -22,6 +25,47 @@ mpl.rcParams['axes.grid']      = True
 mpl.rcParams['grid.linestyle'] = ':'
 mpl.rcParams['figure.figsize'] = np.array([15, 8])
 mpl.rcParams['axes.xmargin']   = 0
+
+def to_cmap(my_cdict,name='CustomCMAP',vmin=-2.,vmax=1.):
+    norm = mpl.colors.Normalize(vmin=vmin,vmax=vmax)
+    
+    red   = []
+    green = []
+    blue  = []
+    
+    keys = list(my_cdict.keys())
+    keys.sort()
+    
+    for x in keys:
+        r,g,b, = my_cdict[x]
+        x = norm(x)
+        r = r/255.
+        g = g/255.
+        b = b/255.
+        red.append(   (x, r, r))
+        green.append( (x, g, g))
+        blue.append(  (x, b, b))
+    cdict = {'red'   : tuple(red),
+             'green' : tuple(green),
+             'blue'  : tuple(blue)}
+    cmap  = mpl.colors.LinearSegmentedColormap(name, cdict)
+    return cmap
+
+def rainbowCmap():
+    #Color Map
+    img = Image.open('rainbow.png')
+    data_2=np.array(img)
+
+    vmin, vmax = (-2, 1)
+    inxs = (np.linspace(vmin,vmax,data_2.shape[1])).tolist()
+    vals = [tuple(x) for x in (data_2[0,:,:]).tolist()]
+
+    rgb_dict = {}
+    for inx,val in zip(inxs,vals):
+        rgb_dict[inx] = val
+
+    cmap = to_cmap(rgb_dict,vmin=vmin,vmax=vmax)
+    return cmap
 
 class Merra2AirsMaps(object):
     def __init__(self,data_in='data/merra2_cips_airs_timeSeries/AIRS_GW_VARIANCE+MERRA2_20181101-20190430.nc'):
@@ -127,8 +171,15 @@ class Merra2AirsMaps(object):
         airs_lats       = ds['AIRS_LATS']
         airs_gw_var     = ds['AIRS_GW_VARIANCE'].values[date_inx,:,:]
         
-#        mpbl    = ax.pcolormesh(airs_lons,airs_lats,airs_gw_var,transform=ccrs.PlateCarree(),cmap=cmap, vmin=vmin,vmax=vmax)
-        mpbl    = ax.contourf(airs_lons,airs_lats,airs_gw_var,transform=ccrs.PlateCarree(),cmap=cmap,levels=np.arange(vmin,vmax+0.01,0.01))
+        cmap    = rainbowCmap()
+        zz      = airs_gw_var.copy()
+        tf      = ~np.isfinite(airs_gw_var)
+        zz[tf]  = 0.
+        zz[zz < 0] = 0.
+
+        cyc_zz, cyc_lons = add_cyclic_point(zz,coord=airs_lons)
+        mpbl    = ax.contourf(cyc_lons,airs_lats,cyc_zz,transform=ccrs.PlateCarree(),
+                cmap=cmap,levels=np.arange(vmin,vmax+0.01,0.01),extend='max')
         cbar    = fig.colorbar(mpbl,aspect=15,shrink=0.8)
         cbar.set_label('AIRS GW Variance [K^2]',fontdict={'weight':'bold','size':20})
 
