@@ -3,8 +3,11 @@
 import os
 import shutil
 import glob
+import string
+letters = string.ascii_lowercase
 
 import datetime
+
 
 import tqdm
 
@@ -255,8 +258,8 @@ def reject_legend(fig):
 
     axl.legend(handles=legend_elements, loc='center left', fontsize = 42)
 
-def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,
-        fontdict=None):
+def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,short_labels=False,
+        fontdict=None,plot_axvline=True):
     if fontdict is None:
         fontdict = xtick_fontdict
     xticks      = []
@@ -287,8 +290,9 @@ def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,
             else:
                 xpos    = curr_date
 
-            axvline = ax.axvline(xpos,-0.015,color='k')
-            axvline.set_clip_on(False)
+            if plot_axvline:
+                axvline = ax.axvline(xpos,-0.015,color='k')
+                axvline.set_clip_on(False)
 
             if labels:
                 ypos    = -0.025
@@ -296,6 +300,13 @@ def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,
                 ax.text(xpos,ypos,txt,transform=ytransaxes,
                         ha='left', va='top',rotation=0,
                         fontdict=fontdict)
+            if short_labels:    
+                if curr_date.day == 1:
+                    ypos    = -0.025
+                    txt     = curr_date.strftime('%b %Y')
+                    ax.text(xpos,ypos,txt,transform=ytransaxes,
+                            ha='left', va='top',rotation=0,
+                            fontdict=fontdict)
         curr_date += datetime.timedelta(days=1)
 
     xmax    = (eDate - sDate).total_seconds() / (86400.)
@@ -863,6 +874,9 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
             if xlabels is False:
                 ax.set_xlabel('')
 
+            if xlabels is False:
+                ax.set_xlabel('')
+
             ax_info = {}
             ax_info['ax']           = ax
         elif plotType == 'HIAMCM':
@@ -886,6 +900,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
 
             ax_info = plot_mstid_values(data_df,ax,radars=_radars,param=param,xlabels=xlabels,
                     sDate=sDate,eDate=eDate)
+            ax_info['radar_ax']     = True
         ax_list.append(ax_info)
 
         ylim    = prmd.get('ylim')
@@ -896,7 +911,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         if ylabel is not None:
             ax.set_ylabel(ylabel,fontdict=ylabel_fontdict)
 
-        txt = prmd.get('title',param)
+        txt = '({!s}) '.format(letters[inx])+prmd.get('title',param)
         left_title_fontdict  = {'weight': 'bold', 'size': 24}
         ax.set_title('')
         ax.set_title(txt,fontdict=left_title_fontdict,loc='left')
@@ -905,6 +920,22 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         season_yr1 = season[9:13]
         txt = '{!s} - {!s} Northern Hemisphere Winter'.format(season_yr0,season_yr1)
         fig.text(0.5,1.01,txt,ha='center',fontdict=title_fontdict)
+
+    # Set X-Labels and X-Tick Labels
+    for inx,(param,ax_info) in enumerate(zip(params,ax_list)):
+        ax          = ax_info.get('ax')
+        ax.set_xlabel('')
+        radar_ax    = ax_info.get('radar_ax',False)
+
+        if inx != nrows-1:
+            fontdict = ylabel_fontdict.copy()
+            fontdict['weight']  = 'normal'
+            fontdict['size']    = 18
+        else:
+            fontdict = ylabel_fontdict.copy()
+
+        my_xticks(sDate,eDate,ax,radar_ax=radar_ax,fontdict=fontdict,
+                  labels=False,short_labels=True,plot_axvline=False)
 
     fig.tight_layout()
 
