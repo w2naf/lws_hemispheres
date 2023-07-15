@@ -20,6 +20,7 @@ from matplotlib.collections import PolyCollection
 import merra2CipsAirsTimeSeries
 import gnss_dtec_gw
 import lstid_ham
+import HIAMCM
 
 pd.set_option('display.max_rows', None)
 
@@ -763,7 +764,10 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         if param.endswith('_reducedIndex'):
             base_param      = param.rstrip('_reducedIndex')
             plotType        = 'reducedIndex'
-        elif param == 'merra2CipsAirsTimeSeries' or param == 'gnss_dtec_gw' or param == 'lstid_ham':
+        elif    (param == 'merra2CipsAirsTimeSeries' 
+              or param == 'gnss_dtec_gw' 
+              or param == 'lstid_ham'
+              or param == 'HIAMCM'):
             base_param      = param
             plotType        = param
         else:
@@ -775,7 +779,10 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         if plotType == 'reducedIndex':
             data_df = po.data[season]['reducedIndex']
             prmd    = prm_dct.get(param,{})
-        elif plotType == 'merra2CipsAirsTimeSeries' or plotType == 'gnss_dtec_gw' or plotType == 'lstid_ham':
+        elif  (plotType == 'merra2CipsAirsTimeSeries' 
+            or plotType == 'gnss_dtec_gw' 
+            or plotType == 'lstid_ham'
+            or plotType == 'HIAMCM'):
             data_df = None
             prmd    = prm_dct.get(param,{})
         else:
@@ -858,6 +865,19 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
 
             ax_info = {}
             ax_info['ax']           = ax
+        elif plotType == 'HIAMCM':
+            hiamcm  = HIAMCM.HIAMCM()
+            result  = hiamcm.plot_ax(ax,plot_cbar=False,ylabel_fontdict=ylabel_fontdict,**prmd)
+
+            ax.set_xlim(sDate,eDate)
+
+            if xlabels is False:
+                ax.set_xlabel('')
+
+            ax_info = {}
+            ax_info['ax']           = ax
+            ax_info['cbar_pcoll']   = result['cbar_pcoll']
+            ax_info['cbar_label']   = result.get('cbar_label')
         else: 
             if radars is None:
                 _radars = po.radars
@@ -1064,9 +1084,10 @@ if __name__ == '__main__':
 
     ss = stack_sets['figure_3'] = []
     ss.append('merra2CipsAirsTimeSeries')
+    ss.append('HIAMCM')
     ss.append('gnss_dtec_gw')
-    ss.append('lstid_ham')
     ss.append('meanSubIntSpect_by_rtiCnt')
+    ss.append('lstid_ham')
 #    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
 
     if plot_stackplots:
