@@ -143,7 +143,8 @@ ds = []
 for idat_inx,(prm,prmd) in enumerate(prms.items()):
     arr = xr.DataArray(dat[:,:,:,idat_inx],
             coords  = {'dates':dates,'lats':ylat,'alts':altz},
-            dims    = ['dates','lats','alts'])
+            dims    = ['dates','lats','alts'],
+            attrs   = prmd)
     ds.append(arr.to_dataset(name=prm))
 
 ds  = xr.merge(ds)
