@@ -37,22 +37,27 @@ class HIAMCM(object):
 
         result  = self.plot_ax(ax,**kwargs)
 
+        ax.set_title(result['title'])
+
         fig.tight_layout()
         fig.savefig(png_fpath,bbox_inches='tight')
         plt.close(fig)
     
-    def plot_ax(self,ax,prm='u',lat=61.,
+    def plot_ax(self,ax,prm='ww',lats=(40.,65.),
                 cmap='jet',plot_cbar=True,ylabel_fontdict={},**kwargs):
 
         ds  = self.ds
 
         fig     = ax.get_figure()
         
-        lat_inx = np.where(ds['lats'] == lat)[0][0]
+#        lat_inx = np.where(ds['lats'] == lat)[0][0]
         xx      = ds[prm]['dates']
         yy      = ds[prm]['alts']
-        zz      = ds[prm][:,lat_inx,:]
-        cbar_pcoll  = ax.contourf(xx,yy,zz.T,cmap=cmap)
+#        zz      = ds[prm][:,lat_inx,:]
+        tf      = np.logical_and(ds['lats'] >= min(lats), 
+                                 ds['lats'] < max(lats))
+        zz      = np.mean(ds[prm][:,tf,:],axis=1)
+        cbar_pcoll  = ax.contourf(xx,yy,zz.T,cmap=cmap,**kwargs)
 
         ax.set_xlabel('Date')
         ax.set_ylabel('Altitude [km]',fontdict=ylabel_fontdict)
@@ -63,9 +68,13 @@ class HIAMCM(object):
         if plot_cbar:
             fig.colorbar(cbar_pcoll,label=cbar_label)
 
+        prm_title = ds[prm].attrs.get('title',prm)
+        title = 'HIAMCM {:0.0f}\N{DEGREE SIGN} - {:0.0f}\N{DEGREE SIGN} Lat Average {!s}'.format(lats[0],lats[1],prm_title)
+
         result  = {}
         result['cbar_pcoll'] = cbar_pcoll
         result['cbar_label'] = cbar_label
+        result['title']      = title
         return result
 
 if __name__ == '__main__':

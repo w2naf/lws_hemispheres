@@ -881,7 +881,8 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
             ax_info['ax']           = ax
         elif plotType == 'HIAMCM':
             hiamcm  = HIAMCM.HIAMCM()
-            result  = hiamcm.plot_ax(ax,plot_cbar=False,ylabel_fontdict=ylabel_fontdict,**prmd)
+            result  = hiamcm.plot_ax(ax,prm='ww',lats=(40.,65.),
+                                     plot_cbar=False,ylabel_fontdict=ylabel_fontdict,**prmd)
 
             ax.set_xlim(sDate,eDate)
 
@@ -892,6 +893,8 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
             ax_info['ax']           = ax
             ax_info['cbar_pcoll']   = result['cbar_pcoll']
             ax_info['cbar_label']   = result.get('cbar_label')
+
+            prmd['title'] = result.get('title')
         else: 
             if radars is None:
                 _radars = po.radars
