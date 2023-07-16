@@ -191,15 +191,19 @@ class Merra2AirsMaps(object):
         merra2_windspeed        = ds['MERRA2_WINDSPEED'].values[date_inx,:,:]
         merra2_vortex           = ds['MERRA2_VORTEX'].values[date_inx,:,:]
 
-        ax.contour(merra2_lons,merra2_lats,merra2_streamfunction,colors='white',transform=ccrs.PlateCarree())
+        cyc_zz, cyc_lons = add_cyclic_point(merra2_streamfunction,coord=merra2_lons)
+        ax.contour(cyc_lons,merra2_lats,cyc_zz,colors='white',transform=ccrs.PlateCarree())
 
         cyc_zz, cyc_lons = add_cyclic_point(merra2_vortex,coord=merra2_lons)
         ax.contour(cyc_lons,merra2_lats,cyc_zz,colors='white',linewidths=2,transform=ccrs.PlateCarree())
 
-        ax.contour(merra2_lons,merra2_lats,merra2_windspeed,levels=[50,70,90],colors=['yellow','orange','red'],transform=ccrs.PlateCarree())
+        cyc_zz, cyc_lons = add_cyclic_point(merra2_windspeed,coord=merra2_lons)
+        ax.contour(cyc_lons,merra2_lats,cyc_zz,levels=[50,70,90],colors=['yellow','orange','red'],transform=ccrs.PlateCarree())
         
         ax.coastlines(zorder=100,color='0.45')
-        ax.gridlines()
+        ax.gridlines(draw_labels=True)
+#        ax.gridlines(lw=2, ec='black', draw_labels=True) # Show the geographic grid.
+
 
         result  = {}
         result['cbar_pcoll']    = cbar_pcoll
