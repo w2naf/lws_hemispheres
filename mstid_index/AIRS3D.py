@@ -17,6 +17,10 @@ import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib.collections import PolyCollection
 
+import cartopy.crs as ccrs
+from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
+import cartopy.feature as cfeature
+
 pd.set_option('display.max_rows', None)
 
 mpl.rcParams['font.size']      = 12
@@ -63,40 +67,66 @@ class AIRS3DWorld(object):
         self.lons       = xr.load_dataset(lon_nc_path)['lon'].values
         self.Tpert      = xr.load_dataset(Tpert_nc_path)['temp_pert'].values
 
-    def plot_figure(self,png_fpath='output.png',figsize=(16,8),**kwargs):
-        import ipdb; ipdb.set_trace()
-
+    def plot_figure(self,png_fpath='output.png',figsize=(12,4.75),**kwargs):
         fig     = plt.figure(figsize=figsize)
-        ax      = fig.add_subplot(1,1,1)
 
-        result  = self.plot_ax(ax,**kwargs)
+        result  = self.plot_ax(**kwargs)
+        ax      = result.get('ax')
 
         ax.set_title(result['title'])
-        fig.colorbar(result['cbar_pcoll'],label=result['cbar_label'])
+
+        cbar_pcoll = result.get('cbar_pcoll')
+        if cbar_pcoll is not None:
+            fig.colorbar(cbar_pcoll,label=result['cbar_label'])
 
         fig.tight_layout()
         fig.savefig(png_fpath,bbox_inches='tight')
         plt.close(fig)
     
-    def plot_ax(self,ax,prm='ww',lats=(40.,60.),
-                cmap='jet',plot_cbar=True,ylabel_fontdict={},**kwargs):
+    def plot_ax(self,fig=None,ax=None,projection=None,
+                xlim=(-180,180), ylim=(0,90),
+                vmin=-0.5, vmax=0.5,
+                cmap='viridis',ylabel_fontdict={},**kwargs):
 
-        ds  = self.ds
+        if fig is None:
+            fig = plt.gcf()
 
-        fig     = ax.get_figure()
+        if projection is None:
+            projection = ccrs.PlateCarree()
 
-        prm_title = ds[prm].attrs.get('title',prm)
-        title = 'HIAMCM {:0.0f}\N{DEGREE SIGN} - {:0.0f}\N{DEGREE SIGN} Lat Average {!s}'.format(lats[0],lats[1],prm_title)
+        if ax is None:
+            ax      = fig.add_subplot(1,1,1, projection=projection)
+            ax.set_aspect('auto')
+
+        xx = self.lons
+        yy = self.lats
+        zz = self.Tpert
+
+        cbar_pcoll = ax.pcolormesh(xx,yy,zz,vmin=vmin,vmax=vmax,**kwargs) 
+
+        ax.coastlines()
+#        ax.add_feature(cfeature.LAND, color='lightgrey')
+#        ax.add_feature(cfeature.OCEAN, color = 'white')
+#        ax.add_feature(cfeature.LAKES, color='white')
+
+        ax.gridlines(draw_labels=['left','bottom'])
+
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
+
+        title = '{!s} AIRS Global Temperatures'.format(self.date.strftime('%d %b %Y'))
 
         result  = {}
+        result['ax']            = ax
         result['cbar_pcoll'] = cbar_pcoll
-        result['cbar_label'] = cbar_label
-        result['title']      = title
+        result['cbar_label']    = '4.3 micron Temperature'
+        result['title']         = title
         return result
 
 if __name__ == "__main__":
     output_dir = os.path.join('output','AIRS3D')
-    shutil.rmtree(output_dir)
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -115,4 +145,4 @@ if __name__ == "__main__":
         png_name    = 'AIRS3DWorld_{!s}.png'.format(date.strftime('%Y%m%d'))
         png_fpath   = os.path.join(output_dir,png_name)
         a3dw.plot_figure(png_fpath=png_fpath)
-
+        print(png_fpath)
