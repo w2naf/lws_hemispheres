@@ -151,9 +151,10 @@ class Merra2AirsMaps(object):
 
         fig     = plt.figure(figsize=figsize)
 #        ax      = fig.add_subplot(1,1,1, projection=ccrs.Orthographic(270,90))
-        ax      = fig.add_subplot(1,1,1, projection=ccrs.Orthographic(0,90))
-
-        result  = self.plot_ax(ax,date=date,**kwargs)
+        ax          = fig.add_subplot(1,1,1, projection=ccrs.Orthographic(0,90))
+        result      = self.plot_ax(ax,date=date,**kwargs)
+        cbar        = fig.colorbar(result['cbar_pcoll'],aspect=15,shrink=0.8)
+        cbar.set_label(result['cbar_label'],fontdict={'weight':'bold','size':20})
 
         date_str    = date_0.strftime('%Y %b %d')
         ax.set_title(date_str)
@@ -180,17 +181,15 @@ class Merra2AirsMaps(object):
         zz[zz < 0] = 0.
 
         cyc_zz, cyc_lons = add_cyclic_point(zz,coord=airs_lons)
-        mpbl    = ax.contourf(cyc_lons,airs_lats,cyc_zz,transform=ccrs.PlateCarree(),
+        cbar_pcoll  = ax.contourf(cyc_lons,airs_lats,cyc_zz,transform=ccrs.PlateCarree(),
                 cmap=cmap,levels=np.arange(vmin,vmax+0.005,0.005),extend='max')
-        cbar    = fig.colorbar(mpbl,aspect=15,shrink=0.8)
-        cbar.set_label('AIRS GW Variance [K^2]',fontdict={'weight':'bold','size':20})
+        cbar_label  = 'AIRS GW Variance [K^2]'
 
         merra2_lons             = ds['MERRA2_LONS']
         merra2_lats             = ds['MERRA2_LATS']
         merra2_streamfunction   = ds['MERRA2_STREAMFUNCTION'].values[date_inx,:,:]
         merra2_windspeed        = ds['MERRA2_WINDSPEED'].values[date_inx,:,:]
         merra2_vortex           = ds['MERRA2_VORTEX'].values[date_inx,:,:]
-
 
         ax.contour(merra2_lons,merra2_lats,merra2_streamfunction,colors='white',transform=ccrs.PlateCarree())
 
@@ -203,7 +202,8 @@ class Merra2AirsMaps(object):
         ax.gridlines()
 
         result  = {}
-#        result['cbar_pcoll']    = cbar_pcoll
+        result['cbar_pcoll']    = cbar_pcoll
+        result['cbar_label']    = cbar_label
         return result
 
 if __name__ == '__main__':

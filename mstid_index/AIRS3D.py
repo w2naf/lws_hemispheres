@@ -83,7 +83,7 @@ class AIRS3DWorld(object):
         fig.savefig(png_fpath,bbox_inches='tight')
         plt.close(fig)
     
-    def plot_ax(self,fig=None,ax=None,projection=None,
+    def plot_ax(self,fig=None,ax=None,
                 xlim=(-180,180), ylim=(0,90),
                 vmin=-0.5, vmax=0.5,
                 cmap='viridis',ylabel_fontdict={},**kwargs):
@@ -91,18 +91,15 @@ class AIRS3DWorld(object):
         if fig is None:
             fig = plt.gcf()
 
-        if projection is None:
-            projection = ccrs.PlateCarree()
-
         if ax is None:
-            ax      = fig.add_subplot(1,1,1, projection=projection)
+            ax      = fig.add_subplot(1,1,1, projection=ccrs.PlateCarree())
             ax.set_aspect('auto')
 
         xx = self.lons
         yy = self.lats
         zz = self.Tpert
 
-        cbar_pcoll = ax.pcolormesh(xx,yy,zz,vmin=vmin,vmax=vmax,**kwargs) 
+        cbar_pcoll = ax.pcolormesh(xx,yy,zz,vmin=vmin,vmax=vmax,transform=ccrs.PlateCarree(),**kwargs) 
 
         ax.coastlines()
 #        ax.add_feature(cfeature.LAND, color='lightgrey')
@@ -186,8 +183,6 @@ class AIRS3DLatProfile(object):
         zz = self.Tpert
 
         cbar_pcoll = ax.pcolormesh(xx,yy,zz.T,vmin=vmin,vmax=vmax,**kwargs) 
-
-        print(min(xx),max(xx))
 
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
