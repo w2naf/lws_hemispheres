@@ -61,7 +61,7 @@ prmd['scale_1']         =  0.025
 prmd['cmap']            = mpl.cm.jet
 prmd['cbar_label']      = 'MSTID Index'
 prmd['cbar_tick_fmt']   = '%0.3f'
-prmd['title']           = 'SuperDARN MSTID Index'
+prmd['title']           = 'North American SuperDARN MSTID Index (~40\N{DEGREE SIGN}-60\N{DEGREE SIGN} Latititude)'
 
 prmd = prm_dct['meanSubIntSpect_by_rtiCnt_reducedIndex'] = {}
 prmd['title']           = 'Reduced SuperDARN MSTID Index'
@@ -857,6 +857,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
             result  = dTEC.plot_ax(ax,plot_cbar=False,ylabel_fontdict=ylabel_fontdict,**prmd)
 
             ax.set_xlim(sDate,eDate)
+            ax.set_ylim(40,50)
 
             if xlabels is False:
                 ax.set_xlabel('')
@@ -881,7 +882,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
             ax_info['ax']           = ax
         elif plotType == 'HIAMCM':
             hiamcm  = HIAMCM.HIAMCM()
-            result  = hiamcm.plot_ax(ax,prm='ww',lats=(40.,65.),
+            result  = hiamcm.plot_ax(ax,prm='ww',lats=(40.,60.),
                                      plot_cbar=False,ylabel_fontdict=ylabel_fontdict,**prmd)
 
             ax.set_xlim(sDate,eDate)

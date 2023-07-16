@@ -43,7 +43,7 @@ class HIAMCM(object):
         fig.savefig(png_fpath,bbox_inches='tight')
         plt.close(fig)
     
-    def plot_ax(self,ax,prm='ww',lats=(40.,65.),
+    def plot_ax(self,ax,prm='ww',lats=(40.,60.),
                 cmap='jet',plot_cbar=True,ylabel_fontdict={},**kwargs):
 
         ds  = self.ds
