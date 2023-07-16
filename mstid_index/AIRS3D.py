@@ -123,6 +123,86 @@ class AIRS3DWorld(object):
         result['title']         = title
         return result
 
+class AIRS3DLatProfile(object):
+    def __init__(self,date,lat=55):
+        #data/AIRS3D/12_09_2018_data
+        #2018_12_10_AIRS_3D_alt_data_at_55_deg_lat_alt.nc
+        #2018_12_10_AIRS_3D_alt_data_at_55_deg_lat_long.nc
+        #2018_12_10_AIRS_3D_alt_data_at_55_deg_lat_temp_pert.nc
+        data_dir        = os.path.join(AIRS3D_base_dir,date.strftime('%m_%d_%Y_data'))
+
+        # Sophie seems to have given me the map data for December 9, 2018, but the profile
+        # data from December 10, 2018. Need to double-check with her on this, but this if
+        # statement is a workaround for now. All of the other dates seem fine.
+        if date == datetime.datetime(2018,12,9):
+            date = datetime.datetime(2018,12,10)
+
+        date_str        = date.strftime('%Y_%m_%d')
+        alt_nc          = '{!s}_AIRS_3D_alt_data_at_{:0.0f}_deg_lat_alt.nc'.format(date_str,lat)
+        lon_nc          = '{!s}_AIRS_3D_alt_data_at_{:0.0f}_deg_lat_long.nc'.format(date_str,lat)
+        Tpert_nc        = '{!s}_AIRS_3D_alt_data_at_{:0.0f}_deg_lat_temp_pert.nc'.format(date_str,lat)
+
+        alt_nc_path     = os.path.join(data_dir,alt_nc)
+        lon_nc_path     = os.path.join(data_dir,lon_nc)
+        Tpert_nc_path   = os.path.join(data_dir,Tpert_nc)
+
+        paths   = {}
+        paths['alt_nc_path']    = alt_nc_path
+        paths['lon_nc_path']    = lon_nc_path
+        paths['Tpert_nc_path']  = Tpert_nc_path
+        self.paths      = paths
+
+        self.date       = date
+        self.lat        = lat
+        self.alts       = xr.load_dataset(alt_nc_path)['alt'].values
+        self.lons       = xr.load_dataset(lon_nc_path)['lon'].values
+        self.Tpert      = xr.load_dataset(Tpert_nc_path)['temp_pert'].values
+
+    def plot_figure(self,png_fpath='output.png',figsize=(12,4.75),**kwargs):
+        fig     = plt.figure(figsize=figsize)
+
+        ax      = fig.add_subplot(111)
+        result  = self.plot_ax(ax,**kwargs)
+
+        ax.set_title(result['title'])
+
+        cbar_pcoll = result.get('cbar_pcoll')
+        if cbar_pcoll is not None:
+            fig.colorbar(cbar_pcoll,label=result['cbar_label'])
+
+        fig.tight_layout()
+        fig.savefig(png_fpath,bbox_inches='tight')
+        plt.close(fig)
+    
+    def plot_ax(self,ax,
+                xlim=(-85,-40), ylim=(25,55),
+                vmin=-3, vmax=3,
+                cmap='viridis',ylabel_fontdict={},**kwargs):
+
+        fig = ax.get_figure()
+
+        xx = self.lons
+        yy = self.alts
+        zz = self.Tpert
+
+        cbar_pcoll = ax.pcolormesh(xx,yy,zz.T,vmin=vmin,vmax=vmax,**kwargs) 
+
+        print(min(xx),max(xx))
+
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
+
+        ax.set_xlabel('Longitude [deg]')
+        ax.set_ylabel('Altitude [km]')
+
+        title = 'AIRS T\' on {!s} at {:0.0f}\N{DEGREE SIGN} Latitude'.format(self.date.strftime('%d %b %Y'),self.lat)
+
+        result  = {}
+        result['ax']            = ax
+        result['cbar_pcoll']    = cbar_pcoll
+        result['cbar_label']    = "T' [K]"
+        result['title']         = title
+        return result
 if __name__ == "__main__":
     output_dir = os.path.join('output','AIRS3D')
     if os.path.exists(output_dir):
@@ -137,12 +217,14 @@ if __name__ == "__main__":
     dates.append(datetime.datetime(2019,2,1))
 
     for date in dates:
-        #2018_12_10_AIRS_3D_alt_data_at_55_deg_lat_alt.nc
-        #2018_12_10_AIRS_3D_alt_data_at_55_deg_lat_long.nc
-        #2018_12_10_AIRS_3D_alt_data_at_55_deg_lat_temp_pert.nc
         a3dw = AIRS3DWorld(date)
-
         png_name    = 'AIRS3DWorld_{!s}.png'.format(date.strftime('%Y%m%d'))
         png_fpath   = os.path.join(output_dir,png_name)
         a3dw.plot_figure(png_fpath=png_fpath)
+
+        a3dlp = AIRS3DLatProfile(date)
+        png_name    = 'AIRS3DLatProfile_{!s}.png'.format(date.strftime('%Y%m%d'))
+        png_fpath   = os.path.join(output_dir,png_name)
+        a3dlp.plot_figure(png_fpath=png_fpath)
+
         print(png_fpath)
