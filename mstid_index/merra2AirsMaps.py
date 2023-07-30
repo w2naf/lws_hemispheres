@@ -163,7 +163,8 @@ class Merra2AirsMaps(object):
         fig.savefig(png_fpath,bbox_inches='tight')
         plt.close(fig)
     
-    def plot_ax(self,ax,date=None,vmin=0.,vmax=0.8,cmap='jet',**kwargs):
+    def plot_ax(self,ax,date=None,vmin=0.,vmax=0.8,cmap='IDL',
+            gridlines=True,coastlines=True,**kwargs):
         date_0, date_inx = self._date2inx(date)
         ds      = self.ds
 
@@ -174,7 +175,8 @@ class Merra2AirsMaps(object):
         airs_lats       = ds['AIRS_LATS']
         airs_gw_var     = ds['AIRS_GW_VARIANCE'].values[date_inx,:,:]
         
-        cmap    = rainbowCmap()
+        if cmap == 'IDL':
+            cmap    = rainbowCmap()
         zz      = airs_gw_var.copy()
         tf      = ~np.isfinite(airs_gw_var)
         zz[tf]  = 0.
@@ -200,8 +202,10 @@ class Merra2AirsMaps(object):
         cyc_zz, cyc_lons = add_cyclic_point(merra2_windspeed,coord=merra2_lons)
         ax.contour(cyc_lons,merra2_lats,cyc_zz,levels=[50,70,90],colors=['yellow','orange','red'],transform=ccrs.PlateCarree())
         
-        ax.coastlines(zorder=100,color='0.45')
-        ax.gridlines(draw_labels=True)
+        if coastlines is True:
+            ax.coastlines(zorder=100,color='0.45')
+        if gridlines is True:
+            ax.gridlines(draw_labels=True)
 #        ax.gridlines(lw=2, ec='black', draw_labels=True) # Show the geographic grid.
 
 
