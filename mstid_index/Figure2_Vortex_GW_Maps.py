@@ -77,7 +77,7 @@ if __name__ == "__main__":
         bottom  = 1. - np.sum(row_heights[:row_inx+1])
         height  = row_heights[row_inx] - row_pad
         ax      = fig.add_axes([left,bottom,width,height],projection=ccrs.Orthographic(0,90))
-        result  = mca.plot_ax(ax,date,vmin=0.,vmax=0.8)
+        result  = mca.plot_ax(ax,date,vmin=0.,vmax=0.8,cmap='RdPu')
         title   = date.strftime('%d %b %Y')
         ax.set_title(title,pad=18,fontdict={'weight':'bold','size':36})
 
