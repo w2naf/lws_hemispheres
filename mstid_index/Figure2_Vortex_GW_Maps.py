@@ -47,13 +47,13 @@ if __name__ == "__main__":
     dates = []
     dates.append(datetime.datetime(2018,12,9))
     dates.append(datetime.datetime(2019,1,5))
-    dates.append(datetime.datetime(2019,1,16))
+#    dates.append(datetime.datetime(2019,1,16))
     dates.append(datetime.datetime(2019,2,1))
 
     png_name    = 'Fig2_Vortex_GW_Maps.png'
     png_fpath   = os.path.join(output_dir,png_name)
 
-    figsize = (30,20)
+    figsize = (22.5,20)
     fig     = plt.figure(figsize=figsize)
 
     ncols           = len(dates)
