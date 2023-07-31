@@ -58,20 +58,8 @@ def fan_plot(dataObject,
     plotTerminator          = True,
     parallels_ticks         = None,
     meridians_ticks         = None,
-    zoom                    = 1.,
-    lat_shift               = 0.,
-    lon_shift               = 0.,
     cmap                    = None,
     plot_cbar               = True,
-    cbar_ticks              = None,
-    cbar_shrink             = 1.0,
-    cbar_fraction           = 0.15,
-    cbar_gstext_offset      = -0.075,
-    cbar_gstext_fontsize    = None,
-    model_text_size         = 'small',
-    draw_coastlines         = True,
-    plot_title              = True,
-    title                   = None,
     projection              = ccrs.PlateCarree(),
     plot_fov                = True,
     **kwArgs):
@@ -99,10 +87,10 @@ def fan_plot(dataObject,
     paramDict = pyDARNmusic.utils.radUtils.getParamDict(metadata['param'])
     if 'label' in paramDict:
         param     = paramDict['param']
-        cbarLabel = paramDict['label']
+        cbarLabel = paramDict['label'] + ' [{!s}]'.format(paramDict['unit'])
     else:
         param = 'width' # Set param = 'width' at this point just to not screw up the colorbar function.
-        cbarLabel = metadata['param']
+        cbarLabel = metadata['param'] + ' [{!s}]'.format(paramDict['unit'])
 
     # Set colorbar scale if not explicitly defined.
     if(scale is None):
@@ -176,7 +164,6 @@ def fan_plot(dataObject,
     bounds  = np.linspace(scale[0],scale[1],256)
     norm    = mpl.colors.BoundaryNorm(bounds,cmap.N)
 
-#        pcoll = mpl.collections.PolyCollection(np.array(verts),edgecolors='face',linewidths=0,closed=False,cmap=cmap,norm=norm,zorder=99)
     pcoll = mpl.collections.PolyCollection(np.array(verts),edgecolors='face',closed=False,cmap=cmap,norm=norm,zorder=99)
     pcoll.set_array(np.array(scan))
     axis.add_collection(pcoll,autolim=False)
@@ -411,16 +398,18 @@ def plot_map(radars_dct,time,dataSet='active',output_dir='output',
         if dataObj is None:
             continue
 
+        scale   = (0,30)
         result = fan_plot(dataObj,dataSet=dataSet,
-                axis=ax,projection=projection,time=time,scale=(0,30))
+                axis=ax,projection=projection,time=time,scale=scale)
 
     cbar_rect   = [ 0.925, 0.20, 0.02, 0.590]
-    cax  = fig.add_axes(cbar_rect)
+    cax         = fig.add_axes(cbar_rect)
     cax.grid(False)
-    cbar = fig.colorbar(result['pcoll'],cax=cax)
+    cbar_ticks  = np.arange(scale[0],scale[1]+5,5)
+    cbar        = fig.colorbar(result['pcoll'],cax=cax,ticks=cbar_ticks,extend='max')
     cbar.set_label('SuperDARN ' + result['cbarLabel'])
-    labels = cbar.ax.get_yticklabels()
-    labels[-1].set_visible(False)
+#    labels = cbar.ax.get_yticklabels()
+#    labels[-1].set_visible(False)
 
     if 'gscat' in result['metadata']:
         if result['metadata']['gscat'] == 1:
@@ -439,17 +428,21 @@ def plot_map(radars_dct,time,dataSet='active',output_dir='output',
     if mca is not None:
         date = datetime.datetime(time.year,time.month,time.day)
         if date in mca.get_dates():
-            mca_result = mca.plot_ax(ax=ax,date=date,vmin=0.,vmax=0.8,cmap='RdPu',gridlines=False,coastlines=False)
-            cbar_rect   = [ 1.02, 0.20, 0.02, 0.590]
+            AIRS_GWv_vmin   = 0.
+            AIRS_GWv_vmax   = 0.8
+            mca_result      = mca.plot_ax(ax=ax,date=date,vmin=AIRS_GWv_vmin,vmax=AIRS_GWv_vmax,cmap='RdPu',gridlines=False,coastlines=False)
+            cbar_rect       = [ 1.02, 0.20, 0.02, 0.590]
             cax  = fig.add_axes(cbar_rect)
             cax.grid(False)
-            mca_cbar = fig.colorbar(mca_result['cbar_pcoll'],cax=cax)
+            AIRS_cbar_ticks = np.arange(AIRS_GWv_vmin,AIRS_GWv_vmax+0.1,0.1)
+            mca_cbar = fig.colorbar(mca_result['cbar_pcoll'],cax=cax,ticks=AIRS_cbar_ticks)
             mca_cbar.set_label(mca_result['cbar_label'])
 
 #            ax_0_pos    = list(ax_0.get_position().bounds)
 #            ax_0.set_position(ax_0_pos)
 
-    ax.set_extent((-140,-45,20,70))
+#    ax.set_extent((-140,-45,20,70))
+    ax.set_extent((-140,-45,25,75))
 
     fontdict    = {'size':'x-large','weight':'bold'}
     title       = time.strftime('%d %b %Y %H%M UTC')
