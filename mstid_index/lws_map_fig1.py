@@ -8,6 +8,7 @@ import scipy as sp
 import pandas as pd
 
 import matplotlib as mpl
+from matplotlib import patheffects
 from matplotlib import pyplot as plt
 
 import cartopy.crs as ccrs
@@ -374,7 +375,6 @@ def plot_radar_fov(radar,ax,time,fovModel='GS',fov_ranges=(0,50),fov_beams=None,
 
     # Radar Location
     ax.scatter(radar_lon,radar_lat,marker='o',color='k',s=40,transform=ccrs.PlateCarree())
-    fontdict = {'size':14,'weight':'bold'}
     if radar == 'cvw' or radar == 'fhw':
         ha      = 'right'
         text    = radar.upper() + ' '
@@ -382,8 +382,11 @@ def plot_radar_fov(radar,ax,time,fovModel='GS',fov_ranges=(0,50),fov_beams=None,
         ha      = 'left'
         text    = ' ' + radar.upper()
 
+    fontdict = {'color':'black','size':16,'weight':'bold'}
     ax.text(radar_lon,radar_lat,text,ha=ha,
-            fontdict=fontdict,transform=ccrs.PlateCarree(),zorder=1000)
+            fontdict=fontdict,transform=ccrs.PlateCarree(),
+            path_effects=[mpl.patheffects.withStroke(linewidth=2, foreground="white")],
+            zorder=1000)
 
 def plot_map(radars_dct,time,dataSet='active',output_dir='output',
         fovModel='GS',**kwargs):
@@ -436,7 +439,7 @@ def plot_map(radars_dct,time,dataSet='active',output_dir='output',
     if mca is not None:
         date = datetime.datetime(time.year,time.month,time.day)
         if date in mca.get_dates():
-            mca_result = mca.plot_ax(ax=ax,date=date,cmap='RdPu',gridlines=False,coastlines=False)
+            mca_result = mca.plot_ax(ax=ax,date=date,vmin=0.,vmax=0.8,cmap='RdPu',gridlines=False,coastlines=False)
             cbar_rect   = [ 1.02, 0.20, 0.02, 0.590]
             cax  = fig.add_axes(cbar_rect)
             cax.grid(False)
@@ -544,6 +547,8 @@ if __name__ == '__main__':
     plot_rtp(**rd)
     times = time_vector(**rd)
     for time in times:
+        if time != datetime.datetime(2018,12,9,18,30):
+            continue
         rd['time'] = time
         plot_map(**rd)
     import ipdb; ipdb.set_trace()

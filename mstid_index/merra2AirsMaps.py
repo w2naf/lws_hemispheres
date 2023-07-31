@@ -223,16 +223,16 @@ class Merra2AirsMaps(object):
 
         if cmap == 'RdPu': # Red-Purple AIRS GW Variance Colormap
             # MERRA2 Streamfunction
-            m2sf['colors']      = 'black'
+            m2sf['colors']      = '0.5'
 
             # MERRA2 Vortex
             m2vx['colors']      = 'black'
-            m2vx['linewidths']  = 2
+            m2vx['linewidths']  = 3
 
             # MERRA2 Wind Speed
             m2ws['levels']      = [50,70,90]
             m2ws['colors']      = ['yellow','orange','red']
-            m2ws['linewidths']  = 8*np.arange(len(m2ws['levels']))
+            m2ws['linewidths']  = 6*np.arange(len(m2ws['levels']))
 
             # Coastlines
             cl_kw['zorder'] = 100
