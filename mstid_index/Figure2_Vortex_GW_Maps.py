@@ -77,7 +77,9 @@ if __name__ == "__main__":
         bottom  = 1. - np.sum(row_heights[:row_inx+1])
         height  = row_heights[row_inx] - row_pad
         ax      = fig.add_axes([left,bottom,width,height],projection=ccrs.Orthographic(0,90))
-        result  = mca.plot_ax(ax,date,vmin=0.,vmax=0.8,cmap='RdPu')
+        AIRS_GWv_vmin = 0.
+        AIRS_GWv_vmax = 0.8
+        result  = mca.plot_ax(ax,date,vmin=AIRS_GWv_vmin,vmax=AIRS_GWv_vmax,cmap='RdPu')
         title   = date.strftime('%d %b %Y')
         ax.set_title(title,pad=18,fontdict={'weight':'bold','size':36})
 
@@ -86,7 +88,8 @@ if __name__ == "__main__":
             cbar_height = height
 
             cax     = fig.add_axes([cbar_left,cbar_bottom,cbar_width,cbar_height])
-            cbar    = fig.colorbar(result['cbar_pcoll'],cax=cax)
+            AIRS_cbar_ticks = np.arange(AIRS_GWv_vmin,AIRS_GWv_vmax+0.1,0.1)
+            cbar    = fig.colorbar(result['cbar_pcoll'],cax=cax,ticks=AIRS_cbar_ticks)
             cbar.set_label(result['cbar_label'])
 
         profile_lat     = 55
