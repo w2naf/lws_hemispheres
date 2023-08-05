@@ -107,18 +107,30 @@ for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
         if lst not in lists:
             continue
 
-        dates           = []
-        data            = {x:[] for x in keys}
-        data['reject_code'] = []
-
-        crsr = db.get_collection(lst).find()
+        data    = []
+        crsr    = db.get_collection(lst).find()
         for item in crsr:
-            date        = item['sDatetime']
-            dates.append(date)
+            dct = {} # Temporary dictionary to hold data from each item.
+            dct['date'] = item['sDatetime']
 
             for key in keys:
-                import ipdb; ipdb.set_trace()
-                data[key].append(item.get(key))
+                dct[key] = item.get(key)
+
+            # Extract MSTID Parameters from MUSIC Algorithm
+            sigs = item.get('signals')
+            if sigs is not None:
+                for sig in sigs:
+                    sigOrder = sig.get('order')
+
+                    if sigOrder > 2:
+                        # Only keep the top 2 strongest MSTIDs.
+                        continue
+
+                    for sig_key,sig_val in sig.items():
+                        if sig_key in ['order','serialNr']:
+                            continue
+                        new_sigKey = 'sig_{:03d}_{!s}'.format(sigOrder,sig_key)
+                        dct[new_sigKey] = sig_val
 
             # Possible Reject Messages:
             # ['No RTI Fraction', 'No Data', 'High Terminator Fraction', 'Failed Quality Check', 'No Terminator Fraction', 'Low RTI Fraction']
@@ -133,15 +145,19 @@ for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
                 reject_code = 3 # Poor data quality
             else:
                 reject_code = 4 # Other, including No RTI Fraction and No Terminator Fraction.
-            data['reject_code'].append(reject_code)
+            dct['reject_code']  = reject_code
+            
+            # Store completed record to lists.
+            data.append(dct)
 
 #            txt = '{!s}: {!s} {!s} {!s}\n'.format(reject_code, radar, date, reject)
 #            print(txt)
 #            with open('reject_codes.txt','a') as fl:
 #                fl.write(txt)
 
-        
-        df      = pd.DataFrame(data,index=dates)
+        df      = pd.DataFrame(data)
+        df  = df.set_index('date')
+
         attrs   = {'season':season}
         for attr_key in attr_keys:
             attrs[attr_key] = item.get(attr_key)
