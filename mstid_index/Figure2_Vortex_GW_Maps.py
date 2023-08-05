@@ -45,7 +45,8 @@ if __name__ == "__main__":
     mca = merra2AirsMaps.Merra2AirsMaps()
 
     dates = []
-    dates.append(datetime.datetime(2018,12,9))
+#    dates.append(datetime.datetime(2018,12,9))
+    dates.append(datetime.datetime(2018,12,10))
     dates.append(datetime.datetime(2019,1,5))
 #    dates.append(datetime.datetime(2019,1,16))
     dates.append(datetime.datetime(2019,2,1))
@@ -88,12 +89,23 @@ if __name__ == "__main__":
             cbar_height = height
 
             cax     = fig.add_axes([cbar_left,cbar_bottom,cbar_width,cbar_height])
+            cax.grid(False)
             AIRS_cbar_ticks = np.arange(AIRS_GWv_vmin,AIRS_GWv_vmax+0.1,0.1)
             cbar    = fig.colorbar(result['cbar_pcoll'],cax=cax,ticks=AIRS_cbar_ticks)
             cbar.set_label(result['cbar_label'])
 
         profile_lat     = 55
-        profile_lons    = [-85,-40]
+
+        print(' --> Loading AIRS3D Data')
+        a3dw    = AIRS3D.AIRS3DWorld(date)
+        a3dlp   = AIRS3D.AIRS3DLatProfile(date,lat=profile_lat)
+
+        # Determine Longitude Boundaries for region where there is valid data.
+        tf              = np.isfinite(a3dlp.Tpert)
+        LONS            = a3dlp.lons.copy()
+        LONS.shape      = (len(LONS),1)
+        LONS            = LONS*np.ones_like(tf,dtype=float)
+        profile_lons    = [np.min(LONS[tf]),np.max(LONS[tf])]
 
         print(' --> Plotting AIRS Global Temperature Perturbation Map')
         row_inx += 1
@@ -101,7 +113,6 @@ if __name__ == "__main__":
         height  = row_heights[row_inx] - row_pad
         ax      = fig.add_axes([left,bottom,width,height],projection=ccrs.PlateCarree())
         ax.set_aspect('auto')
-        a3dw    = AIRS3D.AIRS3DWorld(date)
         result  = a3dw.plot_ax(ax=ax,vmin=-0.5,vmax=0.5)
         ax.set_title(result['title'])
         ax.axhline(profile_lat,color='red')
@@ -111,6 +122,7 @@ if __name__ == "__main__":
             cbar_height = height
 
             cax     = fig.add_axes([cbar_left,cbar_bottom,cbar_width,cbar_height])
+            cax.grid(False)
             cbar    = fig.colorbar(result['cbar_pcoll'],cax=cax,extend='both')
             cbar.set_label(result['cbar_label'])
 
@@ -120,7 +132,6 @@ if __name__ == "__main__":
         bottom  = 1. - np.sum(row_heights[:row_inx+1])
         height  = row_heights[row_inx] - row_pad
         ax      = fig.add_axes([left,bottom,width,height])
-        a3dlp   = AIRS3D.AIRS3DLatProfile(date,lat=profile_lat)
         result  = a3dlp.plot_ax(ax=ax,vmin=-3,vmax=3,xlim=profile_lons)
         ax.set_title(result['title'])
         if col_inx == nrows-1:
@@ -128,6 +139,7 @@ if __name__ == "__main__":
             cbar_height = height
 
             cax     = fig.add_axes([cbar_left,cbar_bottom,cbar_width,cbar_height])
+            cax.grid(False)
             cbar    = fig.colorbar(result['cbar_pcoll'],cax=cax,extend='both')
             cbar.set_label(result['cbar_label'])
 
