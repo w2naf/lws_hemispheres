@@ -19,8 +19,32 @@ mpl.rcParams['grid.linestyle'] = ':'
 mpl.rcParams['figure.figsize'] = np.array([15, 8])
 mpl.rcParams['axes.xmargin']   = 0
 
+def load_omni():
+    data_dir    = os.path.join('data','cdaweb_omni')
+    fpath       = os.path.join(data_dir,'20230530_OMNI2_H0_MRG1HR_99633.csv')
+
+    df_0        = pd.read_csv(fpath,parse_dates=[0],comment='#')
+    dt_key      = 'TIME_AT_CENTER_OF_HOUR_yyyy-mm-ddThh:mm:ss.sssZ'
+    df_0.index  = df_0[dt_key].apply(lambda x: x.replace(tzinfo=None)).values
+    del df_0[dt_key]
+
+    params  = ['DAILY_SUNSPOT_NO_', 'DAILY_F10.7_', '1-H_DST_nT', '1-H_AE_nT'] 
+
+    # Set bad values to NaN.
+    bad = {}
+    bad['DAILY_F10.7_'] = 999.9
+    bad['1-H_AE_nT']    = 9999
+    for col,val in bad.items():
+        tf = df_0[col] == val
+        df_0.loc[tf,col] = np.nan
+
+    return df_0
+
+
 class LSTID_HAM(object):
     def __init__(self,data_in='data/lstid_ham/WinterHam_2018_19.csv'):
+        self.omni = load_omni()
+
         self.load_data(data_in)
     
     def load_data(self,data_in):
@@ -45,7 +69,8 @@ class LSTID_HAM(object):
         fig.savefig(png_fpath,bbox_inches='tight')
         plt.close(fig)
     
-    def plot_ax(self,ax,ylabel_fontdict={},legend_fontsize='large',**kwargs):
+    def plot_ax(self,ax,xlim=None,ylabel_fontdict={},legend_fontsize='large',
+            plot_ae=False,plot_dst=False,**kwargs):
         fig     = ax.get_figure()
         
         df      = self.df
@@ -53,6 +78,10 @@ class LSTID_HAM(object):
         hndls   = []
 
         xx      = df['date']
+
+        if xlim is None:
+            xlim = (min(xx), max(xx))
+
         yy      = df['tid_hours']
         label  = 'TID Occurrence [hr]'
         hndl    = ax.bar(xx,yy,width=1,label=label)
@@ -67,8 +96,33 @@ class LSTID_HAM(object):
         hndls.append(hndl)
         ax.legend(handles=hndls,loc='upper right',fontsize=legend_fontsize,ncols=2)
 
+        if plot_ae:
+            omni = self.omni
+            tf = np.logical_and(omni.index >= xlim[0], omni.index < xlim[1])
+            omni = omni[tf].copy()
+
+            ax2 = ax.twinx()
+            ax2_xx = omni.index
+            ax2_yy = omni['1-H_AE_nT']
+            ax2.plot(ax2_xx,ax2_yy,color='k')
+            ax2.set_ylabel('AE [nT]')
+
+        if plot_dst:
+            omni = self.omni
+            tf = np.logical_and(omni.index >= xlim[0], omni.index < xlim[1])
+            omni = omni[tf].copy()
+
+            ax2 = ax.twinx()
+            ax2_xx = omni.index
+            ax2_yy = omni['1-H_DST_nT']
+            ax2.plot(ax2_xx,ax2_yy,color='k')
+            ax2.axhline(0,color='k')
+            ax2.set_ylabel('DST [nT]')
+
         title   = 'Amateur Radio 14 MHz LSTID Observations'
         ax.set_title(title)
+
+        ax.set_xlim(xlim)
 
         result  = {}
         result['title'] = title

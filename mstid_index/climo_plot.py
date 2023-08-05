@@ -3,8 +3,11 @@
 import os
 import shutil
 import glob
+import string
+letters = string.ascii_lowercase
 
 import datetime
+
 
 import tqdm
 
@@ -20,6 +23,7 @@ from matplotlib.collections import PolyCollection
 import merra2CipsAirsTimeSeries
 import gnss_dtec_gw
 import lstid_ham
+import HIAMCM
 
 pd.set_option('display.max_rows', None)
 
@@ -57,7 +61,7 @@ prmd['scale_1']         =  0.025
 prmd['cmap']            = mpl.cm.jet
 prmd['cbar_label']      = 'MSTID Index'
 prmd['cbar_tick_fmt']   = '%0.3f'
-prmd['title']           = 'SuperDARN MSTID Index'
+prmd['title']           = 'North American SuperDARN MSTID Index (~40\N{DEGREE SIGN}-60\N{DEGREE SIGN} Latititude)'
 
 prmd = prm_dct['meanSubIntSpect_by_rtiCnt_reducedIndex'] = {}
 prmd['title']           = 'Reduced SuperDARN MSTID Index'
@@ -254,8 +258,8 @@ def reject_legend(fig):
 
     axl.legend(handles=legend_elements, loc='center left', fontsize = 42)
 
-def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,
-        fontdict=None):
+def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,short_labels=False,
+        fontdict=None,plot_axvline=True):
     if fontdict is None:
         fontdict = xtick_fontdict
     xticks      = []
@@ -286,8 +290,9 @@ def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,
             else:
                 xpos    = curr_date
 
-            axvline = ax.axvline(xpos,-0.015,color='k')
-            axvline.set_clip_on(False)
+            if plot_axvline:
+                axvline = ax.axvline(xpos,-0.015,color='k')
+                axvline.set_clip_on(False)
 
             if labels:
                 ypos    = -0.025
@@ -295,6 +300,13 @@ def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,
                 ax.text(xpos,ypos,txt,transform=ytransaxes,
                         ha='left', va='top',rotation=0,
                         fontdict=fontdict)
+            if short_labels:    
+                if curr_date.day == 1:
+                    ypos    = -0.025
+                    txt     = curr_date.strftime('%b %Y')
+                    ax.text(xpos,ypos,txt,transform=ytransaxes,
+                            ha='left', va='top',rotation=0,
+                            fontdict=fontdict)
         curr_date += datetime.timedelta(days=1)
 
     xmax    = (eDate - sDate).total_seconds() / (86400.)
@@ -763,7 +775,10 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         if param.endswith('_reducedIndex'):
             base_param      = param.rstrip('_reducedIndex')
             plotType        = 'reducedIndex'
-        elif param == 'merra2CipsAirsTimeSeries' or param == 'gnss_dtec_gw' or param == 'lstid_ham':
+        elif    (param == 'merra2CipsAirsTimeSeries' 
+              or param == 'gnss_dtec_gw' 
+              or param == 'lstid_ham'
+              or param == 'HIAMCM'):
             base_param      = param
             plotType        = param
         else:
@@ -775,7 +790,10 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         if plotType == 'reducedIndex':
             data_df = po.data[season]['reducedIndex']
             prmd    = prm_dct.get(param,{})
-        elif plotType == 'merra2CipsAirsTimeSeries' or plotType == 'gnss_dtec_gw' or plotType == 'lstid_ham':
+        elif  (plotType == 'merra2CipsAirsTimeSeries' 
+            or plotType == 'gnss_dtec_gw' 
+            or plotType == 'lstid_ham'
+            or plotType == 'HIAMCM'):
             data_df = None
             prmd    = prm_dct.get(param,{})
         else:
@@ -839,6 +857,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
             result  = dTEC.plot_ax(ax,plot_cbar=False,ylabel_fontdict=ylabel_fontdict,**prmd)
 
             ax.set_xlim(sDate,eDate)
+            ax.set_ylim(40,50)
 
             if xlabels is False:
                 ax.set_xlabel('')
@@ -856,8 +875,27 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
             if xlabels is False:
                 ax.set_xlabel('')
 
+            if xlabels is False:
+                ax.set_xlabel('')
+
             ax_info = {}
             ax_info['ax']           = ax
+        elif plotType == 'HIAMCM':
+            hiamcm  = HIAMCM.HIAMCM()
+            result  = hiamcm.plot_ax(ax,prm='ww',lats=(40.,60.),
+                                     plot_cbar=False,ylabel_fontdict=ylabel_fontdict,**prmd)
+
+            ax.set_xlim(sDate,eDate)
+
+            if xlabels is False:
+                ax.set_xlabel('')
+
+            ax_info = {}
+            ax_info['ax']           = ax
+            ax_info['cbar_pcoll']   = result['cbar_pcoll']
+            ax_info['cbar_label']   = result.get('cbar_label')
+
+            prmd['title'] = result.get('title')
         else: 
             if radars is None:
                 _radars = po.radars
@@ -866,6 +904,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
 
             ax_info = plot_mstid_values(data_df,ax,radars=_radars,param=param,xlabels=xlabels,
                     sDate=sDate,eDate=eDate)
+            ax_info['radar_ax']     = True
         ax_list.append(ax_info)
 
         ylim    = prmd.get('ylim')
@@ -876,7 +915,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         if ylabel is not None:
             ax.set_ylabel(ylabel,fontdict=ylabel_fontdict)
 
-        txt = prmd.get('title',param)
+        txt = '({!s}) '.format(letters[inx])+prmd.get('title',param)
         left_title_fontdict  = {'weight': 'bold', 'size': 24}
         ax.set_title('')
         ax.set_title(txt,fontdict=left_title_fontdict,loc='left')
@@ -885,6 +924,22 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         season_yr1 = season[9:13]
         txt = '{!s} - {!s} Northern Hemisphere Winter'.format(season_yr0,season_yr1)
         fig.text(0.5,1.01,txt,ha='center',fontdict=title_fontdict)
+
+    # Set X-Labels and X-Tick Labels
+    for inx,(param,ax_info) in enumerate(zip(params,ax_list)):
+        ax          = ax_info.get('ax')
+        ax.set_xlabel('')
+        radar_ax    = ax_info.get('radar_ax',False)
+
+        if inx != nrows-1:
+            fontdict = ylabel_fontdict.copy()
+            fontdict['weight']  = 'normal'
+            fontdict['size']    = 18
+        else:
+            fontdict = ylabel_fontdict.copy()
+
+        my_xticks(sDate,eDate,ax,radar_ax=radar_ax,fontdict=fontdict,
+                  labels=False,short_labels=True,plot_axvline=False)
 
     fig.tight_layout()
 
@@ -1064,10 +1119,11 @@ if __name__ == '__main__':
 
     ss = stack_sets['figure_3'] = []
     ss.append('merra2CipsAirsTimeSeries')
+    ss.append('HIAMCM')
     ss.append('gnss_dtec_gw')
-    ss.append('lstid_ham')
     ss.append('meanSubIntSpect_by_rtiCnt')
-    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
+    ss.append('lstid_ham')
+#    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
 
     if plot_stackplots:
         for stack_code,stack_params in stack_sets.items():
