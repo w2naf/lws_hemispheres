@@ -511,9 +511,13 @@ if __name__ == '__main__':
     rd['output_dir'] = 'output/fig1_map'
     prep_dir(rd['output_dir'],clear=True)
 
-    rd['sTime']         = datetime.datetime(2018,12,9,12)
-    rd['eTime']         = datetime.datetime(2018,12,10)
-    rd['time']          = datetime.datetime(2018,12,9,19,0)
+#    rd['sTime']         = datetime.datetime(2018,12,9,12)
+#    rd['eTime']         = datetime.datetime(2018,12,10)
+#    rd['time']          = datetime.datetime(2018,12,9,19,0)
+
+    rd['sTime']         = datetime.datetime(2018,12,10,12)
+    rd['eTime']         = datetime.datetime(2018,12,11)
+    rd['time']          = datetime.datetime(2018,12,10,19,0)
 
 #    rd['sTime']         = datetime.datetime(2019,1,9,12)
 #    rd['eTime']         = datetime.datetime(2019,1,10)
@@ -540,8 +544,8 @@ if __name__ == '__main__':
     plot_rtp(**rd)
     times = time_vector(**rd)
     for time in times:
-        if time != datetime.datetime(2018,12,9,18,30):
-            continue
+#        if time != datetime.datetime(2018,12,9,18,30):
+#            continue
         rd['time'] = time
         plot_map(**rd)
     import ipdb; ipdb.set_trace()

@@ -78,9 +78,13 @@ if __name__ == "__main__":
         bottom  = 1. - np.sum(row_heights[:row_inx+1])
         height  = row_heights[row_inx] - row_pad
         ax      = fig.add_axes([left,bottom,width,height],projection=ccrs.Orthographic(0,90))
-        AIRS_GWv_vmin = 0.
-        AIRS_GWv_vmax = 0.8
-        result  = mca.plot_ax(ax,date,vmin=AIRS_GWv_vmin,vmax=AIRS_GWv_vmax,cmap='RdPu')
+        AIRS_GWv_vmin       = 0.
+        AIRS_GWv_vmax       = 0.8
+        # Loosely dashed negative linestyle
+        # See https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html
+        merra2_vortex_kw    = {'linewidths':3,'negative_linestyles':(0, (1, 3))}
+        result  = mca.plot_ax(ax,date,vmin=AIRS_GWv_vmin,vmax=AIRS_GWv_vmax,cmap='RdPu',
+                merra2_vortex_kw=merra2_vortex_kw)
         title   = date.strftime('%d %b %Y')
         ax.set_title(title,pad=18,fontdict={'weight':'bold','size':36})
 
