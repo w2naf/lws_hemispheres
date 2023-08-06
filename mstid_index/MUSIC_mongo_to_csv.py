@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 import os
 import shutil
+import socket
+from pathlib import Path
 import tqdm
+
+import datetime
 
 import numpy as np
 import pandas as pd
@@ -10,6 +14,12 @@ import matplotlib as mpl
 import xarray as xr
 
 import pymongo
+
+script_run_time = datetime.datetime.now()
+
+# Set the maximum number of signals detected.
+# Set to None for all available signals.
+max_sigs = 2
 
 def generate_radar_dict():
     rad_list = []
@@ -38,7 +48,7 @@ def generate_radar_dict():
     return radar_dict
 
 db_name     = 'mstid_MUSIC'
-prefix      = 'music_guc'
+prefix      = 'guc'
 
 output_dir  = os.path.join('data','mongo_out',db_name,prefix)
 mongo_port  = 27017
@@ -103,12 +113,32 @@ seasons = list(set(seasons))
 for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
     for radar in tqdm.tqdm(radar_dict.keys(),desc='Radars',dynamic_ncols=True,position=1,leave=False):
         lst = '_'.join([prefix,radar,season])
-
         if lst not in lists:
+            tqdm.tqdm.write('NOT FOUND: {!s}'.format(lst))
             continue
 
+        tqdm.tqdm.write('EXPORTING: {!s}'.format(lst))
         data    = []
         crsr    = db.get_collection(lst).find()
+
+        # Check to see if the corresponding MUSIC list is available.
+        music_lst = 'music_'+lst
+        if music_lst in lists:
+            music_col = db.get_collection(music_lst)
+        else:
+            tqdm.tqdm.write('--> MUSIC Collection Not Found: {!s}'.format(music_lst))
+            music_lst = None
+
+        attrs   = {}
+        attrs['MongoDB_database']               = db_name
+        attrs['MongoDB_collection']             = lst
+        attrs['MongoDB_MUSICcollection']        = str(music_lst)
+        attrs['season']                         = season
+        attrs['Max Number of Signals Reported'] = max_sigs
+        attrs['MongoDB_to_CSV_Script']          = str(Path(__file__))
+        attrs['System Hostname']                = socket.gethostname()
+        attrs['Script Run Time']                = str(script_run_time)
+
         for item in crsr:
             dct = {} # Temporary dictionary to hold data from each item.
             dct['date'] = item['sDatetime']
@@ -117,20 +147,30 @@ for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
                 dct[key] = item.get(key)
 
             # Extract MSTID Parameters from MUSIC Algorithm
-            sigs = item.get('signals')
-            if sigs is not None:
-                for sig in sigs:
-                    sigOrder = sig.get('order')
+            # This will only work if the MUSIC algorithm has already been run and there is corresponding
+            # collection named 'music_guc_<RAD>_<SDATE>_<EDATE>'
+            if music_col is not None:
+                # Find item in music collection.
+                music_srch = {k: item[k] for k in ['date', 'sDatetime', 'fDatetime', 'radar']}
+                music_item = music_col.find_one(music_srch)
+                if music_item is not None:
 
-                    if sigOrder > 2:
-                        # Only keep the top 2 strongest MSTIDs.
-                        continue
+                    # Check to see if music_item has 'signals' key.
+                    sigs = music_item.get('signals')
+                    if sigs is not None:
+                        for sig in sigs:
+                            sigOrder = sig.get('order')
 
-                    for sig_key,sig_val in sig.items():
-                        if sig_key in ['order','serialNr']:
-                            continue
-                        new_sigKey = 'sig_{:03d}_{!s}'.format(sigOrder,sig_key)
-                        dct[new_sigKey] = sig_val
+                            if max_sigs is not None:
+                                if sigOrder > max_sigs:
+                                    # Only keep the top max_sigs strongest MSTIDs.
+                                    continue
+
+                            for sig_key,sig_val in sig.items():
+                                if sig_key in ['order','serialNr']:
+                                    continue
+                                new_sigKey = 'sig_{:03d}_{!s}'.format(sigOrder,sig_key)
+                                dct[new_sigKey] = sig_val
 
             # Possible Reject Messages:
             # ['No RTI Fraction', 'No Data', 'High Terminator Fraction', 'Failed Quality Check', 'No Terminator Fraction', 'Low RTI Fraction']
@@ -158,7 +198,6 @@ for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
         df      = pd.DataFrame(data)
         df  = df.set_index('date')
 
-        attrs   = {'season':season}
         for attr_key in attr_keys:
             attrs[attr_key] = item.get(attr_key)
 
@@ -232,6 +271,7 @@ for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
             hdr.append('#  vel: MSTID Phase Velocity [m/s]')
             hdr.append('#  max: Wavenumber Spectral Density Value')
             hdr.append('#  area: Number of pixels of Karr plot in detected region of this signal.')
+            hdr.append('#')
 
             fl.write('\n'.join(hdr))
             fl.write('\n')
@@ -240,11 +280,11 @@ for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
             fl.write(','.join(cols))
             fl.write('\n')
         df.to_csv(csv_path,mode='a',header=False)
+        tqdm.tqdm.write('--> WROTE: {!s}'.format(csv_path))
 
         dsr = df.to_xarray()
         dsr = dsr.assign_coords({'radar':radar})
         dsr.attrs = attrs
         nc_path = os.path.join(output_dir,'sdMSTIDindex_{!s}_{!s}.nc'.format(season,radar))
         dsr.to_netcdf(nc_path)
-
-import ipdb; ipdb.set_trace()
+        tqdm.tqdm.write('--> WROTE: {!s}'.format(nc_path))
