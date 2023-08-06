@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""
+This script will export the results from a MongoDB created with the DARNTids libary
+to CSV files that can be used for analysis.
+
+Nathaniel A. Frissell
+23 August 2023
+"""
 import os
 import shutil
 import socket
