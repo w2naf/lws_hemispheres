@@ -362,8 +362,16 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
         rasterized=False,radars=None,param=None,**kwargs):
 
     prmd        = prm_dct.get(param,{})
-    scale_0     = prmd.get('scale_0',-0.025)
-    scale_1     = prmd.get('scale_1', 0.025)
+
+#    scale_0     = prmd.get('scale_0',-0.025)
+#    scale_1     = prmd.get('scale_1', 0.025)
+
+    scale_0     = prmd.get('scale_0')
+    scale_1     = prmd.get('scale_1')
+    if scale_0 is None:
+        scale_0 = np.nanmin(data_df.values)
+    if scale_1 is None:
+        scale_1 = np.nanmax(data_df.values)
     scale       = (scale_0, scale_1)
 
     cmap        = prmd.get('cmap',mpl.cm.jet)
@@ -1053,7 +1061,7 @@ if __name__ == '__main__':
     output_base_dir     = 'output'
     mstid_data_dir      = os.path.join('data','mongo_out','mstid_MUSIC','guc')
     plot_climatologies  = True
-    plot_stackplots     = True
+    plot_stackplots     = False
 
     radars          = []
     # 'High Latitude Radars'
@@ -1084,6 +1092,9 @@ if __name__ == '__main__':
 
     params = []
     params.append('meanSubIntSpect_by_rtiCnt')
+    params.append('meanSubIntSpect')
+    params.append('intSpect_by_rtiCnt')
+    params.append('intSpect')
     params.append('reject_code')
 #    params.append('U_10HPA')
 #    params.append('U_1HPA')
