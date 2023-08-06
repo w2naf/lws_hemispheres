@@ -28,6 +28,11 @@ script_run_time = datetime.datetime.now()
 # Set to None for all available signals.
 max_sigs = 2
 
+# Set max_lambda to 750 km.
+# These are not medium scale, and the MUSIC algorithm
+# has a high error value here.
+max_lambda = 750.
+
 def generate_radar_dict():
     rad_list = []
     rad_list.append(('bks', 39.6, -81.1))
@@ -163,8 +168,9 @@ for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
                 if music_item is not None:
 
                     # Check to see if music_item has 'signals' key.
+                    # Only report MUSIC analysis for MSTID periods.
                     sigs = music_item.get('signals')
-                    if sigs is not None:
+                    if sigs is not None and item['category_manu'] == 'mstid':
                         for sig in sigs:
                             sigOrder = sig.get('order')
 
@@ -173,10 +179,28 @@ for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
                                     # Only keep the top max_sigs strongest MSTIDs.
                                     continue
 
+                            # Reject any signals with a wavelength > max_lambda km.
+                            sig_k = sig.get('k')
+                            if sig_k < ( (2*np.pi)/max_lambda):
+                                continue
+
                             for sig_key,sig_val in sig.items():
                                 if sig_key in ['order','serialNr']:
                                     continue
+
                                 new_sigKey = 'sig_{:03d}_{!s}'.format(sigOrder,sig_key)
+                                if sig_key == 'lambda':
+                                    new_sigKey = new_sigKey+'_km'
+                                elif sig_key == 'azm':
+                                    new_sigKey = new_sigKey+'_deg'
+                                elif sig_key == 'freq':
+                                    new_sigKey = new_sigKey+'_Hz'
+                                elif sig_key == 'period':
+                                    sig_val = sig_val/60.
+                                    new_sigKey = new_sigKey+'_min'
+                                elif sig_key == 'vel':
+                                    new_sigKey = new_sigKey+'_mps'
+
                                 dct[new_sigKey] = sig_val
 
             # Possible Reject Messages:
@@ -271,11 +295,11 @@ for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
             hdr.append('#  kx: North-South Wavenumber [1/(2*pi*km)]')
             hdr.append('#  ky: East-West Wavenumber [1/(2*pi*km)]')
             hdr.append('#  k: Horizontal Wavenumber [1/(2*pi*km)]')
-            hdr.append('#  lambda: Horizontal Wavelength [km]')
-            hdr.append('#  azm: Propagation azimumuth [degrees clockwise from geographic North]')
-            hdr.append('#  freq: Frequency of maxium MSTID-band Power Spectral Density for data window [Hz]')
-            hdr.append('#  period: Period of strongest MSTID in data window [seconds]')
-            hdr.append('#  vel: MSTID Phase Velocity [m/s]')
+            hdr.append('#  lambda_km: Horizontal Wavelength [km]')
+            hdr.append('#  azm_deg: Propagation azimumuth [degrees clockwise from geographic North]')
+            hdr.append('#  freq_Hz: Frequency of maxium MSTID-band Power Spectral Density for data window [Hz]')
+            hdr.append('#  period_min: Period of strongest MSTID in data window [minutes]')
+            hdr.append('#  vel_mps: MSTID Phase Velocity [m/s]')
             hdr.append('#  max: Wavenumber Spectral Density Value')
             hdr.append('#  area: Number of pixels of Karr plot in detected region of this signal.')
             hdr.append('#')

@@ -23,6 +23,9 @@ import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib.collections import PolyCollection
 
+# https://colorcet.holoviz.org/user_guide/Continuous.html
+import colorcet
+
 import warnings
 warnings.filterwarnings(action='ignore', message='Mean of empty slice')
 
@@ -68,6 +71,37 @@ prmd['cmap']            = mpl.cm.jet
 prmd['cbar_label']      = 'MSTID Index'
 prmd['cbar_tick_fmt']   = '%0.3f'
 prmd['title']           = 'North American SuperDARN MSTID Index (~40\N{DEGREE SIGN}-60\N{DEGREE SIGN} Latititude)'
+
+prmd = prm_dct['sig_001_azm_deg'] = {}
+prmd['scale_0']         = -180
+prmd['scale_1']         =  180
+#prmd['cmap']            = mpl.cm.hsv
+# https://colorcet.holoviz.org/user_guide/Continuous.html
+prmd['cmap']            = mpl.cm.get_cmap('cet_CET_C6') #colorcet.cyclic_rygcbmr_50_90_c64
+prmd['cbar_label']      = 'MSTID Azimuth [deg]'
+prmd['cbar_tick_fmt']   = '%.0f'
+prmd['title']           = 'SuperDARN MSTID Propagation Azimuth'
+
+prmd = prm_dct['sig_001_vel_mps'] = {}
+prmd['scale_0']         = 0
+prmd['scale_1']         = 300
+prmd['cbar_label']      = 'MSTID Speed [m/s]'
+prmd['cbar_tick_fmt']   = '%.0f'
+prmd['title']           = 'SuperDARN MSTID Speed'
+
+prmd = prm_dct['sig_001_period_min'] = {}
+prmd['scale_0']         = 15
+prmd['scale_1']         = 60
+prmd['cbar_label']      = 'MSTID Period [min]'
+prmd['cbar_tick_fmt']   = '%.0f'
+prmd['title']           = 'SuperDARN MSTID Period'
+
+prmd = prm_dct['sig_001_lambda_km'] = {}
+prmd['scale_0']         = 0
+prmd['scale_1']         = 500
+prmd['cbar_label']      = 'Horizontal Wavelength [km]'
+prmd['cbar_tick_fmt']   = '%.0f'
+prmd['title']           = 'SuperDARN Horizontal Wavelength'
 
 prmd = prm_dct['meanSubIntSpect_by_rtiCnt_reducedIndex'] = {}
 prmd['title']           = 'Reduced SuperDARN MSTID Index'
@@ -496,6 +530,7 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
     ax_info         = {}
     ax_info['ax']   = ax
     ax_info['cbar_pcoll']   = pcoll
+    ax_info['cbar_tick_fmt']= prmd.get('cbar_tick_fmt')
     ax_info.update(cbar_info)
     
     return ax_info
@@ -523,7 +558,7 @@ def list_seasons(yr_0=2010,yr_1=2022):
 class ParameterObject(object):
     def __init__(self,param,radars,seasons=None,
             output_dir='output',default_data_dir=os.path.join('data','mstid_index'),
-            write_csvs=True):
+            write_csvs=True,calculate_reduced=False):
 
         # Create parameter dictionary.
         prmd        = prm_dct.get(param,{})
@@ -553,8 +588,9 @@ class ParameterObject(object):
             csv_fpath   = os.path.join(self.output_dir,'radars.csv')
             self.lat_lons.to_csv(csv_fpath,index=False)
 
-        for season in seasons:
-            self.calculate_reduced_index(season,write_csvs=write_csvs)
+        if calculate_reduced:
+            for season in seasons:
+                self.calculate_reduced_index(season,write_csvs=write_csvs)
 
     def calculate_reduced_index(self,season,
             reduction_type='mean',daily_vals=True,zscore=True,
@@ -1091,11 +1127,19 @@ if __name__ == '__main__':
 #    radars.append('gbr')
 
     params = []
-    params.append('meanSubIntSpect_by_rtiCnt')
-    params.append('meanSubIntSpect')
-    params.append('intSpect_by_rtiCnt')
-    params.append('intSpect')
-    params.append('reject_code')
+#    params.append('meanSubIntSpect_by_rtiCnt')
+#    params.append('meanSubIntSpect')
+#    params.append('intSpect_by_rtiCnt')
+#    params.append('intSpect')
+#    params.append('intSpect')
+
+    params.append('sig_001_azm_deg')
+    params.append('sig_001_lambda_km')
+    params.append('sig_001_period_min')
+    params.append('sig_001_vel_mps')
+
+#    params.append('reject_code')
+
 #    params.append('U_10HPA')
 #    params.append('U_1HPA')
 
@@ -1110,10 +1154,10 @@ if __name__ == '__main__':
 #    params.append('DAILY_SUNSPOT_NO_')
 
     seasons = list_seasons()
-    seasons = []
-#    seasons.append('20121101_20130501')
-    seasons.append('20171101_20180501')
-    seasons.append('20181101_20190501')
+#    seasons = []
+##    seasons.append('20121101_20130501')
+#    seasons.append('20171101_20180501')
+#    seasons.append('20181101_20190501')
 
     po_dct  = {}
     for param in params:
@@ -1121,8 +1165,15 @@ if __name__ == '__main__':
         output_dir  = os.path.join(output_base_dir,param)
         prep_dir(output_dir,clear=True)
 
+        if param == 'meanSubIntSpect_by_rtiCnt':
+            calculate_reduced=True
+        else:
+            calculate_reduced=False
+
         po = ParameterObject(param,radars=radars,seasons=seasons,
-                output_dir=output_dir,default_data_dir=mstid_data_dir)
+                output_dir=output_dir,default_data_dir=mstid_data_dir,
+                calculate_reduced=calculate_reduced)
+
         po_dct[param]   = po
 
     if plot_climatologies:
