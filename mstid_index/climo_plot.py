@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+This script will create 12-year season climatology plots AND stackplots.
+"""
 
 import os
 import shutil
@@ -19,6 +22,9 @@ import xarray as xr
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib.collections import PolyCollection
+
+import warnings
+warnings.filterwarnings(action='ignore', message='Mean of empty slice')
 
 import merra2CipsAirsTimeSeries
 import gnss_dtec_gw
@@ -508,13 +514,14 @@ def list_seasons(yr_0=2010,yr_1=2022):
 
 class ParameterObject(object):
     def __init__(self,param,radars,seasons=None,
-            output_dir='output',write_csvs=True):
+            output_dir='output',default_data_dir=os.path.join('data','mstid_index'),
+            write_csvs=True):
 
         # Create parameter dictionary.
         prmd        = prm_dct.get(param,{})
         prmd['param'] = param
         if prmd.get('data_dir') is None:
-            prmd['data_dir'] = os.path.join('data','mstid_index')
+            prmd['data_dir'] = default_data_dir
         self.prmd   = prmd
 
         # Store radar list.
@@ -649,6 +656,8 @@ class ParameterObject(object):
             # Load all data from a season into a single xarray dataset.
             ds      = []
             attrs   = []
+
+            data_vars = [] # Keep track of each column name in each data file.
             for radar in self.radars:
     #            fl  = os.path.join(data_dir,'sdMSTIDindex_{!s}_{!s}.nc'.format(season,radar))
                 fl  = glob.glob(os.path.join(data_dir,'*{!s}_{!s}.nc'.format(season,radar)))[0]
@@ -658,7 +667,24 @@ class ParameterObject(object):
 
                 # Store radar lat / lons to creat a radar location file.
                 lat_lons.append({'radar':radar,'lat':dsr.attrs['lat'],'lon':dsr.attrs['lon']})
-            dss = xr.concat(ds,dim='index')
+
+                data_vars += list(dsr.data_vars) # Add columns names from the current data file.
+
+            # Loop through each data set and ensure it has all of the columns.
+            # If not, add that column with NaNs.
+            # This makes the later concatenation into an XArray much easier.
+            data_vars = list(set(data_vars)) # Get the unique set of column names.
+            for dsr in ds:
+                dvs = list(dsr.data_vars) # Get list of variable names in the current dataset.
+                for dv in data_vars: # Loop through all of the required variable names.
+                    if dv not in dvs: # If not present in the current data set, add it
+                        dsr[dv] = dsr['lat'].copy() * np.nan
+
+            dss   = xr.concat(ds,dim='index')
+
+            dss = dss.stack(new_index=[...],create_index=False)
+            dss = dss.swap_dims({'new_index':'index'})
+            dss = dss.set_index({'index':'date'})
 
             # Convert parameter of interest to a datafame.
             df      = dss[param].to_dataframe()
@@ -748,7 +774,11 @@ class ParameterObject(object):
         if param == 'reject_code':
             reject_legend(fig)
         else:
-            plot_cbar(ax_list[1])
+            if len(ax_list) == 1:
+                cbar_ax_inx = 0
+            else:
+                cbar_ax_inx = 1
+            plot_cbar(ax_list[cbar_ax_inx])
 
         fpath = os.path.join(output_dir,'{!s}.png'.format(param))
         print('SAVING: ',fpath)
@@ -1021,7 +1051,8 @@ def prep_dir(path,clear=False):
 if __name__ == '__main__':
 
     output_base_dir     = 'output'
-    plot_climatologies  = False
+    mstid_data_dir      = os.path.join('data','mongo_out','mstid_MUSIC','guc')
+    plot_climatologies  = True
     plot_stackplots     = True
 
     radars          = []
@@ -1068,8 +1099,10 @@ if __name__ == '__main__':
 #    params.append('DAILY_SUNSPOT_NO_')
 
     seasons = list_seasons()
-#    seasons = ['20121101_20130501']
-    seasons = ['20181101_20190501']
+    seasons = []
+#    seasons.append('20121101_20130501')
+    seasons.append('20171101_20180501')
+    seasons.append('20181101_20190501')
 
     po_dct  = {}
     for param in params:
@@ -1077,7 +1110,8 @@ if __name__ == '__main__':
         output_dir  = os.path.join(output_base_dir,param)
         prep_dir(output_dir,clear=True)
 
-        po = ParameterObject(param,radars=radars,seasons=seasons,output_dir=output_dir)
+        po = ParameterObject(param,radars=radars,seasons=seasons,
+                output_dir=output_dir,default_data_dir=mstid_data_dir)
         po_dct[param]   = po
 
     if plot_climatologies:
