@@ -16,6 +16,7 @@ import tqdm
 
 import numpy as np
 import scipy as sp
+import scipy.stats
 import pandas as pd
 import xarray as xr
 
@@ -81,6 +82,8 @@ prmd['cmap']            = mpl.cm.get_cmap('cet_CET_C6') #colorcet.cyclic_rygcbmr
 prmd['cbar_label']      = 'MSTID Azimuth [deg]'
 prmd['cbar_tick_fmt']   = '%.0f'
 prmd['title']           = 'SuperDARN MSTID Propagation Azimuth'
+prmd['hist_bins']       = np.arange(-180,185,10)
+prmd['hist_polar']      = True
 
 prmd = prm_dct['sig_001_vel_mps'] = {}
 prmd['scale_0']         = 0
@@ -844,6 +847,8 @@ class ParameterObject(object):
         xlim    = self.prmd.get('hist_xlim',None)
         ylim    = self.prmd.get('hist_ylim',None)
         xlabel  = self.prmd.get('cbar_label',param)
+        polar   = self.prmd.get('hist_polar',False)
+
 
         hist_dct    = {}
         ymax        = 1
@@ -858,10 +863,17 @@ class ParameterObject(object):
                 vals    = np.append(vals,df.values[tf])
                 dates   = dates + df.index.tolist()
 
+                if polar is True:
+                    mean = sp.stats.circmean(vals,180.,-180.)
+                    std  = sp.stats.circstd(vals,180.,-180.)
+                else:
+                    mean = np.mean(vals)
+                    std  = np.std(vals)
+
                 stats   = []
                 stats.append('N: {:d}'.format(vals.size))
-                stats.append('Mean: {:.1f}'.format(np.mean(vals)))
-                stats.append('Std: {:.1f}'.format(np.std(vals)))
+                stats.append('Mean: {:.1f}'.format(mean))
+                stats.append('Std: {:.1f}'.format(std))
 
                 dates   = list(set(dates))
                 months  = list(set(months + [x.month for x in dates]))
@@ -905,25 +917,42 @@ class ParameterObject(object):
         title_fontdict  = {'weight':'bold','size':18}
         label_fontdict  = {'weight':'bold','size':14}
 
-        fig, axs = plt.subplots(nrows,ncols,figsize=figsize)
+        if polar is True:
+            subplot_kw = {'projection':'polar'}
+        else:
+            subplot_kw = {}
+
+        fig, axs = plt.subplots(nrows,ncols,figsize=figsize,subplot_kw=subplot_kw)
         for radar in radars:
             pos = rads_layout.get(radar)
             ax  = axs[pos]
 
             hist        = hist_dct[radar]['hist']
             bin_edges   = hist_dct[radar]['bin_edges']
-            width       = bin_edges[1]-bin_edges[0]
-            ax.bar(bin_edges[:-1],hist,width=width)
+
+            if polar is True:
+                bin_edges   = np.radians(bin_edges)
+                width       = np.diff(bin_edges)
+                ax.bar(bin_edges[:-1],hist,width=width)
+                ax.set_theta_zero_location("N")  # theta=0 at the top
+                ax.set_theta_direction(-1)  # theta increasing clockwise
+                stats_x = 0.800
+                stats_y = 1.000
+            else:
+                width       = bin_edges[1]-bin_edges[0]
+                ax.bar(bin_edges[:-1],hist,width=width)
+
+                ax.set_xlabel(xlabel,fontdict=label_fontdict)
+                ax.set_ylabel('Counts',fontdict=label_fontdict)
+
+                ax.set_xlim(xlim)
+                stats_x = 0.675
+                stats_y = 0.975
+            ax.set_ylim(ylim)
 
             stats       = hist_dct[radar]['stats']
             bbox        = {'boxstyle':'round','facecolor':'white','alpha':0.8}
-            ax.text(0.675,0.975,'\n'.join(stats),va='top',transform=ax.transAxes,bbox=bbox)
-
-            ax.set_xlabel(xlabel,fontdict=label_fontdict)
-            ax.set_ylabel('Counts',fontdict=label_fontdict)
-
-            ax.set_xlim(xlim)
-            ax.set_ylim(ylim)
+            ax.text(stats_x,stats_y,'\n'.join(stats),va='top',transform=ax.transAxes,bbox=bbox)
             ax.set_title(radar,fontdict=title_fontdict)
 
         for del_ax in del_axs:
@@ -1209,7 +1238,7 @@ if __name__ == '__main__':
 
     output_base_dir     = 'output'
     mstid_data_dir      = os.path.join('data','mongo_out','mstid_MUSIC','guc')
-    plot_climatologies  = False
+    plot_climatologies  = True
     plot_histograms     = True
     plot_stackplots     = False
 
@@ -1241,13 +1270,12 @@ if __name__ == '__main__':
 #    radars.append('gbr')
 
     params = []
-#    params.append('meanSubIntSpect_by_rtiCnt')
-#    params.append('meanSubIntSpect')
-#    params.append('intSpect_by_rtiCnt')
-#    params.append('intSpect')
-#    params.append('intSpect')
+    params.append('meanSubIntSpect_by_rtiCnt')
+    params.append('meanSubIntSpect')
+    params.append('intSpect_by_rtiCnt')
+    params.append('intSpect')
 
-#    params.append('sig_001_azm_deg')
+    params.append('sig_001_azm_deg')
     params.append('sig_001_lambda_km')
     params.append('sig_001_period_min')
     params.append('sig_001_vel_mps')
