@@ -10,7 +10,7 @@ import string
 letters = string.ascii_lowercase
 
 import datetime
-
+import calendar
 
 import tqdm
 
@@ -85,6 +85,7 @@ prmd['title']           = 'SuperDARN MSTID Propagation Azimuth'
 prmd = prm_dct['sig_001_vel_mps'] = {}
 prmd['scale_0']         = 0
 prmd['scale_1']         = 300
+prmd['hist_bins']       = np.arange(0,500,10)
 prmd['cbar_label']      = 'MSTID Speed [m/s]'
 prmd['cbar_tick_fmt']   = '%.0f'
 prmd['title']           = 'SuperDARN MSTID Speed'
@@ -95,6 +96,7 @@ prmd['scale_1']         = 60
 prmd['cbar_label']      = 'MSTID Period [min]'
 prmd['cbar_tick_fmt']   = '%.0f'
 prmd['title']           = 'SuperDARN MSTID Period'
+prmd['hist_bins']       = np.arange(15,65,2.5)
 
 prmd = prm_dct['sig_001_lambda_km'] = {}
 prmd['scale_0']         = 0
@@ -830,6 +832,116 @@ class ParameterObject(object):
     #    fig.savefig(fpath)
         fig.savefig(fpath,bbox_inches='tight')
 
+    def plot_histograms(self,output_dir=None):
+        if output_dir is None:
+            output_dir = self.output_dir
+
+        seasons = self.data.keys()
+        radars  = self.radars
+        param   = self.prmd['param']
+
+        bins    = self.prmd.get('hist_bins',30)
+        xlim    = self.prmd.get('hist_xlim',None)
+        ylim    = self.prmd.get('hist_ylim',None)
+        xlabel  = self.prmd.get('cbar_label',param)
+
+        hist_dct    = {}
+        ymax        = 1
+        months      = []
+        years       = []
+        dates       = []
+        for radar in radars:
+            vals    = np.array([],dtype=float)
+            for season,data_dct in self.data.items():
+                df      = data_dct['df'][radar]
+                tf      = np.isfinite(df.values)
+                vals    = np.append(vals,df.values[tf])
+                dates   = dates + df.index.tolist()
+
+                stats   = []
+                stats.append('N: {:d}'.format(vals.size))
+                stats.append('Mean: {:.1f}'.format(np.mean(vals)))
+                stats.append('Std: {:.1f}'.format(np.std(vals)))
+
+                dates   = list(set(dates))
+                months  = list(set(months + [x.month for x in dates]))
+                years   = list(set(years + [x.year for x in dates]))
+
+            hist, bin_edges = np.histogram(vals,bins=bins)
+            ymax    = np.max([ymax,np.max(hist)])
+
+            tmp = {}
+            tmp['hist']         = hist
+            tmp['bin_edges']    = bin_edges
+            tmp['stats']        = stats
+            hist_dct[radar]     = tmp
+
+        if xlim is None:
+            xlim    = (np.min(bin_edges),np.max(bin_edges))
+
+        if ylim is None:
+            ylim    = (0, 1.025*ymax)
+
+        rads_layout = {}
+        rads_layout['pgr'] = (0,1)
+        rads_layout['sas'] = (0,2)
+        rads_layout['kap'] = (0,3)
+        rads_layout['gbr'] = (0,4)
+
+        rads_layout['cvw'] = (1,0)
+        rads_layout['cve'] = (1,1)
+        rads_layout['fhw'] = (1,2)
+        rads_layout['fhe'] = (1,3)
+        rads_layout['bks'] = (1,4)
+        rads_layout['wal'] = (1,5)
+
+        del_axs = []
+        del_axs.append( (0,0) )
+        del_axs.append( (0,5) )
+
+        nrows           = 2
+        ncols           = 6
+        figsize         = (30,10)
+        title_fontdict  = {'weight':'bold','size':18}
+        label_fontdict  = {'weight':'bold','size':14}
+
+        fig, axs = plt.subplots(nrows,ncols,figsize=figsize)
+        for radar in radars:
+            pos = rads_layout.get(radar)
+            ax  = axs[pos]
+
+            hist        = hist_dct[radar]['hist']
+            bin_edges   = hist_dct[radar]['bin_edges']
+            width       = bin_edges[1]-bin_edges[0]
+            ax.bar(bin_edges[:-1],hist,width=width)
+
+            stats       = hist_dct[radar]['stats']
+            bbox        = {'boxstyle':'round','facecolor':'white','alpha':0.8}
+            ax.text(0.675,0.975,'\n'.join(stats),va='top',transform=ax.transAxes,bbox=bbox)
+
+            ax.set_xlabel(xlabel,fontdict=label_fontdict)
+            ax.set_ylabel('Counts',fontdict=label_fontdict)
+
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
+            ax.set_title(radar,fontdict=title_fontdict)
+
+        for del_ax in del_axs:
+            ax  = axs[del_ax]
+            ax.remove()
+
+        title   = []
+        title.append('Daytime '+self.prmd.get('title',param))
+        year_str    = '{!s} - {!s}'.format(min(years),max(years))
+        month_str   = ', '.join([calendar.month_abbr[x] for x in months])
+        title.append('Years: {!s}; Months: {!s}'.format(year_str,month_str))
+        fig.text(0.5,1.0,'\n'.join(title),ha='center',fontdict={'weight':'bold','size':28})
+
+        fig.tight_layout()
+        fpath = os.path.join(output_dir,'{!s}_histograms.png'.format(param))
+        print('SAVING: ',fpath)
+        fig.savefig(fpath,bbox_inches='tight')
+
 def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stackplot.png'):
 
     _sDate, _eDate = season_to_datetime(season)
@@ -1098,7 +1210,8 @@ if __name__ == '__main__':
     output_base_dir     = 'output'
     mstid_data_dir      = os.path.join('data','mongo_out','mstid_MUSIC','guc')
     plot_climatologies  = False
-    plot_stackplots     = True
+    plot_histograms     = True
+    plot_stackplots     = False
 
     radars          = []
     # 'High Latitude Radars'
@@ -1128,13 +1241,13 @@ if __name__ == '__main__':
 #    radars.append('gbr')
 
     params = []
-    params.append('meanSubIntSpect_by_rtiCnt')
+#    params.append('meanSubIntSpect_by_rtiCnt')
 #    params.append('meanSubIntSpect')
 #    params.append('intSpect_by_rtiCnt')
 #    params.append('intSpect')
 #    params.append('intSpect')
 
-    params.append('sig_001_azm_deg')
+#    params.append('sig_001_azm_deg')
     params.append('sig_001_lambda_km')
     params.append('sig_001_period_min')
     params.append('sig_001_vel_mps')
@@ -1160,6 +1273,9 @@ if __name__ == '__main__':
 #    seasons.append('20171101_20180501')
 #    seasons.append('20181101_20190501')
 
+################################################################################
+# LOAD RADAR DATA ##############################################################
+
     po_dct  = {}
     for param in params:
         # Generate Output Directory
@@ -1177,12 +1293,24 @@ if __name__ == '__main__':
 
         po_dct[param]   = po
 
+################################################################################
+# CLIMATOLOGIES ################################################################
+
     if plot_climatologies:
         for param,po in po_dct.items():
             print('Plotting Climatology: {!s}'.format(param))
             po.plot_climatology()
 
-    # Generate Stackplots
+################################################################################
+# HISTOGRAMS ###################################################################
+    if plot_histograms:
+        for param,po in po_dct.items():
+            print('Plotting Climatology: {!s}'.format(param))
+            po.plot_histograms()
+
+################################################################################
+# STACKPLOTS ###################################################################
+
     stack_sets  = {}
 ##    ss = stack_sets['cdaweb_omni'] = []
 ##    ss.append('meanSubIntSpect_by_rtiCnt')
