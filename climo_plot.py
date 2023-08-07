@@ -72,6 +72,16 @@ prmd['cmap']            = mpl.cm.jet
 prmd['cbar_label']      = 'MSTID Index'
 prmd['cbar_tick_fmt']   = '%0.3f'
 prmd['title']           = 'North American SuperDARN MSTID Index (~40\N{DEGREE SIGN}-60\N{DEGREE SIGN} Latititude)'
+prmd['hist_bins']       = np.arange(-0.050,0.051,0.001)
+
+prmd = prm_dct['meanSubIntSpect'] = {}
+prmd['hist_bins']       = np.arange(-1500,1500,50)
+
+prmd = prm_dct['intSpect_by_rtiCnt'] = {}
+prmd['hist_bins']       = np.arange(0.,0.126,0.001)
+
+prmd = prm_dct['intSpect'] = {}
+prmd['hist_bins']       = np.arange(0.,2025,25)
 
 prmd = prm_dct['sig_001_azm_deg'] = {}
 prmd['scale_0']         = -180
