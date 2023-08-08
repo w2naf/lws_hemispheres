@@ -40,11 +40,42 @@ def load_omni():
 
     return df_0
 
+def load_supermag():
+#    # Load Raw SuperMAG data, remove out of range and bad data, and 
+#    # compute SME.
+#    data_dir    = os.path.join('data','supermag_sme')
+#    fpath       = os.path.join(data_dir,'20230808-02-16-supermag.csv.bz2')
+#
+#    df_0        = pd.read_csv(fpath,parse_dates=[0])
+#    df_0        = df_0.set_index('Date_UTC')
+#
+#    sDate       = datetime.datetime(2010,1,1)
+#    eDate       = datetime.datetime(2023,1,1)
+#    tf          = np.logical_and(df_0.index >= sDate, df_0.index < eDate)
+#    df_0        = df_0[tf]
+#    df_0        = df_0.replace(999999,np.nan)
+#
+#    df_0['SME'] = df_0['SMU'] - df_0['SML']
+#
+#    sDate_str   = sDate.strftime('%Y%m%d')
+#    eDate_str   = eDate.strftime('%Y%m%d')
+#    out_fname   = '{!s}_{!s}_SME.csv.bz2'.format(sDate_str,eDate_str)
+#    out_path    = os.path.join(data_dir,out_fname)
+#
+#    df_0.to_csv(out_path)
+
+    data_dir    = os.path.join('data','supermag_sme')
+    fpath       = os.path.join(data_dir,'20100101_20230101_SME.csv.bz2')
+
+    df_0        = pd.read_csv(fpath,parse_dates=[0])
+    df_0        = df_0.set_index('Date_UTC')
+
+    return df_0
+
+
 
 class LSTID_HAM(object):
     def __init__(self,data_in='data/lstid_ham/WinterHam_2018_19.csv'):
-        self.omni = load_omni()
-
         self.load_data(data_in)
     
     def load_data(self,data_in):
@@ -70,7 +101,7 @@ class LSTID_HAM(object):
         plt.close(fig)
     
     def plot_ax(self,ax,xlim=None,ylabel_fontdict={},legend_fontsize='large',
-            plot_ae=False,plot_dst=False,**kwargs):
+            plot_ae=False,plot_dst=False,plot_sme=True,**kwargs):
         fig     = ax.get_figure()
         
         df      = self.df
@@ -97,7 +128,7 @@ class LSTID_HAM(object):
         ax.legend(handles=hndls,loc='upper right',fontsize=legend_fontsize,ncols=2)
 
         if plot_ae:
-            omni = self.omni
+            omni = load_omni()
             tf = np.logical_and(omni.index >= xlim[0], omni.index < xlim[1])
             omni = omni[tf].copy()
 
@@ -108,7 +139,7 @@ class LSTID_HAM(object):
             ax2.set_ylabel('AE [nT]')
 
         if plot_dst:
-            omni = self.omni
+            omni = load_omni()
             tf = np.logical_and(omni.index >= xlim[0], omni.index < xlim[1])
             omni = omni[tf].copy()
 
@@ -118,6 +149,17 @@ class LSTID_HAM(object):
             ax2.plot(ax2_xx,ax2_yy,color='k')
             ax2.axhline(0,color='k')
             ax2.set_ylabel('DST [nT]')
+
+        if plot_sme:
+            supermag = load_supermag()
+            tf = np.logical_and(supermag.index >= xlim[0], supermag.index < xlim[1])
+            supermag = supermag[tf].copy()
+
+            ax2 = ax.twinx()
+            ax2_xx = supermag.index
+            ax2_yy = supermag['SME']
+            ax2.plot(ax2_xx,ax2_yy,color='k')
+            ax2.set_ylabel('SME [nT]')
 
         title   = 'Amateur Radio 14 MHz LSTID Observations'
         ax.set_title(title)
@@ -138,3 +180,4 @@ if __name__ == '__main__':
 
     lstid = LSTID_HAM()
     lstid.plot_figure(png_fpath=png_fpath)
+    print(png_fpath)
