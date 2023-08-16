@@ -119,8 +119,7 @@ if __name__ == "__main__":
         ax.set_aspect('auto')
         result  = a3dw.plot_ax(ax=ax,vmin=-0.5,vmax=0.5)
         ax.set_title(result['title'])
-        ax.axhline(profile_lat,color='red')
-        ax.axvline(np.mean(profile_lons),color='red')
+        ax.hlines(profile_lat,profile_lons[0],profile_lons[1],color='#FE6100',lw=4)
         if col_inx == nrows-1:
             cbar_bottom = bottom
             cbar_height = height
