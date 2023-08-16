@@ -10,7 +10,7 @@ import xarray as xr
 import pandas as pd
 import matplotlib.pyplot as plt
 
-fpath = "07DEC2018-16MAR2019.mzgw.grads"
+fpath = "07DEC2018-31MAR2019.mzgw.grads"
 
 #      it = 0
 #      krec  = 0
@@ -27,10 +27,14 @@ fpath = "07DEC2018-16MAR2019.mzgw.grads"
 nlat    = 90
 lev1    = 261
 idat    = 54
-ndates  = 100
 undef   = -9.99e33
 
-sDate   = datetime.datetime(2018,12,7)
+sDate_str   = fpath[:9]
+fDate_str   = fpath[10:19]
+sDate       = datetime.datetime.strptime(sDate_str,'%d%b%Y')
+fDate       = datetime.datetime.strptime(fDate_str,'%d%b%Y')
+ndates      = (fDate-sDate).days+1
+
 dates   = [sDate]
 while len(dates) < ndates:
     new_day = dates[-1] + datetime.timedelta(days=1)

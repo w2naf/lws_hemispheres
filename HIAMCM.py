@@ -22,7 +22,7 @@ mpl.rcParams['figure.figsize'] = np.array([15, 8])
 mpl.rcParams['axes.xmargin']   = 0
 
 class HIAMCM(object):
-    def __init__(self,data_in='data/HIAMCM/07DEC2018-16MAR2019.mzgw.grads.nc'):
+    def __init__(self,data_in='data/HIAMCM/07DEC2018-31MAR2019.mzgw.grads.nc'):
         self.load_data(data_in)
     
     def load_data(self,data_in):

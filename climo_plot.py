@@ -1248,9 +1248,9 @@ if __name__ == '__main__':
 
     output_base_dir     = 'output'
     mstid_data_dir      = os.path.join('data','mongo_out','mstid_MUSIC','guc')
-    plot_climatologies  = True
-    plot_histograms     = True
-    plot_stackplots     = False
+    plot_climatologies  = False
+    plot_histograms     = False
+    plot_stackplots     = True
 
     radars          = []
     # 'High Latitude Radars'
