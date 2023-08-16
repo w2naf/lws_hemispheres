@@ -89,7 +89,7 @@ class LSTID_HAM(object):
         self.data_in    = data_in
         self.df         = df
 
-    def plot_figure(self,png_fpath='output.png',figsize=(16,8),**kwargs):
+    def plot_figure(self,png_fpath='output.png',figsize=(16,5),**kwargs):
 
         fig     = plt.figure(figsize=figsize)
         ax      = fig.add_subplot(1,1,1)
@@ -175,9 +175,14 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    png_fname   = 'lstid_ham.png'
-    png_fpath   = os.path.join(output_dir,png_fname)
+    for plot_sme in [True,False]:
+        lstid = LSTID_HAM()
+        if plot_sme:
+            png_fname   = 'lstid_ham_sme.png'
+        else:
+            png_fname   = 'lstid_ham.png'
 
-    lstid = LSTID_HAM()
-    lstid.plot_figure(png_fpath=png_fpath)
-    print(png_fpath)
+        png_fpath   = os.path.join(output_dir,png_fname)
+
+        lstid.plot_figure(png_fpath=png_fpath,plot_sme=plot_sme)
+        print(png_fpath)
