@@ -69,13 +69,14 @@ for rinx,row in tqdm.tqdm(df.iterrows(),total=len(df),dynamic_ncols=True):
     fname       = '{!s}_{!s}_RTI.png'.format(radar,os.path.basename(event_dir))
     file_1      = os.path.join(output_dir,fname)
     if os.path.exists(file_0):
-        tqdm.tqdm.write(file_1)
+        tqdm.tqdm.write(file_0)
+        tqdm.tqdm.write('   --> {!s}'.format(file_1))
         shutil.copy(file_0,file_1)
     else:
         tqdm.tqdm.write('FILE MISSING: {!s}'.format(file_0))
 
-    cnt += 1
-    if cnt == 10:
-        break
+#    cnt += 1
+#    if cnt == 10:
+#        break
 
 import ipdb; ipdb.set_trace()
