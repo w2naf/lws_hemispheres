@@ -1,12 +1,12 @@
 TEX = pdflatex
 BIB = bibtex
 
-PAPER = VTpres_latex
+PAPER = pres_latex
 
 all: $(PAPER).tex
-	$(TEX) -draftmode $(PAPER).tex
-#	$(BIB) $(PAPER).aux
-	$(TEX) -draftmode $(PAPER).tex
+#	$(TEX) -draftmode $(PAPER).tex
+##	$(BIB) $(PAPER).aux
+#	$(TEX) -draftmode $(PAPER).tex
 	$(TEX) $(PAPER).tex
 
 short: $(PAPER).tex
