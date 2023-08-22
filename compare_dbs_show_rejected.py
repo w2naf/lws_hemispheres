@@ -25,6 +25,8 @@ import pandas as pd
 
 import mstid
 
+import pybeamer
+
 # Load in CSV and convert to dataframe.
 csv_in  = os.path.join('data','db_compare','mstid_2016-fitexfilter','mstid_2016-fitexfilter.csv')
 df_0    = pd.read_csv(csv_in,comment='#',index_col=0,parse_dates=[1,2])
@@ -58,6 +60,19 @@ data_path   = os.path.join(os.sep,'data','mstid_data','mstid_data_HALF_SLANT','m
 output_dir  = os.path.join('output','db_compare','reject_code_{!s}_{!s}'.format(code_0,code_1))
 mstid.general_lib.prepare_output_dirs({0:output_dir},clear_output_dirs=True)
 
+bmrd    = {}
+bmrd['output_dir']      = output_dir
+#bmrd['filename']        = '000_rejected2016.tex'
+bmrd['full_title']	    = '2016 Missing/Bad Data Included in 2023'
+bmrd['running_title']	= 'Missing/Bad 2016'
+bmrd['subtitle']	    = '2012-2013 Northern Hemisphere Winter'
+bmrd['subject']	        = 'MSTIDs',
+bmrd['first_author']	= 'N. A. Frissell'
+bmrd['all_authors']	    = 'N. A. Frissell'
+bmrd['institute']	    = 'University of Scranton'
+bmrd['date']	        = datetime.datetime.now()
+bmr     = pybeamer.Beamer(**bmrd)
+
 cnt = 0
 for rinx,row in tqdm.tqdm(df.iterrows(),total=len(df),dynamic_ncols=True):
     radar       = row.get('radar')
@@ -67,16 +82,18 @@ for rinx,row in tqdm.tqdm(df.iterrows(),total=len(df),dynamic_ncols=True):
 
     file_0      = os.path.join(event_dir,'000_originalFit_RTI.png')
     fname       = '{!s}_{!s}_RTI.png'.format(radar,os.path.basename(event_dir))
-    file_1      = os.path.join(output_dir,fname)
+#    file_1      = os.path.join(output_dir,fname)
     if os.path.exists(file_0):
         tqdm.tqdm.write(file_0)
+#        shutil.copy(file_0,file_1)
+        file_1  = bmr.add_fig_slide(fname,file_0,fname,width='10cm')
         tqdm.tqdm.write('   --> {!s}'.format(file_1))
-        shutil.copy(file_0,file_1)
     else:
         tqdm.tqdm.write('FILE MISSING: {!s}'.format(file_0))
 
 #    cnt += 1
 #    if cnt == 10:
 #        break
-
+bmr.write_latex()
+bmr.make()
 import ipdb; ipdb.set_trace()
