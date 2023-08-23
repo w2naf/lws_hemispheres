@@ -101,7 +101,7 @@ class LSTID_HAM(object):
         plt.close(fig)
     
     def plot_ax(self,ax,xlim=None,ylabel_fontdict={},legend_fontsize='large',
-            plot_ae=False,plot_dst=False,plot_sme=True,**kwargs):
+            plot_ae=False,plot_dst=False,plot_sme=False,**kwargs):
         fig     = ax.get_figure()
         
         df      = self.df

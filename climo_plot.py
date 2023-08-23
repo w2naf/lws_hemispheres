@@ -1254,8 +1254,8 @@ if __name__ == '__main__':
 
     radars          = []
     # 'High Latitude Radars'
-    radars.append('pgr')
-    radars.append('sas')
+#    radars.append('pgr')
+#    radars.append('sas')
     radars.append('kap')
     radars.append('gbr')
     # 'Mid Latitude Radars'
@@ -1306,10 +1306,10 @@ if __name__ == '__main__':
 #    params.append('DAILY_SUNSPOT_NO_')
 
     seasons = list_seasons()
-#    seasons = []
-##    seasons.append('20121101_20130501')
+    seasons = []
+    seasons.append('20121101_20130501')
 #    seasons.append('20171101_20180501')
-#    seasons.append('20181101_20190501')
+    seasons.append('20181101_20190501')
 
 ################################################################################
 # LOAD RADAR DATA ##############################################################
@@ -1373,9 +1373,9 @@ if __name__ == '__main__':
 #    ss.append('meanSubIntSpect_by_rtiCnt')
 #    ss.append('reject_code')
 
-#    ss = stack_sets['mstid_index_reduced'] = []
-#    ss.append('meanSubIntSpect_by_rtiCnt')
-#    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
+    ss = stack_sets['mstid_index_reduced'] = []
+    ss.append('meanSubIntSpect_by_rtiCnt')
+    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
 #
 ##    ss = stack_sets['mstid_index'] = []
 ##    ss.append('meanSubIntSpect_by_rtiCnt')
