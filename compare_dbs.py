@@ -22,6 +22,12 @@ import xarray as xr
 
 import pymongo
 
+#pd.set_option('display.max_columns', None)
+#pd.set_option('display.max_rows', None)
+#pd.reset_option("max_columns")
+#pd.reset_option("max_rows")
+
+
 mpl.rcParams['font.size']      = 12
 mpl.rcParams['font.weight']    = 'bold'
 mpl.rcParams['axes.grid']      = True
@@ -170,10 +176,16 @@ def compare_mongo_dbs(dbs,seasons=None,output_dir='output'):
                         db_ckey = db_name+':collection'
                         df.loc[row.index,db_ckey] = lst
 
-    # Convert reject codes to integers.
+    # Convert reject codes to floats.
     for db_name in dbs:
-        db_ckey     = db_name+':reject_code'
-        df[db_ckey] = df[db_ckey].astype(int)
+        db_ckey             = db_name+':reject_code'
+
+        # Some reject codes in mstid_2016 started coming up as NaNs and would not map to ints.
+        # So, I am replacing the NaNs with -1.
+        tf                  = ~np.isfinite(df[db_ckey])
+        df.loc[tf,db_ckey]  = -1
+
+        df[db_ckey]         = df[db_ckey].astype(int)
         
     # Output to CSV
     with open(csv_path,'w') as fl:
@@ -183,6 +195,7 @@ def compare_mongo_dbs(dbs,seasons=None,output_dir='output'):
         hdr.append('#')
 
         hdr.append('# reject_code Explanations:')
+        hdr.append('#  -1: Entry not present in this database.')
         hdr.append('#   0: Good Period (Not Rejected)')
         hdr.append('#   1: High Terminator Fraction (Dawn/Dusk in Observational Window')
         hdr.append('#   2: No Data')
@@ -220,7 +233,10 @@ def match_mstid_db(db_0_name,db_1_name,db_new_name,df,mongo_port=27017):
     db_new      = mongo[db_new_name]
     
     col_name    = db_1_name+':collection'
-    collections = list(df[col_name].unique())
+    # If db_0 has data windows that db_1 does not have, it will cause non-finite values in db_1 collections column.
+    # We only want the names of actual collections, so ignore non-finite values when getting collection names.
+    tf          = ~df[col_name].isna()
+    collections = list(df[tf][col_name].unique())
 
     for collection in tqdm.tqdm(collections,desc='Creating matched db {!s}'.format(db_new_name),dynamic_ncols=True,position=0):
         crsr    = db_1[collection].find()
@@ -363,12 +379,12 @@ def reject_code_diff(df,db_0,db_1,output_dir='output'):
 if __name__ == '__main__':
     dbs = []
     dbs.append('mstid_2016')
-    dbs.append('fitexfilter')
+    dbs.append('mstid_GSMR_fitexfilter')
 
     seasons = []
     seasons.append('20121101_20130501')
 
-    recalc  = False
+    recalc  = True
     output_dir  = os.path.join('output','db_compare','-'.join(dbs))
     # Prepare output dictionary.
     if os.path.exists(output_dir) and recalc:
