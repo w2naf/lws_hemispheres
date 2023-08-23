@@ -21,7 +21,7 @@ header = r"""
 \usepackage{times}
 \usepackage[T1]{fontenc}
 \usepackage{natbib}
-\\bibpunct{[}{]}{;}{a}{,}{,~}
+%\\bibpunct{[}{]}{;}{a}{,}{,~}
 \usepackage[3D]{sty/movie15}
 \usepackage{sty/flow}
 \usepackage{sty/eqlist}
@@ -62,20 +62,13 @@ header = r"""
 \usepackage{hyperref}
 \definecolor{VTgray}{RGB}{194,193,186}
 \definecolor{VTdarkgray}{RGB}{64,64,57}
-\definecolor{VTmaroon}{RGB}{102,0,0}
-\definecolor{VTorange}{RGB}{255,102,0}
+\definecolor{VTmaroon}{RGB}{110, 73, 144}
+\definecolor{VTorange}{RGB}{110, 73, 144}
 """
 
 author_list = []
 aa  = author_list.append
 aa('N.A. Frissell')
-aa('J.B.H. Baker')
-aa('J.M. Ruohoniemi')
-aa('R.A. Greenwald')
-aa('\\\\A.J. Gerrard')
-aa('E.S. Miller')
-aa('M.L. West')
-
 all_authors = ', '.join(author_list)
 
 def clean_beamer_path(fpath):
@@ -87,7 +80,7 @@ def clean_beamer_path(fpath):
     return new_fpath
 
 class Beamer(object):
-    def __init__(self,output_dir='beamer',filename='VTpres_latex.tex',
+    def __init__(self,output_dir='beamer',filename='pres_latex.tex',
             full_title      = 'Full Title',
             running_title   = 'Running Title',
             subtitle        = 'Subtitle',
@@ -176,8 +169,14 @@ class Beamer(object):
         txt = '\\subsection[{0}]{{{0}}}'.format(str(subsection))
         self.latex.append(txt)
 
-    def add_fig_slide(self,title,fig_path):
-        basename        = os.path.basename(fig_path)
+    def add_fig_slide(self,title,fig_path,basename=None,width='11.5cm'):
+        """
+        basename: new name of figure file. If None, use the same basename
+                    as the original file.
+        """
+        if basename is None:
+            basename        = os.path.basename(fig_path)
+
         beamer_fig_path = os.path.join(self.figure_dir,basename)
         cp_fig_path     = os.path.join(self.output_dir,beamer_fig_path)
         status          = shutil.copy2(fig_path,cp_fig_path)
@@ -188,11 +187,14 @@ class Beamer(object):
         lx('\\begin{{frame}}{{{!s}}}'.format(title))
         lx('  \\begin{columns}[c]')
         lx('    \\begin{column}{12cm}')
-        lx('      \\begin{{center}} \\includegraphics[width=11.5cm]{{{!s}}} \\end{{center}}'.format(clean_beamer_path(beamer_fig_path)))
+#        lx('      \\begin{{center}} \\includegraphics[width=11.5cm]{{{!s}}} \\end{{center}}'.format(clean_beamer_path(beamer_fig_path)))
+        lx('      \\begin{{center}} \\includegraphics[width={!s}]{{{!s}}} \\end{{center}}'.format(width,beamer_fig_path))
         lx('    \\end{column}')
         lx('  \\end{columns}')
         lx('\\end{frame}')
         lx('')
+
+        return cp_fig_path
 
     def add_figs_slide(self,title,figs,width=11.5):
         title = title.replace('_','\_')
