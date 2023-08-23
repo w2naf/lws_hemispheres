@@ -59,7 +59,8 @@ def generate_radar_dict():
 
     return radar_dict
 
-db_name     = 'mstid_MUSIC'
+#db_name     = 'mstid_MUSIC'
+db_name     = 'mstid_GSMR_fitexfilter_using_mstid_2016_dates'
 prefix      = 'guc'
 
 output_dir  = os.path.join('data','mongo_out',db_name,prefix)
@@ -139,7 +140,7 @@ for season in tqdm.tqdm(seasons,desc='Seasons',dynamic_ncols=True,position=0):
             music_col = db.get_collection(music_lst)
         else:
             tqdm.tqdm.write('--> MUSIC Collection Not Found: {!s}'.format(music_lst))
-            music_lst = None
+            music_col = None
 
         attrs   = {}
         attrs['MongoDB_database']               = db_name
