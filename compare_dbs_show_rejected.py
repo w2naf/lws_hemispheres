@@ -28,7 +28,7 @@ import mstid
 import pybeamer
 
 # Load in CSV and convert to dataframe.
-csv_in  = os.path.join('data','db_compare','mstid_2016-fitexfilter','mstid_2016-fitexfilter.csv')
+csv_in  = os.path.join('data','db_compare','mstid_2016-mstid_GSMR_fitexfilter','mstid_2016-mstid_GSMR_fitexfilter.csv')
 df_0    = pd.read_csv(csv_in,comment='#',index_col=0,parse_dates=[1,2])
 
 
@@ -37,8 +37,8 @@ df_0    = pd.read_csv(csv_in,comment='#',index_col=0,parse_dates=[1,2])
 col_0   = 'mstid_2016:reject_code'
 code_0  = 3
 
-# fitexfilter:reject_code == 0
-col_1   = 'fitexfilter:reject_code'
+# mstid_GSMR_fitexfilter:reject_code == 0
+col_1   = 'mstid_GSMR_fitexfilter:reject_code'
 code_1  = 0
 
 tf      = np.logical_and(df_0[col_0]==code_0,df_0[col_1]==code_1)
@@ -56,7 +56,7 @@ df      = df[df_keys].copy()
 
 
 ### Copy RTI PNGs over to output dir.
-data_path   = os.path.join(os.sep,'data','mstid_data','mstid_data_HALF_SLANT','mstid_index')
+data_path   = os.path.join(os.sep,'data','mstid_data','mstid_GSMR_fitexfilter','mstid_index')
 output_dir  = os.path.join('output','db_compare','reject_code_{!s}_{!s}'.format(code_0,code_1))
 mstid.general_lib.prepare_output_dirs({0:output_dir},clear_output_dirs=True)
 
