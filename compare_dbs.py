@@ -331,7 +331,7 @@ def reject_code_diff(df,db_0,db_1,output_dir='output'):
     output_dir: Output Directory
     """
 
-    reject_codes    = list(range(5))
+    reject_codes    = list(np.arange(-1,5))
 
     cols    = [db+':reject_code' for db in [db_0,db_1]]
 
@@ -364,6 +364,7 @@ def reject_code_diff(df,db_0,db_1,output_dir='output'):
         hdr.append('#')
 
         hdr.append('# reject_code Explanations:')
+        hdr.append('#  -1: Entry not present in this database.')
         hdr.append('#   0: Good Period (Not Rejected)')
         hdr.append('#   1: High Terminator Fraction (Dawn/Dusk in Observational Window')
         hdr.append('#   2: No Data')
@@ -384,7 +385,7 @@ if __name__ == '__main__':
     seasons = []
     seasons.append('20121101_20130501')
 
-    recalc  = True
+    recalc  = False
     output_dir  = os.path.join('output','db_compare','-'.join(dbs))
     # Prepare output dictionary.
     if os.path.exists(output_dir) and recalc:
