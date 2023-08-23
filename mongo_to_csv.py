@@ -60,7 +60,8 @@ def generate_radar_dict():
     return radar_dict
 
 #db_name     = 'mstid_MUSIC'
-db_name     = 'mstid_GSMR_fitexfilter_using_mstid_2016_dates'
+db_name     = 'mstid_2016'
+#db_name     = 'mstid_GSMR_fitexfilter_using_mstid_2016_dates'
 prefix      = 'guc'
 
 output_dir  = os.path.join('data','mongo_out',db_name,prefix)
