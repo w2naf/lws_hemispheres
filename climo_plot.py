@@ -1249,7 +1249,8 @@ if __name__ == '__main__':
     output_base_dir     = 'output'
 #    mstid_data_dir      = os.path.join('data','mongo_out','mstid_MUSIC','guc')
 #    mstid_data_dir      = os.path.join('data','mongo_out','mstid_GSMR_fitexfilter_using_mstid_2016_dates','guc')
-    mstid_data_dir      = os.path.join('data','mongo_out','mstid_2016','guc')
+#    mstid_data_dir      = os.path.join('data','mongo_out','mstid_2016','guc')
+    mstid_data_dir      = os.path.join('data','mongo_out','mstid_GSMR_fitexfilter','guc')
     plot_climatologies  = False
     plot_histograms     = False
     plot_stackplots     = True
