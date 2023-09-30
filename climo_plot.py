@@ -542,6 +542,8 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
         txt = '{} ({})'.format(group_name,txt)
     ax.set_title(txt,fontdict=title_fontdict)
 
+    ax.set_title('Test',loc='right',fontdict=title_fontdict)
+
     ax_info         = {}
     ax_info['ax']   = ax
     ax_info['cbar_pcoll']   = pcoll
@@ -1222,6 +1224,9 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
 
             ax_info = plot_mstid_values(data_df,ax,radars=_radars,param=param,xlabels=xlabels,
                     sDate=sDate,eDate=eDate)
+
+            min_orf   = po.data[season]['attrs_season'].get('min_orig_rti_fraction')
+            ax_info['ax'].set_title('RTI Fraction > {:0.3f}'.format(min_orf),loc='right')
             ax_info['radar_ax']     = True
         ax_list.append(ax_info)
 
