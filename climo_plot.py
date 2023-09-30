@@ -716,8 +716,8 @@ class ParameterObject(object):
         reducedIndex_attrs['smoothing_type']     = smoothing_type
         self.data[season]['reducedIndex_attrs']  = reducedIndex_attrs
 
-        param   = '{!s}_reducedIndex'.format(self.prmd.get('param'))
-        attrs   = self.data[season]['attrs']
+        param           = '{!s}_reducedIndex'.format(self.prmd.get('param'))
+        attrs_radars    = self.data[season]['attrs_radars']
 
         if write_csvs:
             output_dir = self.output_dir
@@ -732,9 +732,9 @@ class ParameterObject(object):
                 hdr.append('#')
                 hdr.append('# Parameter: {!s}'.format(param))
                 hdr.append('#')
-                hdr.append('# Original Attributes:')
-                for attr in attrs:
-                    hdr.append('# {!s}'.format(attr))
+                hdr.append('# Individual Radar Attributes:')
+                for radar,attr in attrs_radars.items():
+                    hdr.append('# {!s}: {!s}'.format(radar,attr))
                 hdr.append('#')
                 hdr.append('# Reduction Attributes:')
                 for attr in reducedIndex_attrs.items():
@@ -771,8 +771,8 @@ class ParameterObject(object):
         lat_lons    = []
         for season in tqdm.tqdm(dataDct.keys(),desc='Seasons',dynamic_ncols=True,position=0):
             # Load all data from a season into a single xarray dataset.
-            ds      = []
-            attrs   = {}
+            ds              = []
+            attrs_radars    = {}
 
             data_vars = [] # Keep track of each column name in each data file.
             for radar in self.radars:
@@ -781,7 +781,7 @@ class ParameterObject(object):
                 tqdm.tqdm.write('--> {!s}: {!s}'.format(param,fl))
                 dsr = xr.open_dataset(fl)
                 ds.append(dsr)
-                attrs[radar] = dsr.attrs
+                attrs_radars[radar] = dsr.attrs
 
                 # Store radar lat / lons to creat a radar location file.
                 lat_lons.append({'radar':radar,'lat':dsr.attrs['lat'],'lon':dsr.attrs['lon']})
@@ -820,9 +820,9 @@ class ParameterObject(object):
 
             df  = pd.DataFrame(dfrs.values(),dfrs.keys())
             df  = df.sort_index()
-            df.index.name               = 'datetime'
-            dataDct[season]['df']     = df
-            dataDct[season]['attrs']  = attrs
+            df.index.name                   = 'datetime'
+            dataDct[season]['df']           = df
+            dataDct[season]['attrs_radars'] = attrs_radars
 
         # Clean up lat_lon data table
         if selfUpdate is True:
@@ -836,7 +836,7 @@ class ParameterObject(object):
 
         param           = self.prmd.get('param')
         df              = self.data[season]['df']
-        attrs           = self.data[season]['attrs']
+        attrs_radars    = self.data[season]['attrs_radars']
         attrs_global    = self.attrs_global
 
         if output_dir is None:
@@ -857,7 +857,7 @@ class ParameterObject(object):
 
             hdr.append('#')
             hdr.append('# Radar Attributes:')
-            for radar,attr in attrs.items():
+            for radar,attr in attrs_radars.items():
                 hdr.append('# {!s}: {!s}'.format(radar,attr))
             hdr.append('#')
 
