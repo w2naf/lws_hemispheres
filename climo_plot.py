@@ -594,6 +594,18 @@ class ParameterObject(object):
         print('Loading data...')
         self._load_data()
 
+        try:
+            # Track and report minimum orig_rti_fraction.
+            # This is the percentage of range-beam cells reporting scatter in an
+            # observational window. It is a critical parameter to correctly calculate
+            # the reduced MSTID index and other statistcal measures.
+            orig_rti_fraction       = self._load_data('orig_rti_fraction',selfUpdate=False)
+            orf                     = self.flatten(orig_rti_fraction)
+            min_orig_rti_fraction   = np.nanmin(orf)
+            self.prmd['min_orig_rti_fraction']  = min_orig_rti_fraction
+        except:
+           print('   ERROR calulating min_orig_rti_fraction while creating ParameterObject for {!s}'.format(param))
+
         self.output_dir = output_dir
         if write_csvs:
             print('Generating Season CSV Files...')
@@ -606,6 +618,24 @@ class ParameterObject(object):
         if calculate_reduced:
             for season in seasons:
                 self.calculate_reduced_index(season,write_csvs=write_csvs)
+
+    def flatten(self,dataDct=None):
+        """
+        Return a single, flattened numpy array of all values from all seasons
+        of a data dictionary. This is useful for calculating overall statistics.
+
+        dataDct: Data dictionary to flatten. If None, use self.data.
+        """
+        if dataDct is None:
+            dataDct = self.data
+
+        data = []
+        for season in dataDct.keys():
+            tmp = dataDct[season]['df'].values.flatten()
+            data.append(tmp)
+
+        data = np.concatenate(data)
+        return data
 
     def calculate_reduced_index(self,season,
             reduction_type='mean',daily_vals=True,zscore=True,
