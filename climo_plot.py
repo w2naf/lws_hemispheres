@@ -627,8 +627,15 @@ class ParameterObject(object):
                 orf     = orig_rti_fraction[season]['df']
                 min_orf = np.nanmin(orf.values)
                 self.data[season]['attrs_season']['min_orig_rti_fraction'] = min_orf
+
+            # Calculate min_orig_rti_fraction for each individual radar.
+            for season in seasons:
+                orf     = orig_rti_fraction[season]['df']
+                for radar in radars:
+                    min_orf = np.nanmin(orf[radar].values)
+                    self.data[season]['attrs_radars'][radar]['min_orig_rti_fraction'] = min_orf
         except:
-           print('   ERROR calulating min_orig_rti_fraction while creating ParameterObject for {!s}'.format(param))
+            print('   ERROR calulating min_orig_rti_fraction while creating ParameterObject for {!s}'.format(param))
 
         self.output_dir = output_dir
         if write_csvs:
