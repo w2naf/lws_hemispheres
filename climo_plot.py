@@ -604,6 +604,11 @@ class ParameterObject(object):
         print('Loading data...')
         self._load_data()
 
+        # Create a attrs_season dict for each season to hold statistics and other info that applies
+        # to all data in a season, not just individual radars.
+        for season in seasons:
+            self.data[season]['attrs_season']   = {}
+
         try:
             # Track and report minimum orig_rti_fraction.
             # This is the percentage of range-beam cells reporting scatter in an
@@ -612,11 +617,16 @@ class ParameterObject(object):
             orig_rti_fraction       = self._load_data('orig_rti_fraction',selfUpdate=False)
             self.orig_rti_fraction   = orig_rti_fraction
 
-            # Calculate minimum min orig_rti_fraction for all loaded seasons.
+            # Calculate min_orig_rti_fraction for all loaded seasons.
             orf                     = self.flatten(orig_rti_fraction)
             min_orig_rti_fraction   = np.nanmin(orf)
             self.attrs_global['min_orig_rti_fraction']  = min_orig_rti_fraction
 
+            # Calculate min_orig_rti_fraction for each individual season.
+            for season in seasons:
+                orf     = orig_rti_fraction[season]['df']
+                min_orf = np.nanmin(orf.values)
+                self.data[season]['attrs_season']['min_orig_rti_fraction'] = min_orf
         except:
            print('   ERROR calulating min_orig_rti_fraction while creating ParameterObject for {!s}'.format(param))
 
@@ -718,6 +728,7 @@ class ParameterObject(object):
 
         param           = '{!s}_reducedIndex'.format(self.prmd.get('param'))
         attrs_radars    = self.data[season]['attrs_radars']
+        attrs_season    = self.data[season]['attrs_season']
 
         if write_csvs:
             output_dir = self.output_dir
@@ -731,6 +742,9 @@ class ParameterObject(object):
                 hdr.append('# Generated on: {!s} UTC'.format(datetime.datetime.utcnow()))
                 hdr.append('#')
                 hdr.append('# Parameter: {!s}'.format(param))
+                hdr.append('#')
+                hdr.append('# {!s} Season Attributes:'.format(season))
+                hdr.append('# {!s}'.format(attrs_season))
                 hdr.append('#')
                 hdr.append('# Individual Radar Attributes:')
                 for radar,attr in attrs_radars.items():
@@ -837,6 +851,7 @@ class ParameterObject(object):
         param           = self.prmd.get('param')
         df              = self.data[season]['df']
         attrs_radars    = self.data[season]['attrs_radars']
+        attrs_season    = self.data[season]['attrs_season']
         attrs_global    = self.attrs_global
 
         if output_dir is None:
@@ -854,6 +869,10 @@ class ParameterObject(object):
             hdr.append('#')
             hdr.append('# Global Attributes (Applies to All Seasons Loaded in ParameterObject):')
             hdr.append('# {!s}'.format(attrs_global))
+
+            hdr.append('#')
+            hdr.append('# {!s} Season Attributes:'.format(season))
+            hdr.append('# {!s}'.format(attrs_season))
 
             hdr.append('#')
             hdr.append('# Radar Attributes:')
