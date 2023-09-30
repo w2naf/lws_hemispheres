@@ -617,7 +617,13 @@ class ParameterObject(object):
             # observational window. It is a critical parameter to correctly calculate
             # the reduced MSTID index and other statistcal measures.
             orig_rti_fraction       = self._load_data('orig_rti_fraction',selfUpdate=False)
-            self.orig_rti_fraction   = orig_rti_fraction
+
+            # Only keep the RTI Fractions from ``good'' periods.
+            reject_dataDct          = self._load_data('reject_code',selfUpdate=False)
+            for season in seasons:
+                bad = reject_dataDct[season]['df'] != 0
+                orig_rti_fraction[season]['df'][bad] = np.nan
+            self.orig_rti_fraction  = orig_rti_fraction
 
             # Calculate min_orig_rti_fraction for all loaded seasons.
             orf                     = self.flatten(orig_rti_fraction)
