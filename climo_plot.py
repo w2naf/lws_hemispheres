@@ -772,7 +772,7 @@ class ParameterObject(object):
         for season in tqdm.tqdm(dataDct.keys(),desc='Seasons',dynamic_ncols=True,position=0):
             # Load all data from a season into a single xarray dataset.
             ds      = []
-            attrs   = []
+            attrs   = {}
 
             data_vars = [] # Keep track of each column name in each data file.
             for radar in self.radars:
@@ -781,7 +781,7 @@ class ParameterObject(object):
                 tqdm.tqdm.write('--> {!s}: {!s}'.format(param,fl))
                 dsr = xr.open_dataset(fl)
                 ds.append(dsr)
-                attrs.append(dsr.attrs)
+                attrs[radar] = dsr.attrs
 
                 # Store radar lat / lons to creat a radar location file.
                 lat_lons.append({'radar':radar,'lat':dsr.attrs['lat'],'lon':dsr.attrs['lon']})
@@ -857,8 +857,8 @@ class ParameterObject(object):
 
             hdr.append('#')
             hdr.append('# Radar Attributes:')
-            for attr in attrs:
-                hdr.append('# {!s}'.format(attr))
+            for radar,attr in attrs.items():
+                hdr.append('# {!s}: {!s}'.format(radar,attr))
             hdr.append('#')
 
             fl.write('\n'.join(hdr))
