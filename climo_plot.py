@@ -922,6 +922,8 @@ class ParameterObject(object):
             
             sDate, eDate = season_to_datetime(season)
             ax_info = plot_mstid_values(data_df,ax,radars=radars,param=param,sDate=sDate,eDate=eDate)
+            min_orf   = po.data[season]['attrs_season'].get('min_orig_rti_fraction')
+            ax_info['ax'].set_title('RTI Fraction > {:0.2f}'.format(min_orf),loc='right')
             ax_list.append(ax_info)
 
             season_yr0 = season[:4]
@@ -1159,6 +1161,9 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
 
             ax.set_xlim(sDate,eDate)
 
+            min_orf   = po.data[season]['attrs_season'].get('min_orig_rti_fraction')
+            ax.set_title('RTI Fraction > {:0.2f}'.format(min_orf),loc='right')
+
             ax_info = {}
             ax_info['ax']           = ax
         elif plotType == 'merra2CipsAirsTimeSeries':
@@ -1232,7 +1237,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
                     sDate=sDate,eDate=eDate)
 
             min_orf   = po.data[season]['attrs_season'].get('min_orig_rti_fraction')
-            ax_info['ax'].set_title('RTI Fraction > {:0.3f}'.format(min_orf),loc='right')
+            ax_info['ax'].set_title('RTI Fraction > {:0.2f}'.format(min_orf),loc='right')
             ax_info['radar_ax']     = True
         ax_list.append(ax_info)
 
@@ -1386,10 +1391,10 @@ if __name__ == '__main__':
 #    radars.append('gbr')
 
     params = []
-    params.append('meanSubIntSpect_by_rtiCnt')
-    params.append('meanSubIntSpect')
-    params.append('intSpect_by_rtiCnt')
-    params.append('intSpect')
+    params.append('meanSubIntSpect_by_rtiCnt') # This is the MSTID index.
+#    params.append('meanSubIntSpect')
+#    params.append('intSpect_by_rtiCnt')
+#    params.append('intSpect')
 
 #    params.append('sig_001_azm_deg')
 #    params.append('sig_001_lambda_km')
@@ -1412,10 +1417,10 @@ if __name__ == '__main__':
 #    params.append('DAILY_SUNSPOT_NO_')
 
     seasons = list_seasons()
-    seasons = []
-    seasons.append('20121101_20130501')
-#    seasons.append('20171101_20180501')
-    seasons.append('20181101_20190501')
+#    seasons = []
+#    seasons.append('20121101_20130501')
+##    seasons.append('20171101_20180501')
+#    seasons.append('20181101_20190501')
 
 ################################################################################
 # LOAD RADAR DATA ##############################################################
@@ -1486,19 +1491,22 @@ if __name__ == '__main__':
 ##    ss = stack_sets['mstid_index'] = []
 ##    ss.append('meanSubIntSpect_by_rtiCnt')
 
-#    ss = stack_sets['figure_3'] = []
-#    ss.append('merra2CipsAirsTimeSeries')
-#    ss.append('HIAMCM')
-#    ss.append('gnss_dtec_gw')
-#    ss.append('meanSubIntSpect_by_rtiCnt')
-#    ss.append('lstid_ham')
-##    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
+    ss = stack_sets['figure_3'] = []
+    ss.append('merra2CipsAirsTimeSeries')
+    ss.append('HIAMCM')
+    ss.append('gnss_dtec_gw')
+    ss.append('meanSubIntSpect_by_rtiCnt')
+    ss.append('lstid_ham')
+#    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
 
     if plot_stackplots:
         for stack_code,stack_params in stack_sets.items():
             stack_dir  = os.path.join(output_base_dir,'stackplots',stack_code)
             prep_dir(stack_dir,clear=True)
             for season in seasons:
+                if stack_code == 'figure_3':
+                    if season != '20181101_20190501':
+                        continue
                 png_name    = '{!s}_stack_{!s}.png'.format(season,stack_code)
                 png_path    = os.path.join(stack_dir,png_name) 
 
