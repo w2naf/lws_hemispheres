@@ -702,16 +702,30 @@ class ParameterObject(object):
                 
             reducedIndex.to_csv(csv_fpath,mode='a')
 
-    def _load_data(self):
+    def _load_data(self,param=None,selfUpdate=True):
         """
         Load data into data frames and store in self.data dictionary.
+        
+        param: Parameter to load. Use self.prmd.get('param') if None.
+        selfUpdate:
+            If True, update self.data and self.lat_lon with results and
+                also return dictionary.
+            If False, only return data dictionary.
         """
 
         data_dir    = self.prmd.get('data_dir')
-        param       = self.prmd.get('param')
+        if param is None:
+            param       = self.prmd.get('param')
+
+        if selfUpdate is True:
+            dataDct = self.data
+        else:
+            dataDct = {}
+            for season in self.data.keys():
+                dataDct[season] = {}
 
         lat_lons    = []
-        for season in tqdm.tqdm(self.data.keys(),desc='Seasons',dynamic_ncols=True,position=0):
+        for season in tqdm.tqdm(dataDct.keys(),desc='Seasons',dynamic_ncols=True,position=0):
             # Load all data from a season into a single xarray dataset.
             ds      = []
             attrs   = []
@@ -763,11 +777,13 @@ class ParameterObject(object):
             df  = pd.DataFrame(dfrs.values(),dfrs.keys())
             df  = df.sort_index()
             df.index.name               = 'datetime'
-            self.data[season]['df']     = df
-            self.data[season]['attrs']  = attrs
+            dataDct[season]['df']     = df
+            dataDct[season]['attrs']  = attrs
 
         # Clean up lat_lon data table
-        self.lat_lons    = pd.DataFrame(lat_lons).drop_duplicates()
+        if selfUpdate is True:
+            self.lat_lons    = pd.DataFrame(lat_lons).drop_duplicates()
+        return dataDct
 
     def write_csv(self,season,output_dir=None):
         """
@@ -1312,7 +1328,7 @@ if __name__ == '__main__':
     seasons = []
     seasons.append('20121101_20130501')
 #    seasons.append('20171101_20180501')
-#    seasons.append('20181101_20190501')
+    seasons.append('20181101_20190501')
 
 ################################################################################
 # LOAD RADAR DATA ##############################################################
