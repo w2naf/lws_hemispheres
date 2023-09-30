@@ -610,9 +610,13 @@ class ParameterObject(object):
             # observational window. It is a critical parameter to correctly calculate
             # the reduced MSTID index and other statistcal measures.
             orig_rti_fraction       = self._load_data('orig_rti_fraction',selfUpdate=False)
+            self.orig_rti_fraction   = orig_rti_fraction
+
+            # Calculate minimum min orig_rti_fraction for all loaded seasons.
             orf                     = self.flatten(orig_rti_fraction)
             min_orig_rti_fraction   = np.nanmin(orf)
             self.attrs_global['min_orig_rti_fraction']  = min_orig_rti_fraction
+
         except:
            print('   ERROR calulating min_orig_rti_fraction while creating ParameterObject for {!s}'.format(param))
 
@@ -852,7 +856,7 @@ class ParameterObject(object):
             hdr.append('# {!s}'.format(attrs_global))
 
             hdr.append('#')
-            hdr.append('# Season Attributes:')
+            hdr.append('# Radar Attributes:')
             for attr in attrs:
                 hdr.append('# {!s}'.format(attr))
             hdr.append('#')
