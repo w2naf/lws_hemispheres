@@ -101,7 +101,7 @@ class LSTID_HAM(object):
         plt.close(fig)
     
     def plot_ax(self,ax,xlim=None,ylabel_fontdict={},legend_fontsize='large',
-            plot_ae=False,plot_dst=False,plot_sme=False,**kwargs):
+            legend_ncols=2,plot_ae=False,plot_dst=False,plot_sme=False,**kwargs):
         fig     = ax.get_figure()
         
         df      = self.df
@@ -125,7 +125,7 @@ class LSTID_HAM(object):
         ylabel  = 'LSTID Period [hr]'
         hndl    = ax.bar(xx,yy,label=ylabel)
         hndls.append(hndl)
-        ax.legend(handles=hndls,loc='upper right',fontsize=legend_fontsize,ncols=2)
+        ax.legend(handles=hndls,loc='upper right',fontsize=legend_fontsize,ncols=legend_ncols)
 
         if plot_ae:
             omni = load_omni()

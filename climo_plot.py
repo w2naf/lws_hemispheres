@@ -1205,7 +1205,8 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
             ax_info['cbar_label']   = prmd.get('cbar_label')
         elif plotType == 'lstid_ham':
             lstid = lstid_ham.LSTID_HAM()
-            result  = lstid.plot_ax(ax,legend_fontsize='x-large',ylabel_fontdict=ylabel_fontdict,**prmd)
+            result  = lstid.plot_ax(ax,legend_fontsize='x-large',ylabel_fontdict=ylabel_fontdict,
+                    legend_ncols=1,**prmd)
 
             ax.set_xlim(sDate,eDate)
 
