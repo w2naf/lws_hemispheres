@@ -12,6 +12,14 @@ from sklearn.metrics import r2_score
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 
+from cycler import cycler
+
+#default_cycler  =  cycler('color', ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'])
+#custom_cycler   = (default_cycler +  cycler(linestyle=['-', '--', ':', '-.']))
+#ls_cycler       = cycler(linestyle=['-', '--', ':', '-.'])
+
+lss = ['-', '--', ':', '-.']
+
 mpl.rcParams['font.size']      = 12
 mpl.rcParams['font.weight']    = 'bold'
 mpl.rcParams['axes.grid']      = True
@@ -28,6 +36,7 @@ def plot_r2_csv(csv_path):
 
     fig     = plt.figure(figsize=(10,8))
     ax      = fig.add_subplot(111)
+#    ax.set_prop_cycle(custom_cycler)
 
     values  = df.values
 
@@ -38,9 +47,12 @@ def plot_r2_csv(csv_path):
 
         if season == 'all':
             lw = 5
+            ls = '-'
         else:
             lw = 1
-        ax.plot(xx,yy,lw=lw,label=season)
+            ls = lss[rinx%len(lss)]
+
+        ax.plot(xx,yy,lw=lw,ls=ls,label=season)
 
         ax.legend(loc='lower right',fontsize='small')
 
