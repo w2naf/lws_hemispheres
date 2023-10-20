@@ -19,27 +19,6 @@ mpl.rcParams['grid.linestyle'] = ':'
 mpl.rcParams['figure.figsize'] = np.array([15, 8])
 mpl.rcParams['axes.xmargin']   = 0
 
-#def load_omni():
-#    data_dir    = os.path.join('data','cdaweb_omni')
-#    fpath       = os.path.join(data_dir,'20230530_OMNI2_H0_MRG1HR_99633.csv')
-#
-#    df_0        = pd.read_csv(fpath,parse_dates=[0],comment='#')
-#    dt_key      = 'TIME_AT_CENTER_OF_HOUR_yyyy-mm-ddThh:mm:ss.sssZ'
-#    df_0.index  = df_0[dt_key].apply(lambda x: x.replace(tzinfo=None)).values
-#    del df_0[dt_key]
-#
-#    params  = ['DAILY_SUNSPOT_NO_', 'DAILY_F10.7_', '1-H_DST_nT', '1-H_AE_nT'] 
-#
-#    # Set bad values to NaN.
-#    bad = {}
-#    bad['DAILY_F10.7_'] = 999.9
-#    bad['1-H_AE_nT']    = 9999
-#    for col,val in bad.items():
-#        tf = df_0[col] == val
-#        df_0.loc[tf,col] = np.nan
-#
-#    return df_0
-
 def load_supermag():
 #    # Load Raw SuperMAG data, remove out of range and bad data, and 
 #    # compute SME.
@@ -93,11 +72,12 @@ class SME_PLOT(object):
 
         hndls   = []
 
-        xx      = df.index
-
         if xlim is None:
-            xlim = (min(xx), max(xx))
+            xlim = (min(df.index), max(df.index))
+        tf      = np.logical_and(df.index >= xlim[0], df.index < xlim[1])
+        df      = df[tf].copy()
 
+        xx      = df.index
         yy      = df['SME']
         ylabel  = 'SME Index [nT]'
         ax.set_ylabel(ylabel,fontdict=ylabel_fontdict)

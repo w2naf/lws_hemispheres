@@ -34,6 +34,7 @@ import merra2CipsAirsTimeSeries
 import gnss_dtec_gw
 import lstid_ham
 import HIAMCM
+import sme_plot
 
 pd.set_option('display.max_rows', None)
 
@@ -229,6 +230,9 @@ prmd['title']           = 'GNSS aTEC Amplitude at 115\N{DEGREE SIGN} W'
 
 prmd = prm_dct['lstid_ham'] = {}
 prmd['title']           = 'Amateur Radio 14 MHz LSTID Observations'
+
+prmd = prm_dct['sme'] = {}
+prmd['title']           = 'SuperMAG Electrojet Index (SME)'
 
 prmd = prm_dct['reject_code'] = {}
 prmd['title']           = 'MSTID Index Data Quality Flag'
@@ -1106,6 +1110,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         elif    (param == 'merra2CipsAirsTimeSeries' 
               or param == 'gnss_dtec_gw' 
               or param == 'lstid_ham'
+              or param == 'sme'
               or param == 'HIAMCM'):
             base_param      = param
             plotType        = param
@@ -1121,6 +1126,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         elif  (plotType == 'merra2CipsAirsTimeSeries' 
             or plotType == 'gnss_dtec_gw' 
             or plotType == 'lstid_ham'
+            or plotType == 'sme'
             or plotType == 'HIAMCM'):
             data_df = None
             prmd    = prm_dct.get(param,{})
@@ -1200,6 +1206,21 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         elif plotType == 'lstid_ham':
             lstid = lstid_ham.LSTID_HAM()
             result  = lstid.plot_ax(ax,legend_fontsize='x-large',ylabel_fontdict=ylabel_fontdict,**prmd)
+
+            ax.set_xlim(sDate,eDate)
+
+            if xlabels is False:
+                ax.set_xlabel('')
+
+            if xlabels is False:
+                ax.set_xlabel('')
+
+            ax_info = {}
+            ax_info['ax']           = ax
+        elif plotType == 'sme':
+            sme     = sme_plot.SME_PLOT()
+            result  = sme.plot_ax(ax,legend_fontsize='x-large',ylabel_fontdict=ylabel_fontdict,
+                    xlim=(sDate,eDate),**prmd)
 
             ax.set_xlim(sDate,eDate)
 
@@ -1484,9 +1505,9 @@ if __name__ == '__main__':
 #    ss.append('meanSubIntSpect_by_rtiCnt')
 #    ss.append('reject_code')
 
-    ss = stack_sets['mstid_index_reduced'] = []
-    ss.append('meanSubIntSpect_by_rtiCnt')
-    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
+#    ss = stack_sets['mstid_index_reduced'] = []
+#    ss.append('meanSubIntSpect_by_rtiCnt')
+#    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
 #
 ##    ss = stack_sets['mstid_index'] = []
 ##    ss.append('meanSubIntSpect_by_rtiCnt')
@@ -1497,6 +1518,7 @@ if __name__ == '__main__':
     ss.append('gnss_dtec_gw')
     ss.append('meanSubIntSpect_by_rtiCnt')
     ss.append('lstid_ham')
+    ss.append('sme')
 #    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
 
     if plot_stackplots:
