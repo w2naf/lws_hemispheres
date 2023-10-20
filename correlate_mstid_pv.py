@@ -137,7 +137,7 @@ for season in seasons:
         label   = '\n'.join(lbl)
         ax.plot(xx,yy_fit,color='red',lw=2,label=label)
 
-        ax.set_xlabel('MERRA2 Polar Vortext Index')
+        ax.set_xlabel('MERRA2 Polar Vortex Index')
         ax.set_ylabel('SuperDARN MSTID Index ({!s})'.format(var_1))
 
         title   = []
