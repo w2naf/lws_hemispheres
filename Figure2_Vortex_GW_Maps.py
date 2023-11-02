@@ -44,12 +44,20 @@ if __name__ == "__main__":
 
     mca = merra2AirsMaps.Merra2AirsMaps()
 
-    dates = []
-#    dates.append(datetime.datetime(2018,12,9))
-    dates.append(datetime.datetime(2018,12,10))
-    dates.append(datetime.datetime(2019,1,5))
-#    dates.append(datetime.datetime(2019,1,16))
-    dates.append(datetime.datetime(2019,2,1))
+    # Create a dictionary with information about each column, especially
+    # the base filename of the AIRS3D profile data file we want to use.
+    cols_dct = {}
+    cld = cols_dct[datetime.datetime(2018,12,10)] = {}
+    cld['a3d_prof_bname']   = 'NEW_2018 12 10_AIRS_3D_alt_data_45_deg_lat'
+    cld['a3d_prof_lat']     = 45
+
+    cld = cols_dct[datetime.datetime(2019,1,5)] = {}
+    cld['a3d_prof_bname']   = 'NEW_2019 01 05_AIRS_3D_alt_data_50_deg_lat'
+    cld['a3d_prof_lat']     = 50
+
+    cld = cols_dct[datetime.datetime(2019,2,1)] = {}
+    cld['a3d_prof_bname']   = 'NEW_2019 02 01_AIRS_3D_alt_data_48_deg_lat'
+    cld['a3d_prof_lat']     = 48
 
     png_name    = 'Fig2_Vortex_GW_Maps.png'
     png_fpath   = os.path.join(output_dir,png_name)
@@ -57,7 +65,7 @@ if __name__ == "__main__":
     figsize = (22.5,20)
     fig     = plt.figure(figsize=figsize)
 
-    ncols           = len(dates)
+    ncols           = len(cols_dct)
     col_fwidth      = 1./ncols
     col_padded      = 0.90*col_fwidth
 
@@ -67,7 +75,7 @@ if __name__ == "__main__":
 
     cbar_left   = 1.
     cbar_width  = 0.015
-    for col_inx,date in enumerate(dates):
+    for col_inx,(date,cld) in enumerate(cols_dct.items()):
         print(date)
         # fig.add_axes([left,bottom,width,height])
         left    = col_inx*col_fwidth
@@ -98,11 +106,11 @@ if __name__ == "__main__":
             cbar    = fig.colorbar(result['cbar_pcoll'],cax=cax,ticks=AIRS_cbar_ticks)
             cbar.set_label(result['cbar_label'])
 
-        profile_lat     = 55
+        profile_lat     = cld['a3d_prof_lat']
 
         print(' --> Loading AIRS3D Data')
         a3dw    = AIRS3D.AIRS3DWorld(date)
-        a3dlp   = AIRS3D.AIRS3DLatProfile(date,lat=profile_lat)
+        a3dlp   = AIRS3D.AIRS3DLatProfile(cld['a3d_prof_bname'],date,lat=profile_lat)
 
         # Determine Longitude Boundaries for region where there is valid data.
         tf              = np.isfinite(a3dlp.Tpert)

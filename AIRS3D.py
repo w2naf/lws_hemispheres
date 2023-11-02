@@ -121,23 +121,22 @@ class AIRS3DWorld(object):
         return result
 
 class AIRS3DLatProfile(object):
-    def __init__(self,date,lat=55):
+    def __init__(self,bname,date,lat=55):
         #data/AIRS3D/12_09_2018_data
         #2018_12_10_AIRS_3D_alt_data_at_55_deg_lat_alt.nc
         #2018_12_10_AIRS_3D_alt_data_at_55_deg_lat_long.nc
         #2018_12_10_AIRS_3D_alt_data_at_55_deg_lat_temp_pert.nc
         data_dir        = os.path.join(AIRS3D_base_dir,date.strftime('%m_%d_%Y_data'))
 
-        # Sophie seems to have given me the map data for December 9, 2018, but the profile
-        # data from December 10, 2018. Need to double-check with her on this, but this if
-        # statement is a workaround for now. All of the other dates seem fine.
-        if date == datetime.datetime(2018,12,9):
-            date = datetime.datetime(2018,12,10)
-
         date_str        = date.strftime('%Y_%m_%d')
-        alt_nc          = '{!s}_AIRS_3D_alt_data_at_{:0.0f}_deg_lat_alt.nc'.format(date_str,lat)
-        lon_nc          = '{!s}_AIRS_3D_alt_data_at_{:0.0f}_deg_lat_long.nc'.format(date_str,lat)
-        Tpert_nc        = '{!s}_AIRS_3D_alt_data_at_{:0.0f}_deg_lat_temp_pert.nc'.format(date_str,lat)
+
+#        alt_nc          = '{!s}_AIRS_3D_alt_data_at_{:0.0f}_deg_lat_alt.nc'.format(date_str,lat)
+#        lon_nc          = '{!s}_AIRS_3D_alt_data_at_{:0.0f}_deg_lat_long.nc'.format(date_str,lat)
+#        Tpert_nc        = '{!s}_AIRS_3D_alt_data_at_{:0.0f}_deg_lat_temp_pert.nc'.format(date_str,lat)
+
+        alt_nc          = '{!s}_alt.nc'.format(bname)
+        lon_nc          = '{!s}_long.nc'.format(bname)
+        Tpert_nc        = '{!s}_temp_pert.nc'.format(bname)
 
         alt_nc_path     = os.path.join(data_dir,alt_nc)
         lon_nc_path     = os.path.join(data_dir,lon_nc)
