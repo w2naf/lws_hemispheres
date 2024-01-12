@@ -810,7 +810,9 @@ class ParameterObject(object):
             data_vars = [] # Keep track of each column name in each data file.
             for radar in self.radars:
     #            fl  = os.path.join(data_dir,'sdMSTIDindex_{!s}_{!s}.nc'.format(season,radar))
-                fl  = glob.glob(os.path.join(data_dir,'*{!s}_{!s}.nc'.format(season,radar)))[0]
+                patt    = os.path.join(data_dir,'*{!s}_{!s}.nc'.format(season,radar))
+                print('Loading: {!s}'.format(patt))
+                fl      = glob.glob(patt)[0]
                 tqdm.tqdm.write('--> {!s}: {!s}'.format(param,fl))
                 dsr = xr.open_dataset(fl)
                 ds.append(dsr)
@@ -1380,7 +1382,7 @@ if __name__ == '__main__':
 #    mstid_data_dir      = os.path.join('data','mongo_out','mstid_MUSIC','guc')
 #    mstid_data_dir      = os.path.join('data','mongo_out','mstid_GSMR_fitexfilter_using_mstid_2016_dates','guc')
 #    mstid_data_dir      = os.path.join('data','mongo_out','mstid_2016','guc')
-    mstid_data_dir      = os.path.join('data','mongo_out','mstid_GSMR_fitexfilter','guc')
+    mstid_data_dir      = os.path.join('data','mongo_out','mstid_GSMR_fitexfilter_rtiThresh-0.25','guc')
     plot_climatologies  = False
     plot_histograms     = False
     plot_stackplots     = True
