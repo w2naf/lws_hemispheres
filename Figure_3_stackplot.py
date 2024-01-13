@@ -38,12 +38,15 @@ import sme_plot
 
 pd.set_option('display.max_rows', None)
 
-mpl.rcParams['font.size']      = 12
-mpl.rcParams['font.weight']    = 'bold'
-mpl.rcParams['axes.grid']      = True
-mpl.rcParams['grid.linestyle'] = ':'
-mpl.rcParams['figure.figsize'] = np.array([15, 8])
-mpl.rcParams['axes.xmargin']   = 0
+mpl.rcParams['font.size']           = 12
+mpl.rcParams['font.weight']         = 'bold'
+mpl.rcParams['axes.grid']           = True
+mpl.rcParams['grid.linestyle']      = ':'
+mpl.rcParams['figure.figsize']      = np.array([15, 8])
+mpl.rcParams['axes.xmargin']        = 0
+mpl.rcParams['ytick.labelsize']     = 22
+mpl.rcParams['xtick.major.size']    = 6
+#mpl.rcParams['xtick.minor.size']    = 10
 
 #cbar_title_fontdict     = {'weight':'bold','size':30}
 #cbar_ytick_fontdict     = {'size':30}
@@ -57,8 +60,8 @@ mpl.rcParams['axes.xmargin']   = 0
 #title_fontdict          = {'weight': 'bold', 'size':36}
 
 cbar_title_fontdict     = {'weight':'bold','size':42}
-cbar_ytick_fontdict     = {'size':36}
-xtick_fontdict          = {'weight': 'bold', 'size':24}
+cbar_ytick_fontdict     = {'weight':'bold','size':36}
+xtick_fontdict          = {'weight': 'bold', 'size':mpl.rcParams['ytick.labelsize']}
 ytick_major_fontdict    = {'weight': 'bold', 'size':24}
 ytick_minor_fontdict    = {'weight': 'bold', 'size':24}
 title_fontdict          = {'weight': 'bold', 'size':36}
@@ -220,8 +223,8 @@ prmd['scale_0']         = -20
 prmd['scale_1']         = 100
 prmd['levels']          = 11
 prmd['cmap']            = 'jet'
-prmd['cbar_label']      = 'MERRA-2 Zonal Wind\n[m/s] (50\N{DEGREE SIGN} N)'
-prmd['title']           = 'MERRA-2 Zonal Winds + CIPS & AIRS GW Variance'
+prmd['cbar_label']      = 'MERRA-2 Zonal Wind\n[m/s]'
+prmd['title']           = 'MERRA-2 50\N{DEGREE SIGN} N Lat Zonal Winds + CIPS & AIRS GW Variance'
 
 prmd = prm_dct['gnss_dtec_gw'] = {}
 prmd['cmap']            = 'jet'
@@ -361,11 +364,12 @@ def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,short_labels=False,
                         fontdict=fontdict)
             if short_labels:    
                 if curr_date.day == 1:
-                    ypos    = -0.025
+                    ypos    = -0.030
                     txt     = curr_date.strftime('%b %Y')
                     ax.text(xpos,ypos,txt,transform=ytransaxes,
                             ha='left', va='top',rotation=0,
                             fontdict=fontdict)
+                    ax.axvline(xpos,lw=2,zorder=5000,color='0.6',ls='--')
         curr_date += datetime.timedelta(days=1)
 
     xmax    = (eDate - sDate).total_seconds() / (86400.)
@@ -1321,7 +1325,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         else:
             fontdict = ylabel_fontdict.copy()
 
-        my_xticks(sDate,eDate,ax,radar_ax=radar_ax,fontdict=fontdict,
+        my_xticks(sDate,eDate,ax,radar_ax=radar_ax,
                   labels=False,short_labels=True,plot_axvline=False)
 
     fig.tight_layout()

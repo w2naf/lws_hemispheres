@@ -115,7 +115,7 @@ class LSTID_HAM(object):
 
         yy      = df['tid_hours']
         label  = 'TID Occurrence [hr]'
-        hndl    = ax.bar(xx,yy,width=1,label=label)
+        hndl    = ax.bar(xx,yy,width=1,label=label,color='green')
         hndls.append(hndl)
         ylabel  = 'LSTID Occurrence [hr]\nLSTID Period [hr]'
         ax.set_ylabel(ylabel,fontdict=ylabel_fontdict)
@@ -123,7 +123,7 @@ class LSTID_HAM(object):
 
         yy      = df['period_hr']
         ylabel  = 'LSTID Period [hr]'
-        hndl    = ax.bar(xx,yy,label=ylabel)
+        hndl    = ax.bar(xx,yy,label=ylabel,color='orange')
         hndls.append(hndl)
         ax.legend(handles=hndls,loc='upper right',fontsize=legend_fontsize,ncols=legend_ncols)
 

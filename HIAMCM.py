@@ -69,7 +69,7 @@ class HIAMCM(object):
             fig.colorbar(cbar_pcoll,label=cbar_label)
 
         prm_title = ds[prm].attrs.get('title',prm)
-        title = 'HIAMCM {:0.0f}\N{DEGREE SIGN} - {:0.0f}\N{DEGREE SIGN} Lat Average {!s}'.format(lats[0],lats[1],prm_title)
+        title = 'HIAMCM {:0.0f}\N{DEGREE SIGN} N - {:0.0f}\N{DEGREE SIGN} N Lat Average {!s}'.format(lats[0],lats[1],prm_title)
 
         result  = {}
         result['cbar_pcoll'] = cbar_pcoll
