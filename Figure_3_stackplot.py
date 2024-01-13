@@ -520,7 +520,7 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
     brkt_lw     = 2
    
     trans   = mpl.transforms.blended_transform_factory(ax.transAxes,ax.transData)
-    rdr_lbls    = '\n'.join([rdr.upper() for rdr in radars])
+    rdr_lbls    = '\n'.join([rdr.upper() for rdr in radars[::-1]])
     bbox        = {'facecolor':'none','edgecolor':brkt_color,'pad':10.0,'lw':brkt_lw}
     rdr_box_x0  = 1.030
     arrowprops  = {'arrowstyle':'->','lw':brkt_lw}
