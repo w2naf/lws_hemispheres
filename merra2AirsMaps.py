@@ -278,7 +278,7 @@ class Merra2AirsMaps(object):
         m2ws = {} # MERRA2 Wind Stream Parameters
         m2ws['levels']      = [-10000,40,60]
         m2ws['colors']      = ['white','orange','red']
-        m2ws['linewidths']  = 1.75
+        m2ws['linewidths']  = 3
         m2ws['zorder']      = 1000
 
 #        m2ws['linewidths']  = [0,2,1.5]
