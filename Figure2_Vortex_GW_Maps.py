@@ -29,13 +29,13 @@ import merra2AirsMaps
 
 pd.set_option('display.max_rows', None)
 
-mpl.rcParams['font.size']      = 12
+mpl.rcParams['font.size']      = 18
 mpl.rcParams['font.weight']    = 'bold'
 mpl.rcParams['axes.titleweight']   = 'bold'
 mpl.rcParams['axes.labelweight']   = 'bold'
 mpl.rcParams['axes.grid']      = True
 mpl.rcParams['grid.linestyle'] = ':'
-mpl.rcParams['figure.figsize'] = np.array([15, 8])
+mpl.rcParams['figure.figsize'] = np.array([15, 9])
 mpl.rcParams['axes.xmargin']   = 0
     
 if __name__ == "__main__":
@@ -73,8 +73,8 @@ if __name__ == "__main__":
     col_padded      = 0.90*col_fwidth
 
 #    row_heights     = [0.35,0.15,0.2]
-    row_heights     = [0.35,0.15]
-    row_pad         = 0.03 
+    row_heights     = [0.35,0.35]
+    row_pad         = 0.05 
     nrows           = len(row_heights)
 
     # Create array of letters for labeling panels.
@@ -83,6 +83,10 @@ if __name__ == "__main__":
 
     cbar_left   = 1.
     cbar_width  = 0.015
+
+    # Longitude at bottom of map.
+    lon_down = -90
+
     for col_inx,(date,cld) in enumerate(cols_dct.items()):
         print(date)
         # fig.add_axes([left,bottom,width,height])
@@ -93,20 +97,21 @@ if __name__ == "__main__":
         row_inx = 0
         bottom  = 1. - np.sum(row_heights[:row_inx+1])
         height  = row_heights[row_inx] - row_pad
-        ax      = fig.add_axes([left,bottom,width,height],projection=ccrs.Orthographic(0,90))
+        ax      = fig.add_axes([left,bottom,width,height],projection=ccrs.Orthographic(lon_down,90))
         AIRS_GWv_vmin       = 0.
         AIRS_GWv_vmax       = 0.8
         # Loosely dashed negative linestyle
         # See https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html
         merra2_vortex_kw    = {'linewidths':3,'negative_linestyles':(0, (1, 3))}
+#        merra2_vortex_kw    = {'linewidths':3,'vmin':0}
         result  = mca.plot_ax(ax,date,vmin=AIRS_GWv_vmin,vmax=AIRS_GWv_vmax,cmap='RdPu',
                 merra2_vortex_kw=merra2_vortex_kw)
         title   = date.strftime('%d %b %Y')
         ax.set_title(title,pad=18,fontdict={'weight':'bold','size':36})
 
-#        letter = '({!s})'.format(letters[row_inx,col_inx])
-#        ax.text(0.025,0.95,letter,transform=ax.transAxes,
-#                    fontdict={'weight':'bold','size':24})
+        letter = '({!s})'.format(letters[row_inx,col_inx])
+        ax.text(0.025,0.95,letter,transform=ax.transAxes,
+                    fontdict={'weight':'bold','size':24})
 
         if col_inx == nrows-1:
             cbar_bottom = bottom
@@ -135,13 +140,14 @@ if __name__ == "__main__":
         row_inx += 1
         bottom  = 1. - np.sum(row_heights[:row_inx+1])
         height  = row_heights[row_inx] - row_pad
-        ax      = fig.add_axes([left,bottom,width,height],projection=ccrs.PlateCarree())
-        ax.set_aspect('auto')
+        ax      = fig.add_axes([left,bottom,width,height],projection=ccrs.Orthographic(lon_down,90))
         result  = a3dw.plot_ax(ax=ax,vmin=-0.5,vmax=0.5)
-        ax.set_title(result['title'])
+        mca.overlay_windspeed(ax,date)
+        mca.overlay_vortex(ax,date,merra2_vortex_kw=merra2_vortex_kw)
 
-#        letter = '({!s})'.format(letters[row_inx,col_inx])
-#        ax.set_title(letter,loc='left',fontdict={'weight':'bold','size':24})
+        letter = '({!s})'.format(letters[row_inx,col_inx])
+        ax.text(0.025,0.95,letter,transform=ax.transAxes,
+                    fontdict={'weight':'bold','size':24})
 
 #        ax.hlines(profile_lat,profile_lons[0],profile_lons[1],color='#FE6100',lw=4)
         if col_inx == nrows-1:

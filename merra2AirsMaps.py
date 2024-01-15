@@ -201,17 +201,13 @@ class Merra2AirsMaps(object):
         merra2_lons             = ds['MERRA2_LONS']
         merra2_lats             = ds['MERRA2_LATS']
         merra2_streamfunction   = ds['MERRA2_STREAMFUNCTION'].values[date_inx,:,:]
-        merra2_windspeed        = ds['MERRA2_WINDSPEED'].values[date_inx,:,:]
-        merra2_vortex           = ds['MERRA2_VORTEX'].values[date_inx,:,:]
+
+        ################################################################################ 
 
         # Default contour and coastline style parameters.
         # Tuned for an IDL-colormap style plot.
         m2sf = {} # MERRA2 Streamfunction Parameters
         m2sf['colors']      = 'white'
-
-        m2vx = {} # MERRA2 Vortex Parameters
-        m2vx['colors']      = 'white'
-        m2vx['linewidths']  = 2
 
         m2ws = {} # MERRA2 Wind Stream Parameters
         m2ws['levels']      = [50,70,90]
@@ -225,44 +221,87 @@ class Merra2AirsMaps(object):
             # MERRA2 Streamfunction
             m2sf['colors']      = '0.5'
 
-            # MERRA2 Vortex
-            m2vx['colors']      = 'black'
-            m2vx['linewidths']  = 3
-
-            # MERRA2 Wind Speed
-            m2ws['levels']      = [50,70,90]
-            m2ws['colors']      = ['yellow','orange','red']
-            m2ws['linewidths']  = 6*np.arange(len(m2ws['levels']))
-
             # Coastlines
             cl_kw['zorder'] = 100
             cl_kw['color']  = '0.65'
 
         m2sf.update(merra2_streamfunction_kw)
-        m2vx.update(merra2_vortex_kw)
-        m2ws.update(merra2_windspeed_kw)
         cl_kw.update(coastlines_kw)
 
         cyc_zz, cyc_lons = add_cyclic_point(merra2_streamfunction,coord=merra2_lons)
         ax.contour(cyc_lons,merra2_lats,cyc_zz,transform=ccrs.PlateCarree(),**m2sf)
 
-        cyc_zz, cyc_lons = add_cyclic_point(merra2_vortex,coord=merra2_lons)
-        ax.contour(cyc_lons,merra2_lats,cyc_zz,transform=ccrs.PlateCarree(),**m2vx)
-
-        cyc_zz, cyc_lons = add_cyclic_point(merra2_windspeed,coord=merra2_lons)
-        WS = ax.contour(cyc_lons,merra2_lats,cyc_zz,transform=ccrs.PlateCarree(),**m2ws)
-        ax.clabel(WS,inline=True)
+        self.overlay_windspeed(ax,date,merra2_windspeed_kw=merra2_windspeed_kw)
+        self.overlay_vortex(ax,date,merra2_vortex_kw=merra2_vortex_kw)
         
         if coastlines is True:
             ax.coastlines(**cl_kw)
         if gridlines is True:
-            ax.gridlines(draw_labels=True)
-#        ax.gridlines(lw=2, ec='black', draw_labels=True) # Show the geographic grid.
+            ax.gridlines(draw_labels='x',lw=1.5)
 
         result  = {}
         result['cbar_pcoll']    = cbar_pcoll
         result['cbar_label']    = cbar_label
         return result
+    
+    def overlay_vortex(self,ax,date,merra2_vortex_kw={}):
+        date_0, date_inx = self._date2inx(date)
+        ds      = self.ds
+
+        merra2_lons             = ds['MERRA2_LONS']
+        merra2_lats             = ds['MERRA2_LATS']
+        merra2_vortex           = ds['MERRA2_VORTEX'].values[date_inx,:,:]
+
+        # Only plot vortex (positive values), not anti-vortex. ######################### 
+        tf = merra2_vortex < 0
+        merra2_vortex[tf] = np.nan
+
+        m2vx = {} # MERRA2 Vortex Parameters
+        m2vx['colors']      = 'black'
+        m2vx['linewidths']  = 3
+        m2vx['zorder']      = 5000
+
+        m2vx.update(merra2_vortex_kw)
+
+        cyc_zz, cyc_lons = add_cyclic_point(merra2_vortex,coord=merra2_lons)
+        ax.contour(cyc_lons,merra2_lats,cyc_zz,transform=ccrs.PlateCarree(),**m2vx)
+
+    def overlay_windspeed(self,ax,date,merra2_windspeed_kw={}):
+        date_0, date_inx = self._date2inx(date)
+        ds      = self.ds
+
+        merra2_lons             = ds['MERRA2_LONS']
+        merra2_lats             = ds['MERRA2_LATS']
+        merra2_windspeed        = ds['MERRA2_WINDSPEED'].values[date_inx,:,:]
+
+        # MERRA2 Wind Speed
+        m2ws = {} # MERRA2 Wind Stream Parameters
+        m2ws['levels']      = [-10000,40,60]
+        m2ws['colors']      = ['white','orange','red']
+        m2ws['linewidths']  = 1.75
+        m2ws['zorder']      = 1000
+
+#        m2ws['linewidths']  = [0,2,1.5]
+#        m2ws['linewidths']  = 1.5*np.arange(len(m2ws['levels']))
+#
+#        m2ws['vmin']        = 0
+#        m2ws['vmax']        = 100
+#        m2ws['linewidths']  = 3
+#        del m2ws['levels']
+#        del m2ws['colors']
+
+        m2ws.update(merra2_windspeed_kw)
+
+        Nnans   = np.sum(np.isnan(merra2_windspeed))
+        Nfinite = np.sum(~np.isnan(merra2_windspeed))
+        print('   MERRA2 Windspeed Min: {!s} Max: {!s} NaNs: {!s} Finite: {!s}'.format(merra2_windspeed.min(),merra2_windspeed.max(),Nnans,Nfinite))
+        cyc_zz, cyc_lons = add_cyclic_point(merra2_windspeed,coord=merra2_lons)
+        WS = ax.contour(cyc_lons,merra2_lats,cyc_zz,transform=ccrs.PlateCarree(),**m2ws)
+        try:
+            ax.clabel(WS,inline=True)
+        except:
+            pass
+
 
 if __name__ == '__main__':
     output_dir = os.path.join('output','merra2AirsMaps')

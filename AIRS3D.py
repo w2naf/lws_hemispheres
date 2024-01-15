@@ -84,6 +84,7 @@ class AIRS3DWorld(object):
         plt.close(fig)
     
     def plot_ax(self,fig=None,ax=None,
+            gridlines=True,coastlines=True,
                 xlim=(-180,180), ylim=(0,90),
                 vmin=-0.5, vmax=0.5,
                 cmap='viridis',ylabel_fontdict={},**kwargs):
@@ -101,22 +102,24 @@ class AIRS3DWorld(object):
 
         cbar_pcoll = ax.pcolormesh(xx,yy,zz,vmin=vmin,vmax=vmax,transform=ccrs.PlateCarree(),**kwargs) 
 
-        ax.coastlines()
+        if coastlines is True:
+            ax.coastlines()
 #        ax.add_feature(cfeature.LAND, color='lightgrey')
 #        ax.add_feature(cfeature.OCEAN, color = 'white')
 #        ax.add_feature(cfeature.LAKES, color='white')
 
-        ax.gridlines(draw_labels=['left','bottom'])
+        if gridlines is True:
+            gl = ax.gridlines(draw_labels='x',color='k',lw=1.5)
 
-        ax.set_xlim(xlim)
-        ax.set_ylim(ylim)
+#        ax.set_xlim(xlim)
+#        ax.set_ylim(ylim)
 
         title = '{!s} AIRS Global Temperatures'.format(self.date.strftime('%d %b %Y'))
 
         result  = {}
         result['ax']            = ax
         result['cbar_pcoll'] = cbar_pcoll
-        result['cbar_label']    = '4.3 micron Temperature'
+        result['cbar_label']    = 'AIRS 4.3 micron\nTemperature Perturbation'
         result['title']         = title
         return result
 
