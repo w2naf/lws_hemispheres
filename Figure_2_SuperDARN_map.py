@@ -31,12 +31,14 @@ import merra2AirsMaps
 
 Re = 6371 # Radius of the Earth in km
 
-mpl.rcParams['font.size']      = 12
-mpl.rcParams['font.weight']    = 'bold'
-mpl.rcParams['axes.grid']      = True
-mpl.rcParams['grid.linestyle'] = ':'
-mpl.rcParams['figure.figsize'] = np.array([15, 8])
-mpl.rcParams['axes.xmargin']   = 0
+mpl.rcParams['font.size']           = 22
+mpl.rcParams['font.weight']         = 'bold'
+mpl.rcParams['axes.labelweight']    = 'bold'
+mpl.rcParams['axes.labelsize']      = 18
+mpl.rcParams['axes.grid']           = True
+mpl.rcParams['grid.linestyle']      = ':'
+mpl.rcParams['figure.figsize']      = np.array([15, 8])
+mpl.rcParams['axes.xmargin']        = 0
 
 def prep_dir(path,clear=False):
     if clear:
@@ -164,7 +166,7 @@ def fan_plot(dataObject,
     bounds  = np.linspace(scale[0],scale[1],256)
     norm    = mpl.colors.BoundaryNorm(bounds,cmap.N)
 
-    pcoll = mpl.collections.PolyCollection(np.array(verts),edgecolors='face',closed=False,cmap=cmap,norm=norm,zorder=99)
+    pcoll = mpl.collections.PolyCollection(np.array(verts),edgecolors='face',closed=False,cmap=cmap,norm=norm,zorder=6001)
     pcoll.set_array(np.array(scan))
     axis.add_collection(pcoll,autolim=False)
 
@@ -314,7 +316,7 @@ def get_stid(radar):
         if radar == rdr_tpl.hardware_info.abbrev:
             return stid
 
-def plot_radar_fov(radar,ax,time,fovModel='GS',fov_ranges=(0,50),fov_beams=None,rsep=45,frang=180):
+def plot_radar_fov(radar,ax,time,fovModel='GS',fov_ranges=(0,50),fov_beams=None,rsep=45,frang=180,fov_zorder=6000):
     """
     rsep:  Range Seperation (km) (default: 45 km)
     frang: Distance to first range gate (km) (default: 45 km)
@@ -343,25 +345,25 @@ def plot_radar_fov(radar,ax,time,fovModel='GS',fov_ranges=(0,50),fov_beams=None,
     # Left Edge
     xx = lonFull[0,:]
     yy = latFull[0,:]
-    ax.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+    ax.plot(xx,yy,color='k',transform=ccrs.PlateCarree(),zorder=fov_zorder)
 
     # Right Edge
     xx = lonFull[-1,:]
     yy = latFull[-1,:]
-    ax.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+    ax.plot(xx,yy,color='k',transform=ccrs.PlateCarree(),zorder=fov_zorder)
 
     # Bottom Edge 
     xx = lonFull[:,0]
     yy = latFull[:,0]
-    ax.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+    ax.plot(xx,yy,color='k',transform=ccrs.PlateCarree(),zorder=fov_zorder)
 
     # Top Edge
     xx = lonFull[:,-1]
     yy = latFull[:,-1]
-    ax.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
+    ax.plot(xx,yy,color='k',transform=ccrs.PlateCarree(),zorder=fov_zorder)
 
     # Radar Location
-    ax.scatter(radar_lon,radar_lat,marker='o',color='k',s=40,transform=ccrs.PlateCarree())
+    ax.scatter(radar_lon,radar_lat,marker='o',color='k',s=40,transform=ccrs.PlateCarree(),zorder=fov_zorder)
     if radar == 'cvw' or radar == 'fhw':
         ha      = 'right'
         text    = radar.upper() + ' '
@@ -369,11 +371,11 @@ def plot_radar_fov(radar,ax,time,fovModel='GS',fov_ranges=(0,50),fov_beams=None,
         ha      = 'left'
         text    = ' ' + radar.upper()
 
-    fontdict = {'color':'black','size':16,'weight':'bold'}
+    fontdict = {'color':'black','size':18,'weight':'bold'}
     ax.text(radar_lon,radar_lat,text,ha=ha,
             fontdict=fontdict,transform=ccrs.PlateCarree(),
             path_effects=[mpl.patheffects.withStroke(linewidth=2, foreground="white")],
-            zorder=1000)
+            zorder=fov_zorder+1)
 
 def plot_map(radars_dct,time,dataSet='active',output_dir='output',
         fovModel='GS',**kwargs):
@@ -413,14 +415,14 @@ def plot_map(radars_dct,time,dataSet='active',output_dir='output',
 
     if 'gscat' in result['metadata']:
         if result['metadata']['gscat'] == 1:
-            cbar.ax.text(0.5,-0.075,'Ground\nscat\nonly',ha='center',fontsize=None,transform=cbar.ax.transAxes)
+            cbar.ax.text(0.5,-0.075,'Ground\nScatter Only',ha='center',fontsize='x-small',transform=cbar.ax.transAxes)
 
     txt = 'Coordinates: ' + result['metadata']['coords'] +', Model: ' + result['metadata']['model']
     ax.text(1.01, 0, txt,
               horizontalalignment='left',
               verticalalignment='bottom',
               rotation='vertical',
-              size='small',
+              size='x-small',
               weight='bold',
               transform=ax.transAxes)
 
@@ -508,14 +510,15 @@ def time_vector(sTime,eTime,timedelta=datetime.timedelta(minutes=2),**kwargs):
 if __name__ == '__main__':
     rd = {}
 
-    rd['output_dir'] = 'output/fig1_map'
+    rd['output_dir'] = 'output/Fig2_SuperDARN_Map'
     prep_dir(rd['output_dir'],clear=True)
 
 #    rd['sTime']         = datetime.datetime(2018,12,9,12)
 #    rd['eTime']         = datetime.datetime(2018,12,10)
 #    rd['time']          = datetime.datetime(2018,12,9,19,0)
 
-    rd['sTime']         = datetime.datetime(2018,12,10,12)
+#    rd['sTime']         = datetime.datetime(2018,12,10,12)
+    rd['sTime']         = datetime.datetime(2018,12,10,18)
     rd['eTime']         = datetime.datetime(2018,12,11)
     rd['time']          = datetime.datetime(2018,12,10,19,0)
 
@@ -541,11 +544,11 @@ if __name__ == '__main__':
 #    rd['dataSet']       = 'active'
 
     
-    plot_rtp(**rd)
+#    plot_rtp(**rd)
     times = time_vector(**rd)
     for time in times:
-#        if time != datetime.datetime(2018,12,9,18,30):
-#            continue
+        if time != datetime.datetime(2018,12,10,18,30):
+            continue
         rd['time'] = time
         plot_map(**rd)
     import ipdb; ipdb.set_trace()
