@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-This script is used to generate Figure 2 of the Frissell et al. (2023)
+This script is used to generate Figure 1 of the Frissell et al. (2024)
 GRL manuscript on multi-instrument measurements of AGWs, MSTIDs, and LSTIDs.
 """
 
@@ -39,7 +39,7 @@ mpl.rcParams['figure.figsize'] = np.array([15, 9])
 mpl.rcParams['axes.xmargin']   = 0
     
 if __name__ == "__main__":
-    output_dir = os.path.join('output','Fig2_Vortex_GW_Maps')
+    output_dir = os.path.join('output','Fig1_Vortex_GW_Maps')
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     if not os.path.exists(output_dir):
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     cld['a3d_prof_bname']   = 'NEW_2019 02 01_AIRS_3D_alt_data_48_deg_lat'
     cld['a3d_prof_lat']     = 48
 
-    png_name    = 'Fig2_Vortex_GW_Maps.png'
+    png_name    = 'Fig1_Vortex_GW_Maps.png'
     png_fpath   = os.path.join(output_dir,png_name)
 
     figsize = (22.5,20)
