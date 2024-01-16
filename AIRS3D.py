@@ -119,7 +119,7 @@ class AIRS3DWorld(object):
         result  = {}
         result['ax']            = ax
         result['cbar_pcoll'] = cbar_pcoll
-        result['cbar_label']    = 'AIRS 4.3 micron Brightness\nTemperature Perturbation'+u' [K$^2$]'
+        result['cbar_label']    = 'AIRS 4.3 micron Brightness\nTemperature Perturbation [K]'
         result['title']         = title
         return result
 

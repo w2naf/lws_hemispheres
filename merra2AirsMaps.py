@@ -229,7 +229,12 @@ class Merra2AirsMaps(object):
         cl_kw.update(coastlines_kw)
 
         cyc_zz, cyc_lons = add_cyclic_point(merra2_streamfunction,coord=merra2_lons)
-        ax.contour(cyc_lons,merra2_lats,cyc_zz,transform=ccrs.PlateCarree(),**m2sf)
+        Nnans   = np.sum(np.isnan(merra2_streamfunction))
+        Nfinite = np.sum(~np.isnan(merra2_streamfunction))
+        print('   MERRA2 Streamfunction Min: {!s} Max: {!s} NaNs: {!s} Finite: {!s}'.format(merra2_streamfunction.min(),merra2_streamfunction.max(),Nnans,Nfinite))
+        # I am taking the absolute value of the streamfunctions because Lynn Harvey asked that
+        # all of the streamfunction contours be represented as solid lines on the final plot.
+        ax.contour(cyc_lons,merra2_lats,np.abs(cyc_zz),transform=ccrs.PlateCarree(),**m2sf)
 
         self.overlay_windspeed(ax,date,merra2_windspeed_kw=merra2_windspeed_kw)
         self.overlay_vortex(ax,date,merra2_vortex_kw=merra2_vortex_kw)
@@ -292,9 +297,9 @@ class Merra2AirsMaps(object):
 
         m2ws.update(merra2_windspeed_kw)
 
-        Nnans   = np.sum(np.isnan(merra2_windspeed))
-        Nfinite = np.sum(~np.isnan(merra2_windspeed))
-        print('   MERRA2 Windspeed Min: {!s} Max: {!s} NaNs: {!s} Finite: {!s}'.format(merra2_windspeed.min(),merra2_windspeed.max(),Nnans,Nfinite))
+#        Nnans   = np.sum(np.isnan(merra2_windspeed))
+#        Nfinite = np.sum(~np.isnan(merra2_windspeed))
+#        print('   MERRA2 Windspeed Min: {!s} Max: {!s} NaNs: {!s} Finite: {!s}'.format(merra2_windspeed.min(),merra2_windspeed.max(),Nnans,Nfinite))
         cyc_zz, cyc_lons = add_cyclic_point(merra2_windspeed,coord=merra2_lons)
         WS = ax.contour(cyc_lons,merra2_lats,cyc_zz,transform=ccrs.PlateCarree(),**m2ws)
         try:
