@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-This class will generate a time series plot with MERRA2 winds in the background a AIRS and CIPS
-gravity wave variance on top.
+This class will generate a time series plot of Global Navigation Satellite System 
+absolute Total Electron Content (GNSS aTEC).
 """
 import os
 import shutil
