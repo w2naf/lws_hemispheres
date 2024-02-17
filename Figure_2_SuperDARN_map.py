@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+Figure_2a_SuperDARN_map.py
+Nathaniel A. Frissell
+February 2024
+
+This script is used to generate Figure 2b of the Frissell et al. (2024)
+GRL manuscript on multi-instrument measurements of AGWs, MSTIDs, and LSTIDs.
+"""
 
 import os
 import shutil

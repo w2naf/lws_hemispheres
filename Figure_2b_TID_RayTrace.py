@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""
+Figure_2b_TID_RayTrace.py
+Nathaniel A. Frissell
+February 2024
+
+This script is used to generate Figure 2b of the Frissell et al. (2024)
+GRL manuscript on multi-instrument measurements of AGWs, MSTIDs, and LSTIDs.
+"""
 import os 
 
 import numpy as np

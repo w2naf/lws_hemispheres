@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 """
-This script will create 12-year season climatology plots AND stackplots.
+Figure_3_stackplot.py
+Nathaniel A. Frissell
+February 2024
+
+This script is used to generate Figure 3 of the Frissell et al. (2024)
+GRL manuscript on multi-instrument measurements of AGWs, MSTIDs, and LSTIDs.
 """
 
 import os

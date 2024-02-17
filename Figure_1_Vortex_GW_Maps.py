@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 """
+Figure_1_Vortex_GW_Maps.py
+Nathaniel A. Frissell
+February 2024
+
 This script is used to generate Figure 1 of the Frissell et al. (2024)
 GRL manuscript on multi-instrument measurements of AGWs, MSTIDs, and LSTIDs.
 """
