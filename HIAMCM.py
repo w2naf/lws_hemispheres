@@ -46,7 +46,7 @@ class HIAMCM(object):
     def plot_ax(self,ax,prm='ww',lats=(40.,60.),
                 cmap='jet',plot_cbar=True,ylabel_fontdict={},**kwargs):
 
-        ds  = self.ds
+        ds      = self.ds
 
         fig     = ax.get_figure()
         
@@ -75,6 +75,7 @@ class HIAMCM(object):
         result['cbar_pcoll'] = cbar_pcoll
         result['cbar_label'] = cbar_label
         result['title']      = title
+        result['zz']         = zz
         return result
 
 if __name__ == '__main__':
