@@ -157,6 +157,8 @@ class Hovmoller(object):
 
         ax.set_ylim(ylim)
 
+        ax.set_xlabel('Longitude')
+
         result  = {}
         result['cbar_pcoll']    = cbar_pcoll
         result['cbar_label']    = cbar_label

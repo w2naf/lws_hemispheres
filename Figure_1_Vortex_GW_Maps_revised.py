@@ -73,7 +73,7 @@ if __name__ == "__main__":
     figsize = (22.5,24)
     fig     = plt.figure(figsize=figsize)
 
-    col_fwidths     = [0.35,0.35,0.40]
+    col_fwidths     = [0.35,0.35,0.50]
     ncols           = len(col_fwidths)
 
     nrows           = len(rows_dct)
@@ -168,16 +168,32 @@ if __name__ == "__main__":
     ################################################################################ 
     # Hovmoller Diagram
     col_inx += 1
-    left    = np.sum(col_fwidths[:col_inx])
+    left    = np.sum(col_fwidths[:col_inx]) + 0.075
     width   = col_fwidths[col_inx]
-    bottom  = 0
-    height  = 1
+    bottom  = 0.020
+    height  = 0.940 - bottom
     ax = fig.add_axes([left,bottom,width,height])
 
     hov     = hovmoller.Hovmoller()
     vmin    = 0.
     vmax    = 1.
-    result  = hov.plot_ax(ax,vmin=vmin,vmax=vmax)
+    ylim    = (datetime.datetime(2019,3,1),datetime.datetime(2018,12,1))
+    result  = hov.plot_ax(ax,vmin=vmin,vmax=vmax,ylim=ylim)
+
+    yticks  = ax.get_yticks()
+    ytls    = []
+    for ytick in yticks:
+        date    = mpl.dates.num2date(ytick)
+        ytl     = date.strftime('%b %d')
+        ytls.append(ytl)
+
+    ax.set_yticks(yticks)
+    ax.set_yticklabels(ytls)
+
+    title_pad   = 15.
+    title       = '{!s} - {!s}'.format(min(ylim).strftime('%Y %b %d'),max(ylim).strftime('%Y %b %d'))
+    ax.set_title(title,fontdict=title_fontdict,pad=title_pad)
+    ax.set_title('(g)',loc='left',fontdict=letter_fontdict,pad=title_pad)
 
     cbar_width  = 0.8*width
     cbar_left   = left + (width-cbar_width)/2.
