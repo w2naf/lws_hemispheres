@@ -94,7 +94,7 @@ class Hovmoller(object):
         fig.savefig(png_fpath,bbox_inches='tight')
         plt.close(fig)
     
-    def plot_ax(self,ax,vmin=0.,vmax=1,cmap='IDL',
+    def plot_ax(self,ax,vmin=0.,vmax=1,cmap='IDL',levels=None,
             merra2_windspeed_kw={},
             ylim = (datetime.datetime(2019,3,1),datetime.datetime(2018,12,1)),
             **kwargs):
@@ -113,13 +113,16 @@ class Hovmoller(object):
         dates       = [datetime.datetime.strptime(x.decode(), '%Y%m%d') for x in sav_data['sdate_all']]
 
         zz      = sav_data['variance_lineplot_avg'].copy()
-        tf      = ~np.isfinite(zz)
-        zz[tf]  = 0.
-        zz[zz < 0] = 0.
-#        zz[zz < 0.01] = np.nan
+#        tf      = ~np.isfinite(zz)
+#        zz[tf]  = 0.
+#        zz[zz < 0] = 0.
+        zz[zz < 0.0130] = np.nan
+
+        if levels is None:
+            levels = np.arange(vmin,vmax+0.005,0.005)
 
         cbar_pcoll  = ax.contourf(airs_lons,dates,zz,
-                cmap=cmap,levels=np.arange(vmin,vmax+0.005,0.005),extend='max')
+                cmap=cmap,levels=levels,extend='max')
         cbar_label  = 'AIRS GW Variance [K$^{2}$]'
 
         # MERRA2 Wind Speed ############################################################ 
@@ -129,9 +132,13 @@ class Hovmoller(object):
         m2ws = {} # MERRA2 Wind Stream Parameters
 #        m2ws['levels']      = [-10000,40,60]
 #        m2ws['colors']      = ['white','orange','red']
-        m2ws['levels']              = [-20,0,20,50]
-        m2ws['colors']              = ['0.5','0.5','orange','red']
-        m2ws['linewidths']          = 3
+
+        m2ws['levels']      = [-20,0,40,60]
+        m2ws['colors']      = ['0.5','0.5','orange','red']
+
+#        m2ws['levels']              = [-20,0,20,50]
+#        m2ws['colors']              = ['0.5','0.5','orange','red']
+        m2ws['linewidths']          = 6
         m2ws['zorder']              = 1000
         m2ws.update(merra2_windspeed_kw)
 

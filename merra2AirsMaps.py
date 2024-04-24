@@ -163,7 +163,7 @@ class Merra2AirsMaps(object):
         fig.savefig(png_fpath,bbox_inches='tight')
         plt.close(fig)
     
-    def plot_ax(self,ax,date=None,vmin=0.,vmax=0.8,cmap='IDL',
+    def plot_ax(self,ax,date=None,vmin=0.,vmax=0.8,cmap='IDL',levels=None,
             gridlines=True,coastlines=True,
             merra2_streamfunction_kw={},
             merra2_vortex_kw={},
@@ -189,13 +189,17 @@ class Merra2AirsMaps(object):
         if cmap == 'IDL':
             cmap    = rainbowCmap()
         zz      = airs_gw_var.copy()
-        tf      = ~np.isfinite(airs_gw_var)
-        zz[tf]  = 0.
-        zz[zz < 0] = 0.
+#        tf      = ~np.isfinite(airs_gw_var)
+#        zz[tf]  = 0.
+#        zz[zz < 0] = 0.
+        zz[zz < 0.0130] = np.nan
+
+        if levels is None:
+            levels = np.arange(vmin,vmax+0.005,0.005)
 
         cyc_zz, cyc_lons = add_cyclic_point(zz,coord=airs_lons)
         cbar_pcoll  = ax.contourf(cyc_lons,airs_lats,cyc_zz,transform=ccrs.PlateCarree(),
-                cmap=cmap,levels=np.arange(vmin,vmax+0.005,0.005),extend='max')
+                cmap=cmap,levels=levels,extend='max')
         cbar_label  = 'AIRS GW Variance [K$^{2}$]'
 
         merra2_lons             = ds['MERRA2_LONS']
@@ -208,10 +212,6 @@ class Merra2AirsMaps(object):
         # Tuned for an IDL-colormap style plot.
         m2sf = {} # MERRA2 Streamfunction Parameters
         m2sf['colors']      = 'white'
-
-        m2ws = {} # MERRA2 Wind Stream Parameters
-        m2ws['levels']      = [50,70,90]
-        m2ws['colors']      = ['yellow','orange','red']
 
         cl_kw = {} # Coastlines
         cl_kw['zorder']     = 100
@@ -286,20 +286,8 @@ class Merra2AirsMaps(object):
         m2ws['linewidths']  = 3
         m2ws['zorder']      = 1000
 
-#        m2ws['linewidths']  = [0,2,1.5]
-#        m2ws['linewidths']  = 1.5*np.arange(len(m2ws['levels']))
-#
-#        m2ws['vmin']        = 0
-#        m2ws['vmax']        = 100
-#        m2ws['linewidths']  = 3
-#        del m2ws['levels']
-#        del m2ws['colors']
-
         m2ws.update(merra2_windspeed_kw)
 
-#        Nnans   = np.sum(np.isnan(merra2_windspeed))
-#        Nfinite = np.sum(~np.isnan(merra2_windspeed))
-#        print('   MERRA2 Windspeed Min: {!s} Max: {!s} NaNs: {!s} Finite: {!s}'.format(merra2_windspeed.min(),merra2_windspeed.max(),Nnans,Nfinite))
         cyc_zz, cyc_lons = add_cyclic_point(merra2_windspeed,coord=merra2_lons)
         WS = ax.contour(cyc_lons,merra2_lats,cyc_zz,transform=ccrs.PlateCarree(),**m2ws)
         try:
