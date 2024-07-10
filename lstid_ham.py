@@ -75,16 +75,41 @@ def load_supermag():
 
 
 class LSTID_HAM(object):
-    def __init__(self,data_in='data/lstid_ham/WinterHam_2018_19.csv'):
-        self.load_data(data_in)
+    def __init__(self,dataSet='sinFit'):
+        """
+        dataSet: ['MLW', 'sinFit']
+        """
+        self.dataSet = dataSet
+        self.load_data()
     
-    def load_data(self,data_in):
-        df  = pd.read_csv(data_in,comment='#',parse_dates=[0])
+    def load_data(self):
+        if self.dataSet == 'MLW':
+            data_in='data/lstid_ham/WinterHam_2018_19.csv'
 
-        # Convert data columns to floats.
-        cols = ['start_time', 'end_time', 'low_range_km', 'high_range_km', 'tid_hours', 'range_km', 'cycles', 'period_hr']
-        for col in cols:
-            df.loc[:,col] = pd.to_numeric(df[col],errors='coerce')
+            df  = pd.read_csv(data_in,comment='#',parse_dates=[0])
+
+            # Convert data columns to floats.
+            cols_numeric = ['start_time', 'end_time', 'low_range_km', 'high_range_km', 'tid_hours', 'range_km', 'cycles', 'period_hr']
+            for col in cols_numeric:
+                df.loc[:,col] = pd.to_numeric(df[col],errors='coerce')
+        elif self.dataSet == 'sinFit':
+            data_in         = 'data/lstid_ham/20181101-20181101_sinFit.csv'
+            df              = pd.read_csv(data_in,names=['date','period_hr','amplitude_km'],parse_dates=[0],header=1)
+
+            # Convert data columns to floats.
+            cols_numeric    = ['period_hr','amplitude_km']
+            for col in cols_numeric:
+                df.loc[:,col] = pd.to_numeric(df[col],errors='coerce')
+
+            # Eliminate waves with period > 5 hr.
+            tf = df['period_hr'] > 5
+            df.loc[tf,'period_hr']           = np.nan
+            df.loc[tf,'amplitude_km']   = np.nan
+
+            # Eliminate waves with amplitudes < 15 km.
+            tf = df['amplitude_km'] < 15
+            df.loc[tf,'period_hr']           = np.nan
+            df.loc[tf,'amplitude_km']   = np.nan
 
         self.data_in    = data_in
         self.df         = df
@@ -105,26 +130,43 @@ class LSTID_HAM(object):
         fig     = ax.get_figure()
         
         df      = self.df
-
         hndls   = []
-
         xx      = df['date']
 
         if xlim is None:
             xlim = (min(xx), max(xx))
 
-        yy      = df['tid_hours']
-        label  = 'TID Occurrence [hr]'
-        hndl    = ax.bar(xx,yy,width=1,label=label,color='green',align='edge')
-        hndls.append(hndl)
-        ylabel  = 'LSTID Occurrence [hr]\nLSTID Period [hr]'
-        ax.set_ylabel(ylabel,fontdict=ylabel_fontdict)
-        ax.set_xlabel('UTC Date')
+        if self.dataSet == 'MLW':
+            yy      = df['tid_hours']
+            label  = 'TID Occurrence [hr]'
+            hndl    = ax.bar(xx,yy,width=1,label=label,color='green',align='edge')
+            hndls.append(hndl)
+            ylabel  = 'LSTID Occurrence [hr]\nLSTID Period [hr]'
+            ax.set_ylabel(ylabel,fontdict=ylabel_fontdict)
+            ax.set_xlabel('UTC Date')
 
-        yy      = df['period_hr']
-        ylabel  = 'LSTID Period [hr]'
-        hndl    = ax.bar(xx,yy,label=ylabel,color='orange',align='edge')
-        hndls.append(hndl)
+            yy      = df['period_hr']
+            ylabel  = 'LSTID Period [hr]'
+            hndl    = ax.bar(xx,yy,label=ylabel,color='orange',align='edge')
+            hndls.append(hndl)
+        elif self.dataSet == 'sinFit':
+            yy      = df['amplitude_km']
+            ylabel  = 'LSTID Amplitude [km]'
+            hndl    = ax.bar(xx,yy,width=1,label=ylabel,color='green',align='edge')
+            hndls.append(hndl)
+            ax.set_ylabel(ylabel,fontdict=ylabel_fontdict)
+            ax.set_xlabel('UTC Date')
+
+#            ax2     = ax.twinx()
+#            yy      = df['period_hr']
+#            ylabel  = 'LSTID Period [hr]'
+#            ax2.set_ylabel(ylabel,fontdict=ylabel_fontdict)
+#            ax2.grid(False)
+#            ax2.set_ylim(0,20)
+#            hndl    = ax2.bar(xx,yy,label=ylabel,color='orange',align='edge')
+#            hndls.append(hndl)
+
+        ax.text(0.01,0.95,self.dataSet,transform=ax.transAxes)
         ax.legend(handles=hndls,loc='upper right',fontsize=legend_fontsize,ncols=legend_ncols)
 
         if plot_ae:
@@ -135,8 +177,10 @@ class LSTID_HAM(object):
             ax2 = ax.twinx()
             ax2_xx = omni.index
             ax2_yy = omni['1-H_AE_nT']
-            ax2.plot(ax2_xx,ax2_yy,color='k')
+            ax2.plot(ax2_xx,ax2_yy,color='k',alpha=0.5)
             ax2.set_ylabel('AE [nT]')
+            ax2.grid(False)
+            
 
         if plot_dst:
             omni = load_omni()
@@ -158,8 +202,10 @@ class LSTID_HAM(object):
             ax2 = ax.twinx()
             ax2_xx = supermag.index
             ax2_yy = supermag['SME']
-            ax2.plot(ax2_xx,ax2_yy,color='k')
+            ax2.plot(ax2_xx,ax2_yy,color='k',alpha=0.5)
             ax2.set_ylabel('SME [nT]')
+            ax2.grid(False)
+            ax2.set_ylim(0,2000)
 
         title   = 'Amateur Radio 14 MHz LSTID Observations'
         ax.set_title(title)
