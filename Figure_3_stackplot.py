@@ -876,7 +876,7 @@ class ParameterObject(object):
             # Convert parameter of interest to a datafame.
             df      = dss[param].to_dataframe()
             dfrs = {}
-            for radar in tqdm.tqdm(radars,desc='Radars',dynamic_ncols=True,position=1,leave=False):
+            for radar in tqdm.tqdm(self.radars,desc='Radars',dynamic_ncols=True,position=1,leave=False):
                 tf      = df['radar'] == radar
                 dft     = df[tf]
                 dates   = dft.index
