@@ -1,7 +1,7 @@
 ﻿# WinterHam_2018_19.xlsx,,,,MLW,"Bill Engelke's plots, threshold=0",,,,
 # CompareHam_2019.xlsx,,,, ,14 MHz,,,"For Hemispheres, SSW",
 # WinterHam_2018_2019,,,,,20 meters,,,Sudden Stratospheric Warming,
-date,start_time,end_time,low_range_km,high_range_km,tid_hours,range_km,cycles,period_hr,comment
+date,start_time,end_time,low_range_km,high_range_km,tid_hours,range_range,cycles,period_hr,comment
 11/1/2018,14,23,1300,1500,9,200,3,3,
 11/2/2018,15,23,1200,1400,8,200,6,1.33,choppy
 11/3/2018,13,21,1000,1400,8,400,3,2.67,
