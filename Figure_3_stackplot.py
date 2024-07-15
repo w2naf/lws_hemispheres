@@ -326,7 +326,7 @@ def reject_legend(fig):
     axl.legend(handles=legend_elements, loc='center left', fontsize = 42)
 
 def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,short_labels=False,
-        fontdict=None,plot_axvline=True):
+                fmt='%d %b',fontdict=None,plot_axvline=True):
     if fontdict is None:
         fontdict = xtick_fontdict
     xticks      = []
@@ -363,7 +363,7 @@ def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,short_labels=False,
 
             if labels:
                 ypos    = -0.025
-                txt     = curr_date.strftime('%d %b\n%Y')
+                txt     = curr_date.strftime(fmt)
                 ax.text(xpos,ypos,txt,transform=ytransaxes,
                         ha='left', va='top',rotation=0,
                         fontdict=fontdict)
@@ -421,7 +421,9 @@ def get_coords(radar,win_sDate,radars,sDate,eDate,st_uts,verts=True):
 def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
         st_uts=[14, 16, 18, 20],
         xlabels=True, group_name=None,classification_colors=False,
-        rasterized=False,radars=None,param=None,**kwargs):
+        rasterized=False,radars=None,param=None,
+        radar_ylabels=True,
+        radarBox_fontsize='xx-large',**kwargs):
 
     prmd        = prm_dct.get(param,{})
 
@@ -510,11 +512,12 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
     ax.set_facecolor('0.90')
 
     # Add small radar labels on the left-hand side y-axis.
-    trans = mpl.transforms.blended_transform_factory(ax.transAxes,ax.transData)
-    for rdr_inx,radar in enumerate(radars):
-        for st_inx,st_ut in enumerate(st_uts):
-            ypos = len(radars)*st_inx + rdr_inx + 0.5
-            ax.text(-0.002,ypos,radar,transform=trans,ha='right',va='center')
+    if radar_ylabels is True:
+        trans = mpl.transforms.blended_transform_factory(ax.transAxes,ax.transData)
+        for rdr_inx,radar in enumerate(radars):
+            for st_inx,st_ut in enumerate(st_uts):
+                ypos = len(radars)*st_inx + rdr_inx + 0.5
+                ax.text(-0.002,ypos,radar,transform=trans,ha='right',va='center')
 
     # Add large radar labels on the right hand side. ############################### 
     brkt_top    = len(radars)*len(st_uts)
@@ -539,7 +542,7 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
 
         brkt_half   = brkt_bot + (brkt_top-brkt_bot)/2.
         ax.annotate(rdr_lbls,(brkt_x1,brkt_half),xycoords=trans,xytext=(rdr_box_x0,(len(radars)*len(st_uts))/2.),textcoords=trans,bbox=bbox,
-                arrowprops=arrowprops,va='center',ha='left',fontsize='xx-large')
+                arrowprops=arrowprops,va='center',ha='left',fontsize=radarBox_fontsize)
 
     # Add UT Time Labels
     for st_inx,st_ut in enumerate(st_uts):
@@ -579,8 +582,6 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
     if group_name is not None:
         txt = '{} ({})'.format(group_name,txt)
     ax.set_title(txt,fontdict=title_fontdict)
-
-    ax.set_title('Test',loc='right',fontdict=title_fontdict)
 
     ax_info         = {}
     ax_info['ax']   = ax

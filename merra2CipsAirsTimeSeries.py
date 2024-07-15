@@ -43,7 +43,9 @@ class Merra2CipsAirsTS(object):
         fig.savefig(png_fpath,bbox_inches='tight')
         plt.close(fig)
     
-    def plot_ax(self,ax,vmin=-20,vmax=100,levels=11,cmap='jet',plot_cbar=True,ylabel_fontdict={},**kwargs):
+    def plot_ax(self,ax,vmin=-20,vmax=100,levels=11,cmap='jet',
+                plot_cbar=True,cbar_pad=0.05,cbar_aspect=20,
+                ylabel_fontdict={},**kwargs):
         fig     = ax.get_figure()
 
         ds      = self.ds
@@ -71,7 +73,7 @@ class Merra2CipsAirsTS(object):
 
         if plot_cbar:
             lbl     = 'MERRA-2 Zonal Wind (m/s) (50\N{DEGREE SIGN} N)'
-            cbar    = fig.colorbar(cbar_pcoll,label=lbl)
+            cbar    = fig.colorbar(cbar_pcoll,label=lbl,pad=cbar_pad,aspect=cbar_aspect)
 
         # Plot CIPS GW Variance
         ax1     = ax.twinx()
