@@ -28,6 +28,7 @@ import xarray as xr
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib.collections import PolyCollection
+mpl.use('Agg')
 
 # https://colorcet.holoviz.org/user_guide/Continuous.html
 import colorcet
