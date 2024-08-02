@@ -326,6 +326,17 @@ def reject_legend(fig):
 
     axl.legend(handles=legend_elements, loc='center left', fontsize = 42)
 
+def mark_axvline(dates,ax,radar_ax=False,extend=0.020,lw=4,color='k'):
+    ytransaxes = mpl.transforms.blended_transform_factory(ax.transData,ax.transAxes)
+    for date in dates:
+        if radar_ax:
+            xpos    = get_x_coords(date,sDate,eDate)
+        else:
+            xpos    = date
+
+        axvline = ax.axvline(xpos,-1*extend,lw=lw,color=color)
+        axvline.set_clip_on(False)
+
 def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,short_labels=False,
                 fmt='%d %b',fontdict=None,plot_axvline=True):
     if fontdict is None:
@@ -1337,6 +1348,12 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         my_xticks(sDate,eDate,ax,radar_ax=radar_ax,
                   labels=False,short_labels=True,plot_axvline=False)
 
+        mark_dates = []
+        mark_dates.append(datetime.datetime(2018,12,19))
+        mark_dates.append(datetime.datetime(2019,1,15))
+        mark_dates.append(datetime.datetime(2019,3,3))
+        mark_axvline(mark_dates,ax,radar_ax=radar_ax)
+
     fig.tight_layout()
 
     for param,ax_info in zip(params,ax_list):
@@ -1405,6 +1422,54 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
                     label.set_fontweight(fontweight)
                 if fontsize:
                     label.set_fontsize(fontsize)
+
+    for inx,(param,ax_info) in enumerate(zip(params,ax_list)):
+        ax  = ax_info.get('ax')
+        if param == 'lstid_ham':
+            gw_arrows   = []
+            gw_arrows.append(datetime.datetime(2018,11,9))
+            gw_arrows.append(datetime.datetime(2018,11,14))
+            gw_arrows.append(datetime.datetime(2018,11,26))
+            gw_arrows.append(datetime.datetime(2018,12,9))
+            gw_arrows.append(datetime.datetime(2018,12,14))
+            gw_arrows.append(datetime.datetime(2018,12,23))
+            gw_arrows.append(datetime.datetime(2019,2,11))
+            gw_arrows.append(datetime.datetime(2019,3,1))
+
+            ae_arrows   = []
+            ae_arrows.append(datetime.datetime(2018,11,9))
+            ae_arrows.append(datetime.datetime(2018,11,20))
+            ae_arrows.append(datetime.datetime(2018,11,26))
+            ae_arrows.append(datetime.datetime(2018,12,3))
+            ae_arrows.append(datetime.datetime(2018,12,9))
+            ae_arrows.append(datetime.datetime(2019,2,1))
+            ae_arrows.append(datetime.datetime(2019,3,1))
+            ae_arrows.append(datetime.datetime(2019,3,16))
+
+            ae_xs   = []
+            ae_xs.append(datetime.datetime(2018,12,19))
+            ae_xs.append(datetime.datetime(2018,12,29))
+            ae_xs.append(datetime.datetime(2019,1,7))
+            ae_xs.append(datetime.datetime(2019,1,25))
+            ae_xs.append(datetime.datetime(2019,3,29))
+            ae_xs.append(datetime.datetime(2019,4,6))
+            ae_xs.append(datetime.datetime(2019,4,15))
+            ae_xs.append(datetime.datetime(2019,4,24))
+
+            aprops  = {}
+            aprops['arrowstyle']    = "->,head_width=0.8,head_length=0.8"
+            aprops['lw']            = 8
+            aprops['color']         = 'blue'
+
+            ytransaxes = mpl.transforms.blended_transform_factory(ax.transData,ax.transAxes)
+            for arrow in gw_arrows:
+                _arrow  = mpl.dates.date2num(arrow)
+                xy_0 = (_arrow,0.675)
+                xy_1 = (_arrow,1.30)
+                ax.annotate("", xy=xy_0, xytext=xy_1,
+                            xycoords=ytransaxes,textcoords=ytransaxes,
+                            arrowprops=aprops)
+
     fig.savefig(fpath,bbox_inches='tight')
 
 def prep_dir(path,clear=False):
@@ -1417,9 +1482,6 @@ def prep_dir(path,clear=False):
 if __name__ == '__main__':
 
     output_base_dir     = 'output'
-#    mstid_data_dir      = os.path.join('data','mongo_out','mstid_MUSIC','guc')
-#    mstid_data_dir      = os.path.join('data','mongo_out','mstid_GSMR_fitexfilter_using_mstid_2016_dates','guc')
-#    mstid_data_dir      = os.path.join('data','mongo_out','mstid_2016','guc')
     mstid_data_dir      = os.path.join('data','mongo_out','mstid_GSMR_fitexfilter_rtiThresh-0.25','guc')
     plot_climatologies  = False
     plot_histograms     = False
@@ -1439,24 +1501,8 @@ if __name__ == '__main__':
     radars.append('bks')
     radars.append('wal')
 
-#    # Ordered by Longitude
-#    radars          = []
-#    radars.append('cvw')
-#    radars.append('pgr')
-#    radars.append('cve')
-#    radars.append('sas')
-#    radars.append('fhw')
-#    radars.append('fhe')
-#    radars.append('kap')
-#    radars.append('bks')
-#    radars.append('wal')
-#    radars.append('gbr')
-
     params = []
-    params.append('meanSubIntSpect_by_rtiCnt') # This is the MSTID index.
-
-
-
+#    params.append('meanSubIntSpect_by_rtiCnt') # This is the MSTID index.
 #    params.append('meanSubIntSpect')
 #    params.append('intSpect_by_rtiCnt')
 #    params.append('intSpect')
@@ -1468,24 +1514,9 @@ if __name__ == '__main__':
 
 #    params.append('reject_code')
 
-#    params.append('U_10HPA')
-#    params.append('U_1HPA')
-
-#    params.append('OMNI_R_Sunspot_Number')
-#    params.append('OMNI_Dst')
-#    params.append('OMNI_F10.7')
-#    params.append('OMNI_AE')
-
-#    params.append('1-H_AE_nT')
-#    params.append('1-H_DST_nT')
-#    params.append('DAILY_F10.7_')
-#    params.append('DAILY_SUNSPOT_NO_')
-
-    seasons = list_seasons()
-#    seasons = []
-#    seasons.append('20121101_20130501')
-##    seasons.append('20171101_20180501')
-#    seasons.append('20181101_20190501')
+#    seasons = list_seasons()
+    seasons = []
+    seasons.append('20181101_20190501')
 
 ################################################################################
 # LOAD RADAR DATA ##############################################################
@@ -1524,56 +1555,24 @@ if __name__ == '__main__':
 
 ################################################################################
 # STACKPLOTS ###################################################################
-
     stack_sets  = {}
-##    ss = stack_sets['cdaweb_omni'] = []
-##    ss.append('meanSubIntSpect_by_rtiCnt')
-##    ss.append('1-H_AE_nT')
-##    ss.append('1-H_DST_nT')
-##    ss.append('DAILY_F10.7_')
-###    ss.append('DAILY_SUNSPOT_NO_')
-
-#    ss = stack_sets['omni'] = []
-#    ss.append('meanSubIntSpect_by_rtiCnt')
-#    ss.append('OMNI_AE')
-#    ss.append('OMNI_Dst')
-##    ss.append('OMNI_F10.7')
-##    ss.append('OMNI_R_Sunspot_Number')
-#
-#    ss = stack_sets['mstid_merra2'] = []
-#    ss.append('meanSubIntSpect_by_rtiCnt')
-#    ss.append('U_1HPA')
-#    ss.append('U_10HPA')
-#
-#    ss = stack_sets['data_quality'] = []
-#    ss.append('meanSubIntSpect_by_rtiCnt')
-#    ss.append('reject_code')
-
-#    ss = stack_sets['mstid_index_reduced'] = []
-#    ss.append('meanSubIntSpect_by_rtiCnt')
-#    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
-#
-##    ss = stack_sets['mstid_index'] = []
-##    ss.append('meanSubIntSpect_by_rtiCnt')
-
-    ss = stack_sets['figure_3'] = []
-    ss.append('merra2CipsAirsTimeSeries')
+#    ss = stack_sets['figure_3'] = []
+#    ss.append('merra2CipsAirsTimeSeries')
 #    ss.append('HIAMCM')
-#    ss.append('meanSubIntSpect_by_rtiCnt')
 #    ss.append('gnss_dtec_gw')
 #    ss.append('meanSubIntSpect_by_rtiCnt')
+
+    ss = stack_sets['figure_4'] = []
+    ss.append('merra2CipsAirsTimeSeries')
     ss.append('lstid_ham')
-#    ss.append('gnss_dtec_gw')
-#    ss.append('meanSubIntSpect_by_rtiCnt')
     ss.append('sme')
-#    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
 
     if plot_stackplots:
         for stack_code,stack_params in stack_sets.items():
             stack_dir  = os.path.join(output_base_dir,'stackplots',stack_code)
             prep_dir(stack_dir,clear=True)
             for season in seasons:
-                if stack_code == 'figure_3':
+                if stack_code in ['figure_3','figure_4']:
                     if season != '20181101_20190501':
                         continue
                 png_name    = '{!s}_stack_{!s}.png'.format(season,stack_code)
