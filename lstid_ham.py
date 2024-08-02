@@ -5,11 +5,13 @@ This class will generate a time series plot of Mary Lou West's LSTID Amateur Rad
 import os
 import shutil
 import datetime
+import itertools
 
 import numpy as np
 import pandas as pd
 
 import matplotlib as mpl
+mpl.use('Agg')
 from matplotlib import pyplot as plt
 
 mpl.rcParams['font.size']      = 12
@@ -94,22 +96,13 @@ class LSTID_HAM(object):
                 df.loc[:,col] = pd.to_numeric(df[col],errors='coerce')
         elif self.dataSet == 'sinFit':
             data_in         = 'data/lstid_ham/20181101-20181101_sinFit.csv'
-            df              = pd.read_csv(data_in,names=['date','period_hr','amplitude_km'],parse_dates=[0],header=1)
+#            data_in         = 'data/lstid_ham/20170101-20170101_sinFit.csv'
+            df              = pd.read_csv(data_in,usecols=[0, 1, 2,3],names=['date','period_hr','amplitude_km','is_lstid'],parse_dates=[0],header=1)
 
             # Convert data columns to floats.
             cols_numeric    = ['period_hr','amplitude_km']
             for col in cols_numeric:
                 df.loc[:,col] = pd.to_numeric(df[col],errors='coerce')
-
-            # Eliminate waves with period > 5 hr.
-            tf = df['period_hr'] > 5
-            df.loc[tf,'period_hr']           = np.nan
-            df.loc[tf,'amplitude_km']   = np.nan
-
-            # Eliminate waves with amplitudes < 15 km.
-            tf = df['amplitude_km'] < 15
-            df.loc[tf,'period_hr']           = np.nan
-            df.loc[tf,'amplitude_km']   = np.nan
 
         self.data_in    = data_in
         self.df         = df
@@ -127,12 +120,39 @@ class LSTID_HAM(object):
     
     def plot_ax(self,ax,xlim=None,ylabel_fontdict={},legend_fontsize='large',
             legend_ncols=2,plot_ae=False,plot_dst=False,plot_sme=False,**kwargs):
-        fig     = ax.get_figure()
         
-        df      = self.df
-        hndls   = []
-        xx      = df['date']
+        fig      = ax.get_figure()
+        
+        df       = self.df
+        hndls    = []
+        
+        # Eliminate waves with period > 5 hr.
+#        tf = df['period_hr'] > 5
+#        df.loc[tf,'period_hr']      = np.nan
+#        df.loc[tf,'amplitude_km']   = np.nan
 
+        # Eliminate waves with amplitudes < 15 km.
+#        tf = df['amplitude_km'] < 15
+#        df.loc[tf,'period_hr']      = np.nan
+#        df.loc[tf,'amplitude_km']   = np.nan
+
+        # Eliminate waves with amplitudes > 80 km.
+        tf = df['amplitude_km'] > 80
+        df.loc[tf,'period_hr']      = np.nan
+        df.loc[tf,'amplitude_km']   = np.nan
+        df.loc[tf,'is_lstid']       = np.nan
+
+        # Eliminate non TID selected days
+#        tf = df['is_lstid'] == False
+#        df.loc[tf,'is_lstid']     = np.nan
+#        df.loc[tf,'period_hr']      = np.nan
+#        df.loc[tf,'amplitude_km']   = np.nan
+        
+        df['amplitude_km'] = df['amplitude_km'].interpolate(method='linear')
+#        df    = df.dropna()
+        
+        xx      = df['date']
+        
         if xlim is None:
             xlim = (min(xx), max(xx))
 
@@ -149,24 +169,37 @@ class LSTID_HAM(object):
             ylabel  = 'LSTID Period [hr]'
             hndl    = ax.bar(xx,yy,label=ylabel,color='orange',align='edge')
             hndls.append(hndl)
+            text = 'MLW Manual'
         elif self.dataSet == 'sinFit':
-            yy      = df['amplitude_km']
-            ylabel  = 'LSTID Amplitude [km]'
-            hndl    = ax.bar(xx,yy,width=1,label=ylabel,color='green',align='edge')
+            yy           = df['amplitude_km']
+            rolling_days = 3
+            yy_roll      = df['amplitude_km'].rolling(rolling_days,center=True).mean()
+            ylabel       = 'LSTID Amplitude [km]'
+#            hndl         = ax.plot(xx,yy,width=1,label=ylabel,color='green',align='edge')
+            hndl         = ax.plot(xx,yy,label='Raw Data',color='grey')
+            hndls.append(hndl)
+            hndl         = ax.plot(xx,yy_roll,label='3 Day Rolling Mean',color='blue',lw=3)
             hndls.append(hndl)
             ax.set_ylabel(ylabel,fontdict=ylabel_fontdict)
             ax.set_xlabel('UTC Date')
 
-#            ax2     = ax.twinx()
-#            yy      = df['period_hr']
-#            ylabel  = 'LSTID Period [hr]'
-#            ax2.set_ylabel(ylabel,fontdict=ylabel_fontdict)
-#            ax2.grid(False)
-#            ax2.set_ylim(0,20)
-#            hndl    = ax2.bar(xx,yy,label=ylabel,color='orange',align='edge')
-#            hndls.append(hndl)
+            vmin            = np.nanmin(yy_roll)
+            vmax            = 50
+            T_hr_cmap       = 'rainbow'
+            cmap            = mpl.colormaps.get_cmap(T_hr_cmap)
+            cmap.set_bad(color='white')
+            norm            = mpl.colors.Normalize(vmin=vmin,vmax=vmax)
+            mpbl            = mpl.cm.ScalarMappable(norm,cmap)
+            color           = mpbl.to_rgba(yy_roll)
+            trans           = mpl.transforms.blended_transform_factory( ax.transData, ax.transAxes)
+            cbar_pcoll      = ax.bar(xx,1,width=1,color=color,align='edge',zorder=-1,transform=trans,alpha=0.5)
+            cbar_label      = 'Amplitude [km]'
 
-        ax.text(0.01,0.95,self.dataSet,transform=ax.transAxes)
+            text = 'Automated SinFit'
+        
+        ax.text(0.01,0.95,text,transform=ax.transAxes)
+        hndls = list(itertools.chain.from_iterable(hndls))
+        legend_ncols = 1
         ax.legend(handles=hndls,loc='upper right',fontsize=legend_fontsize,ncols=legend_ncols)
 
         if plot_ae:
@@ -213,6 +246,8 @@ class LSTID_HAM(object):
         ax.set_xlim(xlim)
 
         result  = {}
+        result['cbar_pcoll'] = mpbl
+        result['cbar_label'] = cbar_label
         result['title'] = title
         return result
 

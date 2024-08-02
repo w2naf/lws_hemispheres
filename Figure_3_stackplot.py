@@ -28,6 +28,7 @@ import xarray as xr
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib.collections import PolyCollection
+mpl.use('Agg')
 
 # https://colorcet.holoviz.org/user_guide/Continuous.html
 import colorcet
@@ -1255,6 +1256,8 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
 
             ax_info = {}
             ax_info['ax']           = ax
+            ax_info['cbar_pcoll']   = result['cbar_pcoll']
+            ax_info['cbar_label']   = result.get('cbar_label')
         elif plotType == 'sme':
             sme     = sme_plot.SME_PLOT()
             result  = sme.plot_ax(ax,legend_fontsize='x-large',ylabel_fontdict=ylabel_fontdict,
@@ -1371,7 +1374,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
             cbar_ticks      = ax_info.get('cbar_ticks')
             cbar_tick_fmt   = prmd.get('cbar_tick_fmt')
             cbar_tb_vis     = ax_info.get('cbar_tb_vis',False)
-
+            
 			# fraction : float, default: 0.15
 			#     Fraction of original axes to use for colorbar.
 			# 
@@ -1383,6 +1386,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
 			# 
 			# pad : float, default: 0.05 if vertical, 0.15 if horizontal
 			#     Fraction of original axes between colorbar and new image axes.
+            
             cbar  = fig.colorbar(cbar_pcoll,orientation='vertical',
                     cax=axColor,format=cbar_tick_fmt)
 
@@ -1392,7 +1396,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
                 cbar.set_ticks(cbar_ticks)
 
             cbar.ax.set_ylim( *(cbar_pcoll.get_clim()) )
-
+            
             labels = cbar.ax.get_yticklabels()
             fontweight  = cbar_ytick_fontdict.get('weight')
             fontsize    = 18
@@ -1401,7 +1405,6 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
                     label.set_fontweight(fontweight)
                 if fontsize:
                     label.set_fontsize(fontsize)
-
     fig.savefig(fpath,bbox_inches='tight')
 
 def prep_dir(path,clear=False):
@@ -1552,10 +1555,13 @@ if __name__ == '__main__':
 
     ss = stack_sets['figure_3'] = []
     ss.append('merra2CipsAirsTimeSeries')
-    ss.append('HIAMCM')
-    ss.append('gnss_dtec_gw')
-    ss.append('meanSubIntSpect_by_rtiCnt')
+#    ss.append('HIAMCM')
+#    ss.append('meanSubIntSpect_by_rtiCnt')
+#    ss.append('gnss_dtec_gw')
+#    ss.append('meanSubIntSpect_by_rtiCnt')
     ss.append('lstid_ham')
+#    ss.append('gnss_dtec_gw')
+#    ss.append('meanSubIntSpect_by_rtiCnt')
     ss.append('sme')
 #    ss.append('meanSubIntSpect_by_rtiCnt_reducedIndex')
 
@@ -1569,5 +1575,4 @@ if __name__ == '__main__':
                         continue
                 png_name    = '{!s}_stack_{!s}.png'.format(season,stack_code)
                 png_path    = os.path.join(stack_dir,png_name) 
-
                 stackplot(po_dct,stack_params,season,fpath=png_path)
