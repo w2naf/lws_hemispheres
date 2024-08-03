@@ -326,6 +326,43 @@ def reject_legend(fig):
 
     axl.legend(handles=legend_elements, loc='center left', fontsize = 42)
 
+def alpha_rectangle(axs,height=0.2):
+    """
+    Place a semi-transpararent rectangle over the arrows but below the text
+    in between the panels. This will allow the text to be readable.
+    """
+    bdct    = {}
+    bdct['color']   = 'white'
+    bdct['alpha']   = 0.8
+    bdct['width']   = 1
+    bdct['zorder']  = 50
+    bdct['clip_on'] = False
+    bdct['xy']      = (0,1)
+    bdct['height']  = height
+
+    for ax in axs:
+        bdct['transform']   = ax.transAxes
+        rect = mpl.patches.Rectangle(**bdct)
+        ax.add_patch(rect)
+
+def pop_xticklabels(axs):
+    """
+    Force all ticklabels to be on top by making them figure text instead
+    of axes text.
+    """
+    xtnames = []
+    xtnames.append('Nov 2018')
+    xtnames.append('Dec 2018')
+    xtnames.append('Jan 2019')
+    xtnames.append('Feb 2019')
+    xtnames.append('Mar 2019')
+    xtnames.append('Apr 2019')
+    for ax in axs:
+        fig = ax.get_figure()
+        for txt_inx,txt in enumerate(ax.texts):
+            if txt.get_text() in xtnames:
+                fig.texts.append(txt)
+
 def annotate_lstid_ham(params,ax_list):
     """
     Add arrows to the lstid_ham panel to show relationship
@@ -418,37 +455,7 @@ def annotate_lstid_ham(params,ax_list):
         ax1.scatter([ae_x],**sdct)
         ax2.scatter([ae_x],**sdct)
 
-    # Place a semi-transpararent rectangle over the arrows but below the text
-    # in between the panels. This will allow the text to be readable.
-    bdct    = {}
-    bdct['color']   = 'white'
-    bdct['alpha']   = 0.8
-    bdct['width']   = 1
-    bdct['zorder']  = 50
-    bdct['clip_on'] = False
-    bdct['xy']          = (0,1)
-    bdct['height']      = 0.2
-
-    for ax in [ax1,ax2]:
-        bdct['transform']   = ax.transAxes
-        rect = mpl.patches.Rectangle(**bdct)
-        ax.add_patch(rect)
-
-    # Force all ticklabels to be on top by making them figure text instead
-    # of axes text.
-    xtnames = []
-    xtnames.append('Nov 2018')
-    xtnames.append('Dec 2018')
-    xtnames.append('Jan 2019')
-    xtnames.append('Feb 2019')
-    xtnames.append('Mar 2019')
-    xtnames.append('Apr 2019')
-    for ax in [ax0,ax1]:
-        for txt_inx,txt in enumerate(ax.texts):
-            if txt.get_text() in xtnames:
-                fig.texts.append(txt)
-
-def mark_axvline(dates,ax,radar_ax=False,extend=0.020,lw=4,color='k'):
+def mark_axvline(dates,sDate,eDate,ax,radar_ax=False,extend=0.020,lw=6,ls=':',color='k'):
     ytransaxes = mpl.transforms.blended_transform_factory(ax.transData,ax.transAxes)
     for date in dates:
         if radar_ax:
@@ -456,7 +463,7 @@ def mark_axvline(dates,ax,radar_ax=False,extend=0.020,lw=4,color='k'):
         else:
             xpos    = date
 
-        axvline = ax.axvline(xpos,-1*extend,lw=lw,color=color)
+        axvline = ax.axvline(xpos,-1*extend,lw=lw,color=color,ls=ls)
         axvline.set_clip_on(False)
 
 def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,short_labels=False,
@@ -710,7 +717,7 @@ def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
     for ytl in ytls:
         ytl.set_visible(False)
 
-    my_xticks(sDate,eDate,ax,radar_ax=True,labels=xlabels)
+    my_xticks(sDate,eDate,ax,radar_ax=True,labels=False)
     
     txt = ' '.join([x.upper() for x in radars[::-1]])
     if group_name is not None:
@@ -1098,7 +1105,7 @@ class ParameterObject(object):
             sDate, eDate = season_to_datetime(season)
             ax_info = plot_mstid_values(data_df,ax,radars=radars,param=param,sDate=sDate,eDate=eDate)
             min_orf   = po.data[season]['attrs_season'].get('min_orig_rti_fraction')
-            ax_info['ax'].set_title('RTI Fraction > {:0.2f}'.format(min_orf),loc='right')
+            ax_info['ax'].set_title('RTI Fraction > {:0.2f}'.format(min_orf),loc='right',zorder=1000)
             ax_list.append(ax_info)
 
             season_yr0 = season[:4]
@@ -1339,7 +1346,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
             ax.set_xlim(sDate,eDate)
 
             min_orf   = po.data[season]['attrs_season'].get('min_orig_rti_fraction')
-            ax.set_title('RTI Fraction > {:0.2f}'.format(min_orf),loc='right')
+            ax.set_title('RTI Fraction > {:0.2f}'.format(min_orf),loc='right',zorder=1000)
 
             ax_info = {}
             ax_info['ax']           = ax
@@ -1432,7 +1439,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
                     sDate=sDate,eDate=eDate)
 
             min_orf   = po.data[season]['attrs_season'].get('min_orig_rti_fraction')
-            ax_info['ax'].set_title('RTI Fraction > {:0.2f}'.format(min_orf),loc='right')
+            ax_info['ax'].set_title('RTI Fraction > {:0.2f}'.format(min_orf),loc='right',zorder=1000)
             ax_info['radar_ax']     = True
         ax_list.append(ax_info)
 
@@ -1474,12 +1481,20 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         mark_dates.append(datetime.datetime(2018,12,19))
         mark_dates.append(datetime.datetime(2019,1,15))
         mark_dates.append(datetime.datetime(2019,3,3))
-        mark_axvline(mark_dates,ax,radar_ax=radar_ax)
+        extend = 0.5
+        if inx == len(params) - 1:
+            extend = 0.020
+        mark_axvline(mark_dates,sDate,eDate,ax,radar_ax=radar_ax,extend=extend)
 
     fig.tight_layout()
 
-    if (params == ['merra2CipsAirsTimeSeries', 'lstid_ham', 'sme']) and season == '20181101_20190501':
+    if (params == ['merra2CipsAirsTimeSeries', 'lstid_ham', 'sme']) \
+            and season == '20181101_20190501':
         annotate_lstid_ham(params,ax_list)
+
+    axs = [x['ax'] for x in ax_list]
+    alpha_rectangle(axs)
+    pop_xticklabels(axs)
 
     for param,ax_info in zip(params,ax_list):
         # Plot Colorbar ################################################################
@@ -1580,7 +1595,7 @@ if __name__ == '__main__':
     radars.append('wal')
 
     params = []
-#    params.append('meanSubIntSpect_by_rtiCnt') # This is the MSTID index.
+    params.append('meanSubIntSpect_by_rtiCnt') # This is the MSTID index.
 #    params.append('meanSubIntSpect')
 #    params.append('intSpect_by_rtiCnt')
 #    params.append('intSpect')
@@ -1634,11 +1649,11 @@ if __name__ == '__main__':
 ################################################################################
 # STACKPLOTS ###################################################################
     stack_sets  = {}
-#    ss = stack_sets['figure_3'] = []
-#    ss.append('merra2CipsAirsTimeSeries')
-#    ss.append('HIAMCM')
-#    ss.append('gnss_dtec_gw')
-#    ss.append('meanSubIntSpect_by_rtiCnt')
+    ss = stack_sets['figure_3'] = []
+    ss.append('merra2CipsAirsTimeSeries')
+    ss.append('HIAMCM')
+    ss.append('gnss_dtec_gw')
+    ss.append('meanSubIntSpect_by_rtiCnt')
 
     ss = stack_sets['figure_4'] = []
     ss.append('merra2CipsAirsTimeSeries')
