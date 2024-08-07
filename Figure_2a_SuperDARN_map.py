@@ -525,10 +525,10 @@ if __name__ == '__main__':
 #    rd['eTime']         = datetime.datetime(2018,12,10)
 #    rd['time']          = datetime.datetime(2018,12,9,19,0)
 
-#    rd['sTime']         = datetime.datetime(2018,12,10,12)
-    rd['sTime']         = datetime.datetime(2018,12,10,18)
-    rd['eTime']         = datetime.datetime(2018,12,11)
-    rd['time']          = datetime.datetime(2018,12,10,19,0)
+##    rd['sTime']         = datetime.datetime(2018,12,10,12)
+#    rd['sTime']         = datetime.datetime(2018,12,10,18)
+#    rd['eTime']         = datetime.datetime(2018,12,11)
+#    rd['time']          = datetime.datetime(2018,12,10,19,0)
 
 #    rd['sTime']         = datetime.datetime(2019,1,9,12)
 #    rd['eTime']         = datetime.datetime(2019,1,10)
@@ -538,6 +538,9 @@ if __name__ == '__main__':
 #    rd['eTime']         = datetime.datetime(2012,12,21,22)
 #    rd['time']          = datetime.datetime(2012,12,21,16,10)
 
+    rd['sTime']         = datetime.datetime(2018,12,10,17)
+    rd['eTime']         = datetime.datetime(2018,12,10,21)
+    rd['time']          = datetime.datetime(2018,12,10,20)
 
     rd['mca']           = merra2AirsMaps.Merra2AirsMaps()
   
@@ -552,11 +555,11 @@ if __name__ == '__main__':
 #    rd['dataSet']       = 'active'
 
     
-#    plot_rtp(**rd)
+    plot_rtp(**rd)
     times = time_vector(**rd)
     for time in times:
-        if time != datetime.datetime(2018,12,10,18,30):
-            continue
+#        if time != datetime.datetime(2018,12,10,18,30):
+#            continue
         rd['time'] = time
         plot_map(**rd)
     import ipdb; ipdb.set_trace()
