@@ -1477,10 +1477,16 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         my_xticks(sDate,eDate,ax,radar_ax=radar_ax,
                   labels=False,short_labels=True,plot_axvline=False)
 
+#        mark_dates = []
+#        mark_dates.append(datetime.datetime(2018,12,19))
+#        mark_dates.append(datetime.datetime(2019,1,15))
+#        mark_dates.append(datetime.datetime(2019,3,3))
+
         mark_dates = []
-        mark_dates.append(datetime.datetime(2018,12,19))
-        mark_dates.append(datetime.datetime(2019,1,15))
-        mark_dates.append(datetime.datetime(2019,3,3))
+        mark_dates.append(datetime.datetime(2018,12,7))
+        mark_dates.append(datetime.datetime(2018,12,10))
+        mark_dates.append(datetime.datetime(2018,12,15))
+        mark_dates.append(datetime.datetime(2018,12,22))
         extend = 0.5
         if inx == len(params) - 1:
             extend = 0.020

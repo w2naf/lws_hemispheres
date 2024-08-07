@@ -63,9 +63,23 @@ class AIRS3DWorld(object):
         self.paths      = paths
 
         self.date       = date
-        self.lats       = xr.load_dataset(lat_nc_path)['lat'].values
-        self.lons       = xr.load_dataset(lon_nc_path)['lon'].values
-        self.Tpert      = xr.load_dataset(Tpert_nc_path)['temp_pert'].values
+        try:
+            self.lats       = xr.load_dataset(lat_nc_path)['lat'].values
+        except:
+            print('ERROR Loading: {!s}'.format(lat_nc_path))
+            self.lats   = None
+
+        try:
+            self.lons       = xr.load_dataset(lon_nc_path)['lon'].values
+        except:
+            print('ERROR Loading: {!s}'.format(lon_nc_path))
+            self.lons   = None
+
+        try:
+            self.Tpert      = xr.load_dataset(Tpert_nc_path)['temp_pert'].values
+        except:
+            print('ERROR Loading: {!s}'.format(Tpert_nc_path))
+            self.Tpert   = None
 
     def plot_figure(self,png_fpath='output.png',figsize=(12,4.75),**kwargs):
         fig     = plt.figure(figsize=figsize)
@@ -153,9 +167,23 @@ class AIRS3DLatProfile(object):
 
         self.date       = date
         self.lat        = lat
-        self.alts       = xr.load_dataset(alt_nc_path)['alt'].values
-        self.lons       = xr.load_dataset(lon_nc_path)['lon'].values
-        self.Tpert      = xr.load_dataset(Tpert_nc_path)['temp_pert'].values
+        try:
+            self.alts       = xr.load_dataset(alt_nc_path)['alt'].values
+        except:
+            print('ERROR Loading: {!s}'.format(alt_nc_path))
+            self.alts   = None
+
+        try:
+            self.lons       = xr.load_dataset(lon_nc_path)['lon'].values
+        except:
+            print('ERROR Loading: {!s}'.format(lon_nc_path))
+            self.lons   = None
+
+        try:
+            self.Tpert      = xr.load_dataset(Tpert_nc_path)['temp_pert'].values
+        except:
+            print('ERROR Loading: {!s}'.format(Tpert_nc_path))
+            self.Tpert   = None
 
     def plot_figure(self,png_fpath='output.png',figsize=(12,4.75),**kwargs):
         fig     = plt.figure(figsize=figsize)
