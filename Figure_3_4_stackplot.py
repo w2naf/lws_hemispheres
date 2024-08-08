@@ -1483,10 +1483,10 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
 #        mark_dates.append(datetime.datetime(2019,3,3))
 
         mark_dates = []
-        mark_dates.append(datetime.datetime(2018,12,7))
-        mark_dates.append(datetime.datetime(2018,12,10))
+#        mark_dates.append(datetime.datetime(2018,12,7))
+#        mark_dates.append(datetime.datetime(2018,12,10))
         mark_dates.append(datetime.datetime(2018,12,15))
-        mark_dates.append(datetime.datetime(2018,12,22))
+#        mark_dates.append(datetime.datetime(2018,12,22))
         extend = 0.5
         if inx == len(params) - 1:
             extend = 0.020

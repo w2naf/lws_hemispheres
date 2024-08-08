@@ -387,7 +387,7 @@ def plot_radar_fov(radar,ax,time,fovModel='GS',fov_ranges=(0,50),fov_beams=None,
 
 def plot_map(radars_dct,time,dataSet='active',output_dir='output',
         fovModel='GS',**kwargs):
-    projection = ccrs.Orthographic(-100,60)
+    projection = ccrs.Orthographic(-100,70)
     fig = plt.figure(figsize=(18,14))
     ax  = fig.add_subplot(1,1,1,projection=projection)
     ax.coastlines(color='0.7')
@@ -448,11 +448,17 @@ def plot_map(radars_dct,time,dataSet='active',output_dir='output',
             mca_cbar = fig.colorbar(mca_result['cbar_pcoll'],cax=cax,ticks=AIRS_cbar_ticks)
             mca_cbar.set_label(mca_result['cbar_label'])
 
+
+    ax.scatter([112],[60],s=500,marker='*',ec='black',fc='yellow',
+            zorder=10000,transform=ccrs.PlateCarree())
+
 #            ax_0_pos    = list(ax_0.get_position().bounds)
 #            ax_0.set_position(ax_0_pos)
 
-#    ax.set_extent((-140,-45,20,70))
-    ax.set_extent((-140,-45,25,75))
+#    ax.set_extent((-6336895.598980072, 6344835.295088342, -6378073.21863, 6378073.21863))
+##    ax.set_extent((-140,-45,20,70))
+#    ax.set_extent((-140,-45,25,75))
+    ax.set_extent((0,360,25,90),crs=ccrs.PlateCarree())
 
     fontdict    = {'size':'x-large','weight':'bold'}
     title       = time.strftime('%d %b %Y %H%M UTC')
@@ -548,7 +554,7 @@ if __name__ == '__main__':
     rd['fovModel']      = 'GS'
     rd['data_dir']      = '/data/sd-data'
 #    rd['data_dir']      = '/data/sd-data_fitexfilter'
-    rd['clear_cache']   = True
+    rd['clear_cache']   = False
     rd['radars_dct']    = load_data(**rd)
 
     rd['dataSet']       = 'originalFit'
