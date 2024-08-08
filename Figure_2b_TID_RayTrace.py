@@ -220,7 +220,8 @@ def plot_rays(tx_lat,tx_lon,ranges,heights,
 
         # Add a colorbar
         if plot_colorbar:
-            cbar = plt.colorbar(im,label=iono_title,ax=ax,pad=0.02)
+            cbar = plt.colorbar(im,label=iono_title,ax=ax,pad=0.02,
+                    shrink=0.7,aspect=10)
             cbax = cbar.ax
 
     if terminator:
@@ -321,7 +322,8 @@ def plot_rays(tx_lat,tx_lon,ranges,heights,
     return ax, aax, cbax
 
 if __name__ == '__main__':
-    iono_nc = 'data/iri_tid_300km/20181012.1830-20181012.1830_FHE__profile.nc'
+#    iono_nc = 'data/iri_tid_300km/20181012.1830-20181012.1830_FHE__profile.nc'
+    iono_nc = 'data/iri_tid_1000km/20181512.2000-20181512.2000_TX__profile.nc'
     print('Loading ionospheric grid {!s}... '.format(iono_nc))
 
     iono_ds = xr.load_dataset(iono_nc)
@@ -362,10 +364,10 @@ if __name__ == '__main__':
     ### Plot Result ###
     ###################
 
-    end_range       = 2000
+    end_range       = 3000
     end_ht          = 500
 
-    fig = plt.figure(figsize=(35,10))
+    fig = plt.figure(figsize=(40,10))
     ax, aax, cbax   = plot_rays(origin_lat,origin_lon,ranges,heights,
             maxground=end_range, maxalt=end_ht,Re=6371,date=UT,azm=ray_bear,
             iono_arr=iono_en_grid,iono_param='iono_en_grid',
@@ -384,7 +386,7 @@ if __name__ == '__main__':
     ax.set_title(title,loc='left')
 
     title   = []
-    title.append('FHE SuperDARN Boresite {!s} MHz Raytrace'.format(freq))
+    title.append('{!s} MHz Raytrace'.format(freq))
     title.append('Origin {:0.1f}\N{DEGREE SIGN}N, {:0.1f}\N{DEGREE SIGN}E, {:0.0f}\N{DEGREE SIGN} AZM'.format(origin_lat,origin_lon,ray_bear))
     title   = '\n'.join(title)
     ax.set_title(title,loc='right')
@@ -397,3 +399,11 @@ if __name__ == '__main__':
     fpath   = os.path.join(output_dir,fname)
     print('Saving Figure: {!s}'.format(fpath))
     fig.savefig(fpath,bbox_inches='tight')
+
+    # Remove whitespace using mogrify since the curved axes are
+    # not compatible with bbox_inches='tight'
+    try:
+        cmd = f'mogrify -trim {fpath}'
+        os.system(cmd)
+    except:
+        print(f'ERROR: Could not run {cmd}')
