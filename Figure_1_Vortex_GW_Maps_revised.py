@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # Create a dictionary with information about each row, especially
     # the base filename of the AIRS3D profile data file we want to use.
     rows_dct = {}
-    rowd = rows_dct[datetime.datetime(2018,12,22)] = {}
+    rowd = rows_dct[datetime.datetime(2018,12,15)] = {}
     rowd['a3d_prof_bname']   = 'NEW_2018 12 10_AIRS_3D_alt_data_45_deg_lat'
     rowd['a3d_prof_lat']     = 45
 
@@ -205,11 +205,6 @@ if __name__ == "__main__":
     result  = hov.plot_ax(ax,
             vmin=AIRS_GWv_vmin,vmax=AIRS_GWv_vmax,cmap=AIRS_GWv_cmap,levels=AIRS_GWv_levels,
             merra2_windspeed_kw=m2ws,ylim=ylim)
-
-#    hlines  = []
-#    hlines.append(datetime.datetime(2018,12,10))
-#    hlines.append(datetime.datetime(2019,1,5))
-#    hlines.append(datetime.datetime(2019,2,1))
 
     hlines  = list(rows_dct.keys())
     for hline in hlines:
