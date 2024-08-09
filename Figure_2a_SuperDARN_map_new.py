@@ -419,7 +419,7 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     # Calculate specific x and y coordinates
     SD_x00      = _map_wd
     AIRS_x00    = SD_x00 + _cb_wd
-    cb_y00      = (p_ht-_cb_ht)/2.
+    cb_y00      = p_y00+(p_ht-_cb_ht)/2.
 
     # Define actual axes rectangles.
                         # [x00,      y00,    width,             height]
@@ -512,10 +512,43 @@ def plot_map(radars_dct,time,figsize=(18,14),output_dir='output',**kwargs):
     plt.close(fig)
     print(fpath)
 
+def plot_fig_rects(fig,rects,color='k',lw=2,fill=False,
+        plot_names=False,**kwargs):
+    """
+    Print boundaries directly on figure for a dictionary
+    of rectangles.
+
+    This is useful for checking where the boundaries of
+    axis areas actually are.
+    """
+    for name,rect in rects.items():
+        xy      = (rect[0], rect[1])
+        width   = rect[2]
+        height  = rect[3]
+
+        fig.patches.extend([plt.Rectangle(xy,width,height,
+            color=color,lw=lw,fill=fill,
+            transform=fig.transFigure, figure=fig,**kwargs)])
+
+        if plot_names:
+            tx  = rect[0] + 0.01
+            ty  = rect[1] + rect[3] - 0.01
+            fontdict    = {'weight':'bold','size':'large'}
+            fig.text(tx,ty,name,fontdict=fontdict,va='top')
+
 def figure2(radars_dct,time,figsize=(18,14),output_dir='output',**kwargs):
 
+    rects   = {}
+                # [x00,  y00, width, height]
+    rects['a']   = [0.00, 0.50, 1.00, 0.50]
+    rects['b']   = [0.00, 0.25, 1.00, 0.25]
+    rects['c']   = [0.00, 0.00, 1.00, 0.25]
+
     fig     = plt.figure(figsize=figsize)
-    plot_map_ax(fig,radars_dct,time,**kwargs)
+    plot_fig_rects(fig,rects)
+
+    rect    = rects['a']
+    plot_map_ax(fig,radars_dct,time,panel_rect=rect,**kwargs)
 
     # Save Figure ##################################################################
     fname = 'map_{!s}.png'.format(time.strftime('%Y%m%d.%H%M'))
