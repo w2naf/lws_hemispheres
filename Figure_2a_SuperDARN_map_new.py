@@ -55,6 +55,13 @@ def prep_dir(path,clear=False):
     if not os.path.exists(path):
         os.makedirs(path)
 
+def time_vector(sTime,eTime,timedelta=datetime.timedelta(minutes=2),**kwargs):
+    tvec = [sTime]
+    while tvec[-1] < eTime:
+        tvec.append(tvec[-1] + timedelta)
+
+    return tvec
+
 def fan_plot(dataObject,
     dataSet                 = 'active',
     time                    = None,
@@ -166,9 +173,6 @@ def fan_plot(dataObject,
             x4,y4 = projection.transform_point(lonFull[bm+0,rg+1],latFull[bm+0,rg+1],geo)
             verts.append(((x1,y1),(x2,y2),(x3,y3),(x4,y4),(x1,y1)))
     
-    # np.savetxt('lat.csv', good_lat, delimiter=',')
-    # np.savetxt('data.csv', good_data, delimiter=',')
-
     if cmap is None:
         cmap    = mpl.cm.jet
     bounds  = np.linspace(scale[0],scale[1],256)
@@ -178,40 +182,6 @@ def fan_plot(dataObject,
     pcoll.set_array(np.array(scan))
     axis.add_collection(pcoll,autolim=False)
 
-#    if plot_fov:
-#        # Left Edge
-#        xx = lonFull[0,:]
-#        yy = latFull[0,:]
-#        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
-#
-#        # Right Edge
-#        xx = lonFull[-1,:]
-#        yy = latFull[-1,:]
-#        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
-#
-#        # Bottom Edge 
-#        xx = lonFull[:,0]
-#        yy = latFull[:,0]
-#        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
-#
-#        # Top Edge
-#        xx = lonFull[:,-1]
-#        yy = latFull[:,-1]
-#        axis.plot(xx,yy,color='k',transform=ccrs.PlateCarree())
-#
-#        # Radar Location
-#        axis.scatter(radar_lon,radar_lat,marker='o',color='k',s=40,transform=ccrs.PlateCarree())
-#        fontdict = {'size':14,'weight':'bold'}
-#        if radar == 'cvw' or radar == 'fhw':
-#            ha      = 'right'
-#            text    = radar.upper() + ' '
-#        else:
-#            ha      = 'left'
-#            text    = ' ' + radar.upper()
-#
-#        axis.text(radar_lon,radar_lat,text,ha=ha,
-#                fontdict=fontdict,transform=ccrs.PlateCarree())
-    
     result  = {}
     result['pcoll']     = pcoll
     result['metadata']  = metadata
@@ -252,24 +222,11 @@ def load_data(load_sTime=None,load_eTime=None,fovModel='GS',
 
             if not os.path.exists(cache_fpath):
                 gscat                   = 1 # Ground scatter only.
-#                gscat                   = 0 # All scatter.
                 beam_limits             = (None, None)
                 gate_limits             = (0,60)
                 interp_resolution       = 60.
                 filter_numtaps          = 101.
-    #            process_level           = 'music'
-    #            auto_range_on           = True
                 bad_range_km            = None
-    #            filter_cutoff_low       = 0.0003
-    #            filter_cutoff_high      = 0.0012
-    #            detrend                 = True
-    #            hanning_window_space    = True
-    #            hanning_window_time     = True
-    #            zeropad                 = True
-    #            kx_max                  = 0.05
-    #            ky_max                  = 0.05
-    #            autodetect_threshold    = 0.35
-    #            neighborhood            = (10,10)
 
                 dataObj = mstid.more_music.create_music_obj(radar.lower(), load_sTime, load_eTime
                     ,beam_limits                = beam_limits
@@ -385,94 +342,6 @@ def plot_radar_fov(radar,ax,time,fovModel='GS',fov_ranges=(0,50),fov_beams=None,
             path_effects=[mpl.patheffects.withStroke(linewidth=2, foreground="white")],
             zorder=fov_zorder+1)
 
-def plot_map(radars_dct,time,dataSet='active',output_dir='output',
-        fovModel='GS',**kwargs):
-    projection = ccrs.Orthographic(-100,70)
-    fig = plt.figure(figsize=(18,14))
-    ax  = fig.add_subplot(1,1,1,projection=projection)
-    ax.coastlines(color='0.7')
-    ax.add_feature(cfeature.LAND, color='lightgrey')
-    ax.add_feature(cfeature.OCEAN, color = 'white')
-#    ax.add_feature(cfeature.LAKES, color='white')
-    ax.add_feature(Nightshade(time, alpha=0.2))
-    
-    ax.gridlines(draw_labels=['left','bottom'])
-
-    for radar,dct in radars_dct.items():
-        fov_ranges  = dct.get('fov_ranges',(0,60))
-        fov_beams   = dct.get('fov_beams',None)
-        plot_radar_fov(radar,ax,time=time,fovModel=fovModel,
-                fov_ranges=fov_ranges,fov_beams=fov_beams)
-
-        dataObj = dct.get('dataObj')
-        if dataObj is None:
-            continue
-
-        scale   = (0,30)
-        result = fan_plot(dataObj,dataSet=dataSet,
-                axis=ax,projection=projection,time=time,scale=scale)
-
-    cbar_rect   = [ 0.925, 0.20, 0.02, 0.590]
-    cax         = fig.add_axes(cbar_rect)
-    cax.grid(False)
-    cbar_ticks  = np.arange(scale[0],scale[1]+5,5)
-    cbar        = fig.colorbar(result['pcoll'],cax=cax,ticks=cbar_ticks,extend='max')
-    cbar.set_label('SuperDARN ' + result['cbarLabel'])
-#    labels = cbar.ax.get_yticklabels()
-#    labels[-1].set_visible(False)
-
-    if 'gscat' in result['metadata']:
-        if result['metadata']['gscat'] == 1:
-            cbar.ax.text(0.5,-0.075,'Ground\nScatter Only',ha='center',fontsize='x-small',transform=cbar.ax.transAxes)
-
-    txt = 'Coordinates: ' + result['metadata']['coords'] +', Model: ' + result['metadata']['model']
-    ax.text(1.01, 0, txt,
-              horizontalalignment='left',
-              verticalalignment='bottom',
-              rotation='vertical',
-              size='x-small',
-              weight='bold',
-              transform=ax.transAxes)
-
-    mca = kwargs.get('mca')
-    if mca is not None:
-        date = datetime.datetime(time.year,time.month,time.day)
-        if date in mca.get_dates():
-            AIRS_GWv_vmin   = 0.
-            AIRS_GWv_vmax   = 0.8
-            mca_result      = mca.plot_ax(ax=ax,date=date,vmin=AIRS_GWv_vmin,vmax=AIRS_GWv_vmax,cmap='RdPu',gridlines=False,coastlines=False)
-            cbar_rect       = [ 1.02, 0.20, 0.02, 0.590]
-            cax  = fig.add_axes(cbar_rect)
-            cax.grid(False)
-            AIRS_cbar_ticks = np.arange(AIRS_GWv_vmin,AIRS_GWv_vmax+0.1,0.1)
-            mca_cbar = fig.colorbar(mca_result['cbar_pcoll'],cax=cax,ticks=AIRS_cbar_ticks)
-            mca_cbar.set_label(mca_result['cbar_label'])
-
-
-    ax.scatter([112],[60],s=500,marker='*',ec='black',fc='yellow',
-            zorder=10000,transform=ccrs.PlateCarree())
-
-#            ax_0_pos    = list(ax_0.get_position().bounds)
-#            ax_0.set_position(ax_0_pos)
-
-#    ax.set_extent((-6336895.598980072, 6344835.295088342, -6378073.21863, 6378073.21863))
-##    ax.set_extent((-140,-45,20,70))
-#    ax.set_extent((-140,-45,25,75))
-    ax.set_extent((0,360,25,90),crs=ccrs.PlateCarree())
-
-    fontdict    = {'size':'x-large','weight':'bold'}
-    title       = time.strftime('%d %b %Y %H%M UTC')
-    ax.set_title(title,fontdict=fontdict)
-
-#    fig.tight_layout()
-
-    fname = 'map_{!s}.png'.format(time.strftime('%Y%m%d.%H%M'))
-    fpath   = os.path.join(output_dir,fname)
-    fig.savefig(fpath,bbox_inches='tight')
-    plt.close(fig)
-    print(fpath)
-
-
 def plot_rtp(radars_dct,sTime,eTime,dataSet='active',output_dir='output',**kwargs):
 
     nrows   = len(radars_dct)
@@ -505,44 +374,149 @@ def plot_rtp(radars_dct,sTime,eTime,dataSet='active',output_dir='output',**kwarg
         pyDARNmusic.plotting.rtp.musicRTP(dataObj,xlim=(sTime,eTime),axis=ax,dataSet=dataSet,
                 beam=beam,plot_info=False,plot_title=False)
 
-
-
-#    fig.tight_layout()
     fname   = 'rtp_{!s}-{!s}.png'.format(sTime.strftime('%Y%m%d.%H%M'),eTime.strftime('%Y%m%d.%H%M'))
     fpath   = os.path.join(output_dir,fname)
     fig.savefig(fpath,bbox_inches='tight')
     plt.close(fig)
     print(fpath)
 
-def time_vector(sTime,eTime,timedelta=datetime.timedelta(minutes=2),**kwargs):
-    tvec = [sTime]
-    while tvec[-1] < eTime:
-        tvec.append(tvec[-1] + timedelta)
+def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
+                    panel_rect=[0,0,1,1],
+                    map_wd      = 0.80,
+                    map_hpad    = 0.05,
+                    cb_ht       = 0.75,
+                    cb_wd       = 0.10,
+                    cb_hpad     = 0.07,
+                    projection = ccrs.Orthographic(-100,70),
+                    SD_scale=(0,30),
+                    AIRS_GWv_scale=(0.,0.8),
+                    **kwargs):
+    """
+    panel_rect: rectangle in figure coordinatesdefining entire area used by 
+                this panel, including colorbars
+                [x00, y00, width, height]
+    map_wd:     map subpanel width as fraction of panel
+    map_hpad:   horizonal padding of map subpanel as fraction of panel
+    cb_wd:      colorbar subpanel width as fraction of panel
+    cb_hpad:    horizonal padding of colorbar subpanel as fraction of panel
+    cb_ht:      colorbar subpanel height as fraction of panel
+    """
 
-    return tvec
+    # Make panel rectangle values easy to get to.
+    p_x00   = panel_rect[0]
+    p_y00   = panel_rect[1]
+    p_wd    = panel_rect[2]
+    p_ht    = panel_rect[3]
+
+    # Scale map and cb values to panel
+    _map_wd      = map_wd*p_wd
+    _map_hpad    = map_hpad*p_wd
+
+    _cb_ht       = cb_ht*p_ht
+    _cb_wd       = cb_wd*p_wd
+    _cb_hpad     = cb_hpad*p_wd
+
+    # Calculate specific x and y coordinates
+    SD_x00      = _map_wd
+    AIRS_x00    = SD_x00 + _cb_wd
+    cb_y00      = (p_ht-_cb_ht)/2.
+
+    # Define actual axes rectangles.
+                        # [x00,      y00,    width,             height]
+    map_rect            = [p_x00,    p_y00,  _map_wd-_map_hpad, p_ht]
+    SD_cbar_rect        = [SD_x00,   cb_y00, _cb_wd-_cb_hpad,  _cb_ht]
+    AIRS_GWv_cbar_rect  = [AIRS_x00, cb_y00, _cb_wd-_cb_hpad,  _cb_ht]
+
+    # PANEL A - OVERVIEW MAP ####################################################### 
+    ax  = fig.add_axes(map_rect,projection=projection)
+    ax.set_extent((0,360,25,90),crs=ccrs.PlateCarree())
+
+    # Plot Map Features - Coastlines #######
+    ax.coastlines(color='0.7')
+    ax.add_feature(cfeature.LAND, color='lightgrey')
+    ax.add_feature(cfeature.OCEAN, color = 'white')
+    ax.add_feature(Nightshade(time, alpha=0.2))
+    ax.gridlines(draw_labels=['left','bottom'])
+
+    # Plot SuperDARN FOVs and Data #########
+    for radar,dct in radars_dct.items():
+        # SuperDARN FOVs
+        fov_ranges  = dct.get('fov_ranges',(0,60))
+        fov_beams   = dct.get('fov_beams',None)
+        plot_radar_fov(radar,ax,time=time,fovModel=fovModel,
+                fov_ranges=fov_ranges,fov_beams=fov_beams)
+
+        dataObj = dct.get('dataObj')
+        if dataObj is None:
+            # Don't plot data if None exists.
+            continue
+
+        # Plot SuperDARN Data
+        result = fan_plot(dataObj,dataSet=dataSet,
+                axis=ax,projection=projection,time=time,scale=SD_scale)
+
+    # SuperDARN Colorbar
+    cax         = fig.add_axes(SD_cbar_rect)
+    cax.grid(False)
+    cbar_ticks  = np.arange(SD_scale[0],SD_scale[1]+5,5)
+    cbar        = fig.colorbar(result['pcoll'],cax=cax,ticks=cbar_ticks,extend='max')
+    cbar.set_label('SuperDARN ' + result['cbarLabel'])
+
+    if 'gscat' in result['metadata']:
+        if result['metadata']['gscat'] == 1:
+            cbar.ax.text(0.5,-0.075,'Ground\nScatter Only',ha='center',fontsize='x-small',transform=cbar.ax.transAxes)
+
+    txt = 'Coordinates: ' + result['metadata']['coords'] +', Model: ' + result['metadata']['model']
+    ax.text(1.01, 0, txt,
+              horizontalalignment='left',
+              verticalalignment='bottom',
+              rotation='vertical',
+              size='x-small',
+              weight='bold',
+              transform=ax.transAxes)
+
+    # AIRS GW Variance #####################
+    mca = kwargs.get('mca')
+    if mca is not None:
+        date = datetime.datetime(time.year,time.month,time.day)
+        if date in mca.get_dates():
+            # Plot AIRS Data
+            mca_result      = mca.plot_ax(ax=ax,date=date,vmin=AIRS_GWv_scale[0],
+                                vmax=AIRS_GWv_scale[1],cmap='RdPu',gridlines=False,coastlines=False)
+
+            # Plot AIRS Colorbar
+            cax  = fig.add_axes(AIRS_GWv_cbar_rect)
+            cax.grid(False)
+            AIRS_cbar_ticks = np.arange(AIRS_GWv_scale[0],AIRS_GWv_scale[1]+0.1,0.1)
+            mca_cbar = fig.colorbar(mca_result['cbar_pcoll'],cax=cax,ticks=AIRS_cbar_ticks)
+            mca_cbar.set_label(mca_result['cbar_label'])
+
+    # Star for approx center of GW Hotspot # 
+    ax.scatter([112],[60],s=500,marker='*',ec='black',fc='yellow',
+            zorder=10000,transform=ccrs.PlateCarree())
+
+    # Axis Title ########################### 
+    fontdict    = {'size':'x-large','weight':'bold'}
+    title       = time.strftime('%d %b %Y %H%M UTC')
+    ax.set_title(title,fontdict=fontdict)
+
+def plot_map(radars_dct,time,figsize=(18,14),output_dir='output',**kwargs):
+
+    fig     = plt.figure(figsize=figsize)
+    plot_map_ax(fig,radars_dct,time,**kwargs)
+
+    # Save Figure ##################################################################
+    fname = 'map_{!s}.png'.format(time.strftime('%Y%m%d.%H%M'))
+    fpath   = os.path.join(output_dir,fname)
+    fig.savefig(fpath,bbox_inches='tight')
+    plt.close(fig)
+    print(fpath)
 
 if __name__ == '__main__':
     rd = {}
 
     rd['output_dir'] = 'output/Fig2_SuperDARN_Map'
     prep_dir(rd['output_dir'],clear=True)
-
-#    rd['sTime']         = datetime.datetime(2018,12,9,12)
-#    rd['eTime']         = datetime.datetime(2018,12,10)
-#    rd['time']          = datetime.datetime(2018,12,9,19,0)
-
-##    rd['sTime']         = datetime.datetime(2018,12,10,12)
-#    rd['sTime']         = datetime.datetime(2018,12,10,18)
-#    rd['eTime']         = datetime.datetime(2018,12,11)
-#    rd['time']          = datetime.datetime(2018,12,10,19,0)
-
-#    rd['sTime']         = datetime.datetime(2019,1,9,12)
-#    rd['eTime']         = datetime.datetime(2019,1,10)
-#    rd['time']          = datetime.datetime(2019,1,9,19,00)
-
-#    rd['sTime']         = datetime.datetime(2012,12,21,14)
-#    rd['eTime']         = datetime.datetime(2012,12,21,22)
-#    rd['time']          = datetime.datetime(2012,12,21,16,10)
 
     day = 15
     rd['sTime']         = datetime.datetime(2018,12,day,17)
@@ -558,17 +532,7 @@ if __name__ == '__main__':
     rd['radars_dct']    = load_data(**rd)
 
     rd['dataSet']       = 'originalFit'
-#    rd['dataSet']       = 'limitsApplied'
-#    rd['dataSet']       = 'active'
-
     
 #    plot_rtp(**rd)
     plot_map(**rd)
-
-#    times = time_vector(**rd)
-#    for time in times:
-#        if time != datetime.datetime(2018,12,10,18,30):
-#            continue
-#        rd['time'] = time
-#        plot_map(**rd)
     import ipdb; ipdb.set_trace()
