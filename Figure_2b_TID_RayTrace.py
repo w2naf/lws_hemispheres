@@ -113,7 +113,7 @@ def curvedEarthAxes(rect=111, fig=None, minground=0., maxground=2000, minalt=0,
 
     tr_rotate       = Affine2D().rotate(np.pi/2-ang/2)
     tr_shift        = Affine2D().translate(0, Re)
-    tr              = polar.PolarTransform() + tr_rotate
+    tr              = polar.PolarTransform(apply_theta_transforms=False) + tr_rotate
 
     grid_helper = \
         floating_axes.GridHelperCurveLinear(tr, extremes=(0, angran, Re+minalt,
