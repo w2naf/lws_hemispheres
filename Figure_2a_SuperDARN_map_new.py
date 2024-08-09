@@ -512,6 +512,18 @@ def plot_map(radars_dct,time,figsize=(18,14),output_dir='output',**kwargs):
     plt.close(fig)
     print(fpath)
 
+def figure2(radars_dct,time,figsize=(18,14),output_dir='output',**kwargs):
+
+    fig     = plt.figure(figsize=figsize)
+    plot_map_ax(fig,radars_dct,time,**kwargs)
+
+    # Save Figure ##################################################################
+    fname = 'map_{!s}.png'.format(time.strftime('%Y%m%d.%H%M'))
+    fpath   = os.path.join(output_dir,fname)
+    fig.savefig(fpath,bbox_inches='tight')
+    plt.close(fig)
+    print(fpath)
+
 if __name__ == '__main__':
     rd = {}
 
@@ -534,5 +546,7 @@ if __name__ == '__main__':
     rd['dataSet']       = 'originalFit'
     
 #    plot_rtp(**rd)
-    plot_map(**rd)
+#    plot_map(**rd)
+
+    figure2(**rd)
     import ipdb; ipdb.set_trace()
