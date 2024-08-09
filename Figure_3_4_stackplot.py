@@ -1265,7 +1265,8 @@ class ParameterObject(object):
         print('SAVING: ',fpath)
         fig.savefig(fpath,bbox_inches='tight')
 
-def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stackplot.png'):
+def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,
+        mark_dates=None,fpath='stackplot.png'):
 
     _sDate, _eDate = season_to_datetime(season)
     if sDate is None:
@@ -1477,20 +1478,11 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,fpath='stac
         my_xticks(sDate,eDate,ax,radar_ax=radar_ax,
                   labels=False,short_labels=True,plot_axvline=False)
 
-#        mark_dates = []
-#        mark_dates.append(datetime.datetime(2018,12,19))
-#        mark_dates.append(datetime.datetime(2019,1,15))
-#        mark_dates.append(datetime.datetime(2019,3,3))
-
-        mark_dates = []
-#        mark_dates.append(datetime.datetime(2018,12,7))
-#        mark_dates.append(datetime.datetime(2018,12,10))
-        mark_dates.append(datetime.datetime(2018,12,15))
-#        mark_dates.append(datetime.datetime(2018,12,22))
-        extend = 0.5
-        if inx == len(params) - 1:
-            extend = 0.020
-        mark_axvline(mark_dates,sDate,eDate,ax,radar_ax=radar_ax,extend=extend)
+        if mark_dates is not None:
+            extend = 0.5
+            if inx == len(params) - 1:
+                extend = 0.020
+            mark_axvline(mark_dates,sDate,eDate,ax,radar_ax=radar_ax,extend=extend)
 
     fig.tight_layout()
 
@@ -1654,6 +1646,21 @@ if __name__ == '__main__':
 
 ################################################################################
 # STACKPLOTS ###################################################################
+
+#    mark_dates = []
+#    mark_dates.append(datetime.datetime(2018,12,19))
+#    mark_dates.append(datetime.datetime(2019,1,15))
+#    mark_dates.append(datetime.datetime(2019,3,3))
+
+#    mark_dates = []
+#    mark_dates.append(datetime.datetime(2018,12,15))
+
+    mark_dates = []
+    mark_dates.append(datetime.datetime(2018,12,10))
+    mark_dates.append(datetime.datetime(2019,2,2))
+    mark_dates.append(datetime.datetime(2019,2,11))
+    
+
     stack_sets  = {}
     ss = stack_sets['figure_3'] = []
     ss.append('merra2CipsAirsTimeSeries')
@@ -1666,6 +1673,12 @@ if __name__ == '__main__':
     ss.append('lstid_ham')
     ss.append('sme')
 
+    ss = stack_sets['lstid_mstid_stack'] = []
+    ss.append('HIAMCM')
+    ss.append('gnss_dtec_gw')
+    ss.append('meanSubIntSpect_by_rtiCnt')
+    ss.append('lstid_ham')
+
     if plot_stackplots:
         for stack_code,stack_params in stack_sets.items():
             stack_dir  = os.path.join(output_base_dir,'stackplots',stack_code)
@@ -1676,4 +1689,5 @@ if __name__ == '__main__':
                         continue
                 png_name    = '{!s}_stack_{!s}.png'.format(season,stack_code)
                 png_path    = os.path.join(stack_dir,png_name) 
-                stackplot(po_dct,stack_params,season,fpath=png_path)
+                stackplot(po_dct,stack_params,season,fpath=png_path,
+                        mark_dates=mark_dates)
