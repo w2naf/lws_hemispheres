@@ -373,7 +373,7 @@ class RayTraceAndPlot(object):
 
     def plot_figure(self,fpath='output.png',figsize=(40,10),**kwargs):
         fig = plt.figure(figsize=figsize)
-        self.plot_ax(**kwargs)
+        self.plot_ax(fig=fig,**kwargs)
 
         print('Saving Figure: {!s}'.format(fpath))
         fig.savefig(fpath,bbox_inches='tight')
@@ -387,7 +387,8 @@ class RayTraceAndPlot(object):
             print(f'ERROR: Could not run {cmd}')
 
 
-    def plot_ax(self,end_range=3000,end_ht=500):
+    def plot_ax(self,fig=None,end_range=3000,end_ht=500,
+            cbax=None,plot_colorbar=True,**kwargs):
         prmd    = self.prmd
 
         _pltd    = {}
@@ -397,41 +398,18 @@ class RayTraceAndPlot(object):
         _pltd['heights']            = prmd['heights']
         _pltd['maxground']          = end_range
         _pltd['maxalt']             = end_ht
-        _pltd['Re']                 = 6371
-        _pltd['date']               = prmd['UT']
-        _pltd['azm']                = prmd['ray_bear']
+        _pltd['date']               = prmd['UT']    # Used for terminator.
+        _pltd['azm']                = prmd['ray_bear']# Used for terminator.
         _pltd['iono_arr']           = prmd['iono_en_grid']
         _pltd['iono_param']         = 'iono_en_grid'
-        _pltd['iono_cmap']          = 'viridis'
-        _pltd['iono_lim']           = None
-        _pltd['iono_title']         = 'Ionospheric Parameter'
-        _pltd['plot_rays']          = True
         _pltd['ray_path_data']      = self.ray_path_data
-        _pltd['srch_ray_path_data'] = None
-        _pltd['fig']                = None
-        _pltd['rect']               = 111
-        _pltd['ax']                 = None
-        _pltd['aax']                = None
-        _pltd['cbax']               = None
-        _pltd['plot_colorbar']      = True
+        _pltd['fig']                = fig 
+        _pltd['cbax']               = cbax
+        _pltd['plot_colorbar']      = plot_colorbar
         _pltd['title']              = ''
-        _pltd['iono_rasterize']     = False
-        _pltd['scale_Re']           = 1.
-        _pltd['scale_heights']      = 1.
-        _pltd['terminator']         = False
+        _pltd.update(kwargs)
 
         ax, aax, cbax   = plot_rays(**_pltd)
-
-#        ax, aax, cbax   = plot_rays(origin_lat,origin_lon,ranges,heights,
-#                maxground=end_range, maxalt=end_ht,Re=6371,date=UT,azm=ray_bear,
-#                iono_arr=iono_en_grid,iono_param='iono_en_grid',
-#                iono_cmap='viridis', iono_lim=None, iono_title='Ionospheric Parameter',
-#                plot_rays=True,
-#                ray_path_data=ray_path_data, 
-#                srch_ray_path_data=None, 
-#                fig=None, rect=111, ax=None, aax=None, cbax=None,
-#                plot_colorbar=True,title='',
-#                iono_rasterize=False,scale_Re=1.,scale_heights=1.,terminator=False)
 
         title   = []
         title.append('IRI2016 Perturbed with TID')
@@ -444,6 +422,12 @@ class RayTraceAndPlot(object):
         title.append('Origin {:0.1f}\N{DEGREE SIGN}N, {:0.1f}\N{DEGREE SIGN}E, {:0.0f}\N{DEGREE SIGN} AZM'.format(prmd['origin_lat'],prmd['origin_lon'],prmd['ray_bear']))
         title   = '\n'.join(title)
         ax.set_title(title,loc='right')
+
+        result = {}
+        result['ax']    = ax
+        result['aax']   = aax
+        result['cbax']  = cbax
+        return result
 
 if __name__ == '__main__':
     iono_nc = 'data/iri_tid_1000km/20181512.2000-20181512.2000_TX__profile.nc'
