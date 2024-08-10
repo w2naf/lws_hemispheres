@@ -121,9 +121,11 @@ class HamSpotPlot(object):
         fig.savefig(png_fpath,bbox_inches='tight')
         plt.close(fig)
 
-    def plot_map_ax(self,fig,subplot=None,
-            plot_region='US'):
-        ax      = fig.add_subplot(*subplot,projection=ccrs.PlateCarree())
+    def plot_map_ax(self,fig,subplot=(1,1,1),panel_rect=None, plot_region='US'):
+        if panel_rect is not None:
+            ax = fig.add_axes(*subplot,projection=ccrs.PlateCarree())
+        else:
+            ax = fig.add_subplot(*subplot,projection=ccrs.PlateCarree())
 
         # Plot Map #############################
         ax.coastlines(zorder=10,color='w')
@@ -151,7 +153,7 @@ class HamSpotPlot(object):
             ax.set_xlim(lon_lim)
             ax.set_ylim(lat_lim)
     
-    def plot_timeSeries_ax(self,ax,cb_pad=0.125,plot_fit=True):
+    def plot_timeSeries_ax(self,ax,cb_pad=0.125,plot_fit=True,plot_CV=False):
         fig             = ax.get_figure()
 
         result_dct      = self.edge_data
@@ -188,10 +190,11 @@ class HamSpotPlot(object):
             if p0_sin_fit != {}:
                 ax.plot(sin_fit.index,sin_fit+poly_fit,label='Sin Fit',color='white',lw=3,ls='--')
 
-            ax2 = ax.twinx()
-            ax2.plot(stability.index,stability,lw=2,color='0.5')
-            ax2.grid(False)
-            ax2.set_ylabel('Edge Coef. of Variation\n(Grey Line)')
+            if plot_CV:
+                ax2 = ax.twinx()
+                ax2.plot(stability.index,stability,lw=2,color='0.5')
+                ax2.grid(False)
+                ax2.set_ylabel('Edge Coef. of Variation\n(Grey Line)')
 
             for wl in winlim:
                 ax.axvline(wl,color='0.8',ls='--',lw=2)
