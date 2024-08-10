@@ -36,6 +36,7 @@ from pydarn import (Re, time2datetime, Coords, SuperDARNRadars,RangeEstimation)
 
 import mstid
 import merra2AirsMaps
+import ham_spot_plot
 
 Re = 6371 # Radius of the Earth in km
 
@@ -382,7 +383,7 @@ def plot_rtp(radars_dct,sTime,eTime,dataSet='active',output_dir='output',**kwarg
 
 def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
                     panel_rect=[0,0,1,1],
-                    map_wd      = 0.80,
+                    map_wd      = 0.70,
                     map_hpad    = 0.05,
                     cb_ht       = 0.75,
                     cb_wd       = 0.10,
@@ -417,13 +418,15 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     _cb_hpad     = cb_hpad*p_wd
 
     # Calculate specific x and y coordinates
-    SD_x00      = _map_wd
-    AIRS_x00    = SD_x00 + _cb_wd
+    GNSS_x00    = _map_wd 
+    SD_x00      = GNSS_x00 + _cb_wd
+    AIRS_x00    = SD_x00   + _cb_wd
     cb_y00      = p_y00+(p_ht-_cb_ht)/2.
 
     # Define actual axes rectangles.
                         # [x00,      y00,    width,             height]
     map_rect            = [p_x00,    p_y00,  _map_wd-_map_hpad, p_ht]
+    GNSS_TEC_cbar_rect  = [GNSS_x00, cb_y00, _cb_wd-_cb_hpad,  _cb_ht]
     SD_cbar_rect        = [SD_x00,   cb_y00, _cb_wd-_cb_hpad,  _cb_ht]
     AIRS_GWv_cbar_rect  = [AIRS_x00, cb_y00, _cb_wd-_cb_hpad,  _cb_ht]
 
@@ -454,6 +457,25 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
         # Plot SuperDARN Data
         result = fan_plot(dataObj,dataSet=dataSet,
                 axis=ax,projection=projection,time=time,scale=SD_scale)
+
+    # GNSS aTEC
+    hsp = rd.get('hsp')
+    map_data    = hsp.geo_hist.copy()
+    map_data    = np.log10(map_data)
+    tf          = np.isfinite(map_data)
+    map_data.values[~tf]   = np.nan
+    xx  = map_data.lon.values
+    yy  = map_data.lat.values
+    zz  = map_data.values.T
+    tec_mpbl    = ax.contourf(xx,yy,zz,levels=30,cmap=mpl.cm.gray,transform=ccrs.PlateCarree())
+
+    # Plot aTEC Colorbar
+    cax  = fig.add_axes(GNSS_TEC_cbar_rect)
+    cax.grid(False)
+#    tec_cbar_ticks = np.arange(GNSS_TEC_scale[0],GNSS_TEC_scale[1]+0.5,0.5)
+#    tec_cbar = fig.colorbar(tec_mpbl,cax=cax,ticks=tec_cbar_ticks)
+    tec_cbar = fig.colorbar(tec_mpbl,cax=cax)
+    tec_cbar.set_label('GNSS aTEC')
 
     # SuperDARN Colorbar
     cax         = fig.add_axes(SD_cbar_rect)
@@ -513,7 +535,7 @@ def plot_map(radars_dct,time,figsize=(18,14),output_dir='output',**kwargs):
     print(fpath)
 
 def plot_fig_rects(fig,rects,color='k',lw=2,fill=False,
-        plot_names=False,**kwargs):
+        plot_names=True,**kwargs):
     """
     Print boundaries directly on figure for a dictionary
     of rectangles.
@@ -536,19 +558,27 @@ def plot_fig_rects(fig,rects,color='k',lw=2,fill=False,
             fontdict    = {'weight':'bold','size':'large'}
             fig.text(tx,ty,name,fontdict=fontdict,va='top')
 
-def figure2(radars_dct,time,figsize=(18,14),output_dir='output',**kwargs):
+def figure2(radars_dct,time,hsp,figsize=(20,24),output_dir='output',**kwargs):
 
     rects   = {}
                 # [x00,  y00, width, height]
-    rects['a']   = [0.00, 0.50, 1.00, 0.50]
-    rects['b']   = [0.00, 0.25, 1.00, 0.25]
-    rects['c']   = [0.00, 0.00, 1.00, 0.25]
+    rects['a']   = [0.00, 0.40, 1.00, 0.60]
+    rects['b']   = [0.00, 0.20, 0.30, 0.20]
+    rects['c']   = [0.30, 0.20, 0.70, 0.20]
+    rects['d']   = [0.00, 0.00, 1.00, 0.20]
 
     fig     = plt.figure(figsize=figsize)
     plot_fig_rects(fig,rects)
 
     rect    = rects['a']
     plot_map_ax(fig,radars_dct,time,panel_rect=rect,**kwargs)
+
+    rect    = rects['b']
+    hsp.plot_map_ax(fig,panel_rect=rect)
+
+    rect    = rects['c']
+    ax      = fig.add_axes(rect)
+    result  = hsp.plot_timeSeries_ax(ax)
 
     # Save Figure ##################################################################
     fname = 'map_{!s}.png'.format(time.strftime('%Y%m%d.%H%M'))
@@ -563,12 +593,13 @@ if __name__ == '__main__':
     rd['output_dir'] = 'output/Fig2_SuperDARN_Map'
     prep_dir(rd['output_dir'],clear=True)
 
-    day = 15
-    rd['sTime']         = datetime.datetime(2018,12,day,17)
-    rd['eTime']         = datetime.datetime(2018,12,day,21)
-    rd['time']          = datetime.datetime(2018,12,day,20)
+    date                = datetime.datetime(2018,12,15)
+    rd['sTime']         = date + datetime.timedelta(hours=17) 
+    rd['eTime']         = date + datetime.timedelta(hours=21) 
+    rd['time']          = date + datetime.timedelta(hours=20) 
 
     rd['mca']           = merra2AirsMaps.Merra2AirsMaps()
+    rd['hsp']           = ham_spot_plot.HamSpotPlot(date)
   
     rd['fovModel']      = 'GS'
     rd['data_dir']      = '/data/sd-data'

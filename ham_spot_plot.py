@@ -77,7 +77,7 @@ class HamSpotPlot(object):
 
     def load_geo_data(self,dlat=1,dlon=1):
         # hamSpot_geo_2018_12_15.csv.bz2
-        date_str        = date.strftime('%Y_%m_%d')
+        date_str        = self.date.strftime('%Y_%m_%d')
         fname           = f'hamSpot_geo_{date_str}.csv.bz2'
         fpath           = os.path.join(self.data_dir,fname)
         self.geo_fpath  = fpath
@@ -123,7 +123,7 @@ class HamSpotPlot(object):
 
     def plot_map_ax(self,fig,subplot=(1,1,1),panel_rect=None, plot_region='US'):
         if panel_rect is not None:
-            ax = fig.add_axes(*subplot,projection=ccrs.PlateCarree())
+            ax = fig.add_axes(panel_rect,projection=ccrs.PlateCarree())
         else:
             ax = fig.add_subplot(*subplot,projection=ccrs.PlateCarree())
 
