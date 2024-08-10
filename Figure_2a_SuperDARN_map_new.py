@@ -534,7 +534,7 @@ def plot_map(radars_dct,time,figsize=(18,14),output_dir='output',**kwargs):
     plt.close(fig)
     print(fpath)
 
-def plot_fig_rects(fig,rects,color='k',lw=2,fill=False,
+def plot_fig_rects(fig,rects,vpad=0,color='k',lw=2,fill=False,
         plot_names=True,**kwargs):
     """
     Print boundaries directly on figure for a dictionary
@@ -544,6 +544,13 @@ def plot_fig_rects(fig,rects,color='k',lw=2,fill=False,
     axis areas actually are.
     """
     for name,rect in rects.items():
+        # Make sure you do not change the original rectangle.
+        rect    = rect.copy()
+
+        # Add equal vertical padding to top and bottom.
+        rect[1] -= vpad/2.
+        rect[3] += vpad
+
         xy      = (rect[0], rect[1])
         width   = rect[2]
         height  = rect[3]
@@ -558,20 +565,37 @@ def plot_fig_rects(fig,rects,color='k',lw=2,fill=False,
             fontdict    = {'weight':'bold','size':'large'}
             fig.text(tx,ty,name,fontdict=fontdict,va='top')
 
-def figure2(radars_dct,time,hsp,figsize=(20,24),output_dir='output',**kwargs):
+def figure2(radars_dct,time,hsp,figsize=(22,26),output_dir='output',**kwargs):
+
+    map_ht  = 0.60
+    ham_ht  = (1- map_ht) / 2.
+    vpad    = 0.05
+
+    r0_y00  = 1 - map_ht
+    r1_y00  = r0_y00 - ham_ht
+    r2_y00  = r1_y00 - ham_ht
+
+    fig     = plt.figure(figsize=figsize)
 
     rects   = {}
                 # [x00,  y00, width, height]
-    rects['a']   = [0.00, 0.40, 1.00, 0.60]
-    rects['b']   = [0.00, 0.20, 0.30, 0.20]
-    rects['c']   = [0.30, 0.20, 0.70, 0.20]
-    rects['d']   = [0.00, 0.00, 1.00, 0.20]
+    rects['a']   = [0.00, r0_y00, 1.00, map_ht]
+    rects['b']   = [0.00, r1_y00, 0.30, ham_ht]
+    rects['c']   = [0.30, r1_y00, 0.70, ham_ht]
+    rects['d']   = [0.00, r2_y00, 1.00, ham_ht]
+    for key,rect in rects.items():
+        rect[3] -= vpad
 
-    fig     = plt.figure(figsize=figsize)
-    plot_fig_rects(fig,rects)
+    plot_fig_rects(fig,rects,vpad=vpad)
 
     rect    = rects['a']
-    plot_map_ax(fig,radars_dct,time,panel_rect=rect,**kwargs)
+    dims    = {}
+    dims['map_wd']      = 0.80
+    dims['map_hpad']    = 0.00
+    dims['cb_ht']       = 0.75
+    dims['cb_wd']       = (1-dims['map_wd'])/3.
+    dims['cb_hpad']     = 0.65*dims['cb_wd']
+    plot_map_ax(fig,radars_dct,time,panel_rect=rect,**dims,**kwargs)
 
     rect    = rects['b']
     hsp.plot_map_ax(fig,panel_rect=rect)
