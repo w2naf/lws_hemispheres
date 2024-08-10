@@ -37,6 +37,7 @@ from pydarn import (Re, time2datetime, Coords, SuperDARNRadars,RangeEstimation)
 import mstid
 import merra2AirsMaps
 import ham_spot_plot
+import raytrace_and_plot
 
 Re = 6371 # Radius of the Earth in km
 
@@ -382,16 +383,19 @@ def plot_rtp(radars_dct,sTime,eTime,dataSet='active',output_dir='output',**kwarg
     print(fpath)
 
 def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
-                    panel_rect=[0,0,1,1],
-                    map_wd      = 0.70,
-                    map_hpad    = 0.05,
-                    cb_ht       = 0.75,
-                    cb_wd       = 0.10,
-                    cb_hpad     = 0.07,
-                    extent      = None,
-                    projection = ccrs.Orthographic(-100,70),
-                    SD_scale=(0,30),
-                    AIRS_GWv_scale=(0.,0.8),
+                    panel_rect          = [0,0,1,1],
+                    map_wd              = 0.70,
+                    map_hpad            = 0.05,
+                    cb_ht               = 0.75,
+                    cb_wd               = 0.10,
+                    cb_hpad             = 0.07,
+                    extent              = None,
+                    projection          = ccrs.Orthographic(-100,70),
+                    title_size          = None,
+                    cbar_ticklabel_size = None,
+                    cbar_label_size     = None,
+                    SD_scale            = (0,30),
+                    AIRS_GWv_scale      = (0.,0.8),
                     **kwargs):
     """
     panel_rect: rectangle in figure coordinatesdefining entire area used by 
@@ -477,14 +481,23 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
 #    tec_cbar_ticks = np.arange(GNSS_TEC_scale[0],GNSS_TEC_scale[1]+0.5,0.5)
 #    tec_cbar = fig.colorbar(tec_mpbl,cax=cax,ticks=tec_cbar_ticks)
     tec_cbar = fig.colorbar(tec_mpbl,cax=cax)
-    tec_cbar.set_label('GNSS aTEC')
+    cbar_fd  = {}
+    if cbar_label_size is not None:
+        cbar_fd.update({'size':cbar_label_size})
+    tec_cbar.set_label('GNSS aTEC',fontdict=cbar_fd)
+    if cbar_ticklabel_size is not None:
+        for ytl in cax.get_yticklabels():
+            ytl.set_size(cbar_ticklabel_size)
 
     # SuperDARN Colorbar
     cax         = fig.add_axes(SD_cbar_rect)
     cax.grid(False)
     cbar_ticks  = np.arange(SD_scale[0],SD_scale[1]+5,5)
     cbar        = fig.colorbar(result['pcoll'],cax=cax,ticks=cbar_ticks,extend='max')
-    cbar.set_label('SuperDARN ' + result['cbarLabel'])
+    cbar.set_label('SuperDARN ' + result['cbarLabel'],fontdict=cbar_fd)
+    if cbar_ticklabel_size is not None:
+        for ytl in cax.get_yticklabels():
+            ytl.set_size(cbar_ticklabel_size)
 
     if 'gscat' in result['metadata']:
         if result['metadata']['gscat'] == 1:
@@ -513,7 +526,10 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
             cax.grid(False)
             AIRS_cbar_ticks = np.arange(AIRS_GWv_scale[0],AIRS_GWv_scale[1]+0.1,0.1)
             mca_cbar = fig.colorbar(mca_result['cbar_pcoll'],cax=cax,ticks=AIRS_cbar_ticks)
-            mca_cbar.set_label(mca_result['cbar_label'])
+            mca_cbar.set_label(mca_result['cbar_label'],fontdict=cbar_fd)
+            if cbar_ticklabel_size is not None:
+                for ytl in cax.get_yticklabels():
+                    ytl.set_size(cbar_ticklabel_size)
 
     # Star for approx center of GW Hotspot # 
     ax.scatter([112],[60],s=500,marker='*',ec='black',fc='yellow',
@@ -522,6 +538,8 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     # Axis Title ########################### 
     fontdict    = {'size':'x-large','weight':'bold'}
     title       = time.strftime('%d %b %Y %H%M UTC')
+    if title_size is not None:
+        fontdict.update({'size':title_size})
     ax.set_title(title,fontdict=fontdict)
 
 def plot_map(radars_dct,time,figsize=(18,14),output_dir='output',**kwargs):
@@ -581,13 +599,22 @@ def plot_fig_rects(fig,rects,vpad=0,color='k',lw=2,fill=False,
             color=color,lw=lw,fill=fill,ls=':',
             transform=fig.transFigure, figure=fig,**kwargs)])
 
-def figure2(radars_dct,time,hsp,figsize=(21,24),output_dir='output',**kwargs):
-    map_ht      = 0.60
-    ham_ht      = (1- map_ht) / 2.
-    vpad        = 0.035
+def figure2(radars_dct,time,hsp,RTaP,figsize=(23,27),output_dir='output',**kwargs):
+    fig     = plt.figure(figsize=figsize)
+    # Font Control ################################################################# 
+    map_title_size          = 'x-large'
+    map_cbar_ticklabel_size = 'small'
+    map_cbar_label_size     = 'medium'
+
+
+    # Panel Positioning ############################################################
+    map_ht      = 0.55
+    ham_ht      = 0.20
+    rt_ht       = (1- map_ht - ham_ht)
+    vpad        = 0.055
 
     ham_hpad    = 0.100
-    ham_map_wd  = 0.400
+    ham_map_wd  = 0.380
     ham_ts_wd   = 1 - ham_map_wd - ham_hpad
 
     ham_map_x00 = 0.
@@ -595,16 +622,15 @@ def figure2(radars_dct,time,hsp,figsize=(21,24),output_dir='output',**kwargs):
 
     r0_y00  = 1 - map_ht
     r1_y00  = r0_y00 - ham_ht
-    r2_y00  = r1_y00 - ham_ht
+    r2_y00  = r1_y00 - rt_ht
 
-    fig     = plt.figure(figsize=figsize)
 
     rects   = {}
                 # [x00,  y00, width, height]
     rects['a']   = [       0.00, r0_y00,       1.00, map_ht]
     rects['b']   = [ham_map_x00, r1_y00, ham_map_wd, ham_ht]
     rects['c']   = [ ham_ts_x00, r1_y00,  ham_ts_wd, ham_ht]
-    rects['d']   = [       0.00, r2_y00,       1.00, ham_ht]
+    rects['d']   = [       0.00, r2_y00,       1.00,  rt_ht]
     for key,rect in rects.items():
         rect[3] -= vpad
 
@@ -612,23 +638,26 @@ def figure2(radars_dct,time,hsp,figsize=(21,24),output_dir='output',**kwargs):
 
     rects['c'][0] += ham_hpad
 
+    # Plot Panel (a) Map ###########################################################
     rect    = rects['a']
     dims    = {}
-    dims['map_wd']      = 0.75
-    dims['map_hpad']    = 0.00
-    dims['cb_ht']       = 0.75
-    dims['cb_wd']       = (1-dims['map_wd'])/3.
-    dims['cb_hpad']     = 0.70*dims['cb_wd']
-#    dims['extent']      = (0,360,25,90)
-#    dims['projection']  = ccrs.Orthographic(-100,70)
-
-    dims['extent']      = (0,360,20,90)
-    dims['projection']  = ccrs.Orthographic(-100,70.0)
+    dims['map_wd']              = 0.75
+    dims['map_hpad']            = 0.00
+    dims['cb_ht']               = 0.75
+    dims['cb_wd']               = (1-dims['map_wd'])/3.
+    dims['cb_hpad']             = 0.70*dims['cb_wd']
+    dims['extent']              = (0,360,20,90)
+    dims['projection']          = ccrs.Orthographic(-100,70.0)
+    dims['title_size']          = map_title_size
+    dims['cbar_ticklabel_size'] = map_cbar_ticklabel_size
+    dims['cbar_label_size']     = map_cbar_label_size
     plot_map_ax(fig,radars_dct,time,panel_rect=rect,**dims,**kwargs)
 
+    # Plot Panel (b) Ham Radio Map #################################################
     rect    = rects['b']
     hsp.plot_map_ax(fig,panel_rect=rect)
 
+    # Plot Panel (c) Ham Radio Time Series #########################################
     rect            = rects['c']
     ax              = fig.add_axes(rect)
     hspd            = {}
@@ -636,7 +665,12 @@ def figure2(radars_dct,time,hsp,figsize=(21,24),output_dir='output',**kwargs):
                        date + datetime.timedelta(hours=23))
     hspd['ylim']    = (750,2250)
     hspd['cb_pad']  = 0.01
-    result      = hsp.plot_timeSeries_ax(ax,**hspd)
+    result          = hsp.plot_timeSeries_ax(ax,**hspd)
+
+    # Plot Panel (d) Ray Trace Diagram #############################################
+    rect            = rects['d']
+    title_fontdict  = {'weight':'bold','size':'small'}
+    RTaP.plot_ax(fig=fig,panel_rect=rect,title_fontdict=title_fontdict)
 
     # Save Figure ##################################################################
     fname = 'map_{!s}.png'.format(time.strftime('%Y%m%d.%H%M'))
@@ -658,6 +692,9 @@ if __name__ == '__main__':
 
     rd['mca']           = merra2AirsMaps.Merra2AirsMaps()
     rd['hsp']           = ham_spot_plot.HamSpotPlot(date)
+
+    iono_nc = 'data/iri_tid_1000km/20181512.2000-20181512.2000_TX__profile.nc'
+    rd['RTaP']          = raytrace_and_plot.RayTraceAndPlot(iono_nc)
   
     rd['fovModel']      = 'GS'
     rd['data_dir']      = '/data/sd-data'

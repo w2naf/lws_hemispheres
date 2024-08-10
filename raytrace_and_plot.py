@@ -388,7 +388,8 @@ class RayTraceAndPlot(object):
 
 
     def plot_ax(self,fig=None,end_range=3000,end_ht=500,
-            cbax=None,plot_colorbar=True,**kwargs):
+            cbax=None,plot_colorbar=True,panel_rect=None,
+            title_fontdict=None,**kwargs):
         prmd    = self.prmd
 
         _pltd    = {}
@@ -411,17 +412,38 @@ class RayTraceAndPlot(object):
 
         ax, aax, cbax   = plot_rays(**_pltd)
 
+        title_prms  = {}
+        if title_fontdict is not None:
+            title_prms['fontdict'] = title_fontdict
+
         title   = []
         title.append('IRI2016 Perturbed with TID')
         title.append('{!s}'.format(prmd['UT'].strftime('%Y %b %d %H:%M UTC')))
         title   = '\n'.join(title)
-        ax.set_title(title,loc='left')
+        ax.set_title(title,loc='left',**title_prms)
 
         title   = []
         title.append('{!s} MHz Raytrace'.format(prmd['freq']))
         title.append('Origin {:0.1f}\N{DEGREE SIGN}N, {:0.1f}\N{DEGREE SIGN}E, {:0.0f}\N{DEGREE SIGN} AZM'.format(prmd['origin_lat'],prmd['origin_lon'],prmd['ray_bear']))
         title   = '\n'.join(title)
-        ax.set_title(title,loc='right')
+        ax.set_title(title,loc='right',**title_prms)
+
+        if panel_rect is not None:
+            p_x00   = panel_rect[0]
+            p_y00   = panel_rect[1]
+            p_wd    = panel_rect[2]
+            p_ht    = panel_rect[3]
+
+            rt_wd   = 0.85      * p_wd
+            rt_x00  = p_x00
+
+            cb_wd   = (1-rt_wd) * p_wd
+            cb_x00  = rt_x00 + rt_wd
+
+            rt_rect = [rt_x00, p_y00, rt_wd, p_ht]
+            cb_rect = [cb_x00, p_y00, cb_wd, p_ht]
+            ax.set_position(rt_rect)
+            cbax.set_position(cb_rect)
 
         result = {}
         result['ax']    = ax
