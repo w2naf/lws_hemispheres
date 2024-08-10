@@ -322,89 +322,137 @@ def plot_rays(tx_lat,tx_lon,ranges,heights,
 
     return ax, aax, cbax
 
+class RayTraceAndPlot(object):
+    def __init__(self,iono_nc=None, freq=14, nhops=1):
+        if iono_nc is None:
+        #    iono_nc = 'data/iri_tid_300km/20181012.1830-20181012.1830_FHE__profile.nc'
+            iono_nc = 'data/iri_tid_1000km/20181512.2000-20181512.2000_TX__profile.nc'
+
+        print('Loading ionospheric grid {!s}... '.format(iono_nc))
+        iono_ds         = xr.load_dataset(iono_nc)
+        self.iono_ds    = iono_ds
+
+        self.prmd = prmd = {}
+        prmd['UT']             = pd.to_datetime(iono_ds['date'].values[0])
+        prmd['origin_lat']     = iono_ds.attrs['tx_lat']
+        prmd['origin_lon']     = iono_ds.attrs['tx_lon']
+        prmd['ray_bear']       = np.round(iono_ds.attrs['azm'],1)
+        prmd['start_height']   = float(iono_ds['alt'].min())
+        prmd['height_inc']     = np.diff(iono_ds['alt'])[0]
+        prmd['range_inc']      = np.diff(iono_ds['range'])[0]
+        prmd['heights']        = iono_ds['alt'].values
+        prmd['ranges']         = iono_ds['range'].values
+
+        en_ds                  = np.squeeze(iono_ds['electron_density'].values).T # Needs to be dimensions of [height, range]
+        en_ds[en_ds < 0 ]      = 0                                                # Make sure all electron densities are >= 0.
+        en_ds                  = en_ds / (100**3)                                 # PyLap needs electron densities in electrons per cubic cm.
+        prmd['iono_en_grid']   = en_ds
+        prmd['iono_en_grid_5'] = en_ds                                            # We are not calculating Doppler shift, so the 5 minute electron densities can be the same as iono_en_grid
+        prmd['collision_freq'] = en_ds*0.                                         # Ignoring collision frequencies
+        prmd['irreg']          = np.zeros([4,en_ds.shape[1]])                     # Ignoring ionospheric irregularities.
+
+        prmd['elevs']          = np.arange(2, 62, 0.5, dtype = float)             # py
+        prmd['num_elevs']      = len(prmd['elevs'])
+        prmd['freq']           = freq                                             # Ray Frequency (MHz)
+        prmd['freqs']          = freq * np.ones(prmd['num_elevs'], dtype = float) # Need to pass a vector of frequencies the same length as len(elevs)
+        prmd['tol']            = [1e-7, 0.01, 10]                                 # ODE tolerance and min/max step sizes
+        prmd['nhops']          = nhops                                            # number of hops to raytrace
+        prmd['irregs_flag']    = 0                                                # no irregularities - not interested in Doppler spread or field aligned irregularities
+
+        self.ray_trace()
+
+    def ray_trace(self):
+        print('Generating {} 2D NRT rays ...'.format(self.prmd['num_elevs']))
+        rt_keys = ['origin_lat', 'origin_lon', 'elevs', 'ray_bear', 'freqs', 'nhops', 'tol', 'irregs_flag', 'iono_en_grid', 'iono_en_grid_5', 'collision_freq', 'start_height', 'height_inc', 'range_inc', 'irreg']
+        rt_prms = [self.prmd[key] for key in rt_keys]
+        ray_data, ray_path_data, ray_path_state = raytrace_2d(*rt_prms)
+
+        self.ray_data       = ray_data
+        self.ray_path_data  = ray_path_data
+        self.ray_path_state = ray_path_state
+
+    def plot_figure(self,fpath='output.png',figsize=(40,10),**kwargs):
+        fig = plt.figure(figsize=figsize)
+        self.plot_ax(**kwargs)
+
+        print('Saving Figure: {!s}'.format(fpath))
+        fig.savefig(fpath,bbox_inches='tight')
+
+        # Remove whitespace using mogrify since the curved axes are
+        # not compatible with bbox_inches='tight'
+        try:
+            cmd = f'mogrify -trim {fpath}'
+            os.system(cmd)
+        except:
+            print(f'ERROR: Could not run {cmd}')
+
+
+    def plot_ax(self,end_range=3000,end_ht=500):
+        prmd    = self.prmd
+
+        _pltd    = {}
+        _pltd['tx_lat']             = prmd['origin_lat']
+        _pltd['tx_lon']             = prmd['origin_lon']
+        _pltd['ranges']             = prmd['ranges']
+        _pltd['heights']            = prmd['heights']
+        _pltd['maxground']          = end_range
+        _pltd['maxalt']             = end_ht
+        _pltd['Re']                 = 6371
+        _pltd['date']               = prmd['UT']
+        _pltd['azm']                = prmd['ray_bear']
+        _pltd['iono_arr']           = prmd['iono_en_grid']
+        _pltd['iono_param']         = 'iono_en_grid'
+        _pltd['iono_cmap']          = 'viridis'
+        _pltd['iono_lim']           = None
+        _pltd['iono_title']         = 'Ionospheric Parameter'
+        _pltd['plot_rays']          = True
+        _pltd['ray_path_data']      = self.ray_path_data
+        _pltd['srch_ray_path_data'] = None
+        _pltd['fig']                = None
+        _pltd['rect']               = 111
+        _pltd['ax']                 = None
+        _pltd['aax']                = None
+        _pltd['cbax']               = None
+        _pltd['plot_colorbar']      = True
+        _pltd['title']              = ''
+        _pltd['iono_rasterize']     = False
+        _pltd['scale_Re']           = 1.
+        _pltd['scale_heights']      = 1.
+        _pltd['terminator']         = False
+
+        ax, aax, cbax   = plot_rays(**_pltd)
+
+#        ax, aax, cbax   = plot_rays(origin_lat,origin_lon,ranges,heights,
+#                maxground=end_range, maxalt=end_ht,Re=6371,date=UT,azm=ray_bear,
+#                iono_arr=iono_en_grid,iono_param='iono_en_grid',
+#                iono_cmap='viridis', iono_lim=None, iono_title='Ionospheric Parameter',
+#                plot_rays=True,
+#                ray_path_data=ray_path_data, 
+#                srch_ray_path_data=None, 
+#                fig=None, rect=111, ax=None, aax=None, cbax=None,
+#                plot_colorbar=True,title='',
+#                iono_rasterize=False,scale_Re=1.,scale_heights=1.,terminator=False)
+
+        title   = []
+        title.append('IRI2016 Perturbed with TID')
+        title.append('{!s}'.format(prmd['UT'].strftime('%Y %b %d %H:%M UTC')))
+        title   = '\n'.join(title)
+        ax.set_title(title,loc='left')
+
+        title   = []
+        title.append('{!s} MHz Raytrace'.format(prmd['freq']))
+        title.append('Origin {:0.1f}\N{DEGREE SIGN}N, {:0.1f}\N{DEGREE SIGN}E, {:0.0f}\N{DEGREE SIGN} AZM'.format(prmd['origin_lat'],prmd['origin_lon'],prmd['ray_bear']))
+        title   = '\n'.join(title)
+        ax.set_title(title,loc='right')
+
 if __name__ == '__main__':
-#    iono_nc = 'data/iri_tid_300km/20181012.1830-20181012.1830_FHE__profile.nc'
     iono_nc = 'data/iri_tid_1000km/20181512.2000-20181512.2000_TX__profile.nc'
-    print('Loading ionospheric grid {!s}... '.format(iono_nc))
-
-    iono_ds = xr.load_dataset(iono_nc)
-
-    UT              = pd.to_datetime(iono_ds['date'].values[0])
-    origin_lat      = iono_ds.attrs['tx_lat']
-    origin_lon      = iono_ds.attrs['tx_lon']
-    ray_bear        = np.round(iono_ds.attrs['azm'],1)
-    start_height    = float(iono_ds['alt'].min())
-    height_inc      = np.diff(iono_ds['alt'])[0]
-    range_inc       = np.diff(iono_ds['range'])[0]
-    heights         = iono_ds['alt'].values
-    ranges          = iono_ds['range'].values
-
-    en_ds           = np.squeeze(iono_ds['electron_density'].values).T  #Needs to be dimensions of [height, range]
-    en_ds[en_ds < 0 ] = 0 # Make sure all electron densities are >= 0.
-    en_ds           = en_ds / (100**3) # PyLap needs electron densities in electrons per cubic cm.
-    iono_en_grid    = en_ds
-    iono_en_grid_5  = iono_en_grid      # We are not calculating Doppler shift, so the 5 minute electron densities can be the same as iono_en_grid
-    collision_freq  = iono_en_grid*0.   # Ignoring collision frequencies
-    irreg           = np.zeros([4,en_ds.shape[1]])  # Ignoring ionospheric irregularities.
-
-    elevs           = np.arange(2, 62, 0.5, dtype = float) # py
-    num_elevs       = len(elevs)
-    freq            = 14.0                  # Ray Frequency (MHz)
-    freqs           = freq * np.ones(num_elevs, dtype = float) # Need to pass a vector of frequencies the same length as len(elevs)
-    tol             = [1e-7, 0.01, 10]  # ODE tolerance and min/max step sizes
-    nhops           = 1                 # number of hops to raytrace
-    irregs_flag     = 0                 # no irregularities - not interested in Doppler spread or field aligned irregularities
-
-    print('Generating {} 2D NRT rays ...'.format(num_elevs))
-    ray_data, ray_path_data, ray_path_state = \
-       raytrace_2d(origin_lat, origin_lon, elevs, ray_bear, freqs, nhops,
-                   tol, irregs_flag, iono_en_grid, iono_en_grid_5,
-               collision_freq, start_height, height_inc, range_inc, irreg)
-
-    ###################
-    ### Plot Result ###
-    ###################
-
-    end_range       = 3000
-    end_ht          = 500
-
-    fig = plt.figure(figsize=(40,10))
-    ax, aax, cbax   = plot_rays(origin_lat,origin_lon,ranges,heights,
-            maxground=end_range, maxalt=end_ht,Re=6371,date=UT,azm=ray_bear,
-            iono_arr=iono_en_grid,iono_param='iono_en_grid',
-            iono_cmap='viridis', iono_lim=None, iono_title='Ionospheric Parameter',
-            plot_rays=True,
-            ray_path_data=ray_path_data, 
-            srch_ray_path_data=None, 
-            fig=None, rect=111, ax=None, aax=None, cbax=None,
-            plot_colorbar=True,title='',
-            iono_rasterize=False,scale_Re=1.,scale_heights=1.,terminator=False)
-
-    title   = []
-    title.append('IRI2016 Perturbed with TID')
-    title.append('{!s}'.format(UT.strftime('%Y %b %d %H:%M UTC')))
-    title   = '\n'.join(title)
-    ax.set_title(title,loc='left')
-
-    title   = []
-    title.append('{!s} MHz Raytrace'.format(freq))
-    title.append('Origin {:0.1f}\N{DEGREE SIGN}N, {:0.1f}\N{DEGREE SIGN}E, {:0.0f}\N{DEGREE SIGN} AZM'.format(origin_lat,origin_lon,ray_bear))
-    title   = '\n'.join(title)
-    ax.set_title(title,loc='right')
-
     output_dir  = os.path.join('output','Figure_2b')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     fname   = 'Figure_2b_TID_RayTrace.png'
     fpath   = os.path.join(output_dir,fname)
-    print('Saving Figure: {!s}'.format(fpath))
-    fig.savefig(fpath,bbox_inches='tight')
 
-    # Remove whitespace using mogrify since the curved axes are
-    # not compatible with bbox_inches='tight'
-    try:
-        cmd = f'mogrify -trim {fpath}'
-        os.system(cmd)
-    except:
-        print(f'ERROR: Could not run {cmd}')
+    RTaP    = RayTraceAndPlot(iono_nc)
+    RTaP.plot_figure(fpath=fpath)
