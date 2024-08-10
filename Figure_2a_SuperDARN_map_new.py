@@ -562,8 +562,8 @@ def plot_fig_rects(fig,rects,vpad=0,color='k',lw=2,fill=False,
         if plot_names:
             tx  = rect[0] + 0.01
             ty  = rect[1] + rect[3] - 0.01
-            fontdict    = {'weight':'bold','size':'large'}
-            fig.text(tx,ty,name,fontdict=fontdict,va='top')
+            fontdict    = {'weight':'bold','size':'x-large'}
+            fig.text(tx,ty,'({!s})'.format(name),fontdict=fontdict,va='top')
 
 def figure2(radars_dct,time,hsp,figsize=(22,26),output_dir='output',**kwargs):
 
