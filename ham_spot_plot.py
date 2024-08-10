@@ -45,10 +45,10 @@ def get_bins(lim, bin_size):
     bins    = np.arange(lim[0], lim[1]+1*bin_size, bin_size)
     return bins
 
-def fmt_xaxis(ax,xlim=None,label=True):
+def fmt_xaxis(ax,xlim=None,label=True,fontdict={}):
     ax.xaxis.set_major_locator(mpl.dates.HourLocator(interval=2))
     ax.xaxis.set_major_formatter(mpl.dates.DateFormatter("%H%M"))
-    ax.set_xlabel('Time [UTC]')
+    ax.set_xlabel('Time [UTC]',fontdict=fontdict)
     ax.set_xlim(xlim)
 
 class HamSpotPlot(object):
@@ -121,7 +121,16 @@ class HamSpotPlot(object):
         fig.savefig(png_fpath,bbox_inches='tight')
         plt.close(fig)
 
-    def plot_map_ax(self,fig,subplot=(1,1,1),panel_rect=None, plot_region='US'):
+    def plot_map_ax(self,fig,
+            subplot             = (1,1,1),
+            panel_rect          = None,
+            plot_region         = 'US',
+            title_size          = None,
+            ticklabel_size      = None,
+            label_size          = None,
+            cbar_ticklabel_size = None,
+            cbar_label_size     = None):
+
         if panel_rect is not None:
             ax = fig.add_axes(panel_rect,projection=ccrs.PlateCarree())
         else:
@@ -137,11 +146,20 @@ class HamSpotPlot(object):
         map_data    = np.log10(map_data)
         map_data.values[tf] = 0
         map_data.name   = 'log({})'.format(map_data.name)
-        map_data.plot.contourf(x=map_data.attrs['xkey'],y=map_data.attrs['ykey'],ax=ax,levels=30,cmap=mpl.cm.inferno)
-        ax.set_title('')
+        cntr    = map_data.plot.contourf(x=map_data.attrs['xkey'],y=map_data.attrs['ykey'],ax=ax,levels=30,cmap=mpl.cm.inferno)
+        cax     = cntr.colorbar.ax
+        if cbar_ticklabel_size is not None:
+            for ytl in cax.get_yticklabels():
+                ytl.set_size(cbar_ticklabel_size)
+        if cbar_label_size is not None:
+            cax.set_ylabel(map_data.name,fontdict={'size':cbar_label_size})
+
         lweight = mpl.rcParams['axes.labelweight']
         lsize   = mpl.rcParams['axes.labelsize']
         fdict   = {'weight':lweight,'size':lsize}
+        if label_size is not None:
+            fdict.update({'size':label_size})
+
         ax.text(0.5,-0.1,'Radio Spots (N = {!s})'.format(map_n),
                 ha='center',transform=ax.transAxes,fontdict=fdict)
 
@@ -153,11 +171,30 @@ class HamSpotPlot(object):
             ax.set_xlim(lon_lim)
             ax.set_ylim(lat_lim)
 
+        if ticklabel_size is not None:
+            for ttl in ax.get_xticklabels():
+                ttl.set_size(ticklabel_size)
+
+            for ttl in ax.get_yticklabels():
+                ttl.set_size(ticklabel_size)
+
         date_str = self.date.strftime('%Y %b %d')
-        ax.set_title(date_str,fontdict={'weight':'bold'})
+        title_fd = {'weight':'bold'}
+        if title_size is not None:
+            title_fd.update({'size':title_size})
+        ax.set_title(date_str,fontdict=title_fd)
     
     def plot_timeSeries_ax(self,ax,xlim=None,ylim=None,
-            cb_pad=0.125,plot_fit=True,plot_CV=False):
+            plot_fit            = True,
+            plot_CV             = False,
+            cb_pad              = 0.125,
+            title_size          = None,
+            ticklabel_size      = None,
+            label_size          = None,
+            cbar_ticklabel_size = None,
+            cbar_label_size     = None,
+            cbar_label          = '14 MHz\nHam Radio Data'):
+
         fig             = ax.get_figure()
 
         result_dct      = self.edge_data
@@ -186,10 +223,15 @@ class HamSpotPlot(object):
         Ts              = np.mean(np.diff(arr_times)) # Sampling Period
 
         mpbl = ax.pcolormesh(arr_times,ranges_km,arr,cmap='plasma')
-        plt.colorbar(mpbl,aspect=10,pad=cb_pad,label='14 MHz Ham Radio Data')
-        if not plot_fit:
-            ax.set_title(f'| {date} |')
-        else:
+        cbar = plt.colorbar(mpbl,aspect=10,pad=cb_pad,label=cbar_label)
+        cax  = cbar.ax
+        if cbar_ticklabel_size is not None:
+            for ytl in cax.get_yticklabels():
+                ytl.set_size(cbar_ticklabel_size)
+        if cbar_label_size is not None:
+            cax.set_ylabel(cbar_label,fontdict={'size':cbar_label_size})
+
+        if plot_fit:
             ed0_line    = ax.plot(arr_times,edge_0,lw=2,color='Aqua',label='Detected Edge')
 
             if p0_sin_fit != {}:
@@ -210,11 +252,26 @@ class HamSpotPlot(object):
             ax.legend(loc='upper center',fontsize='x-small',ncols=4,
                     framealpha=0.2,labelcolor='linecolor')
 
-        fmt_xaxis(ax,xlim)
-        ax.set_ylabel('Range [km]')
+        label_fd = {}
+        if label_size is not None:
+            label_fd.update({'size':label_size})
+
+        fmt_xaxis(ax,xlim,fontdict=label_fd)
+        ax.set_ylabel('Range [km]',fontdict=label_fd)
         ax.set_ylim(ylim)
+
+        if ticklabel_size is not None:
+            for ttl in ax.get_xticklabels():
+                ttl.set_size(ticklabel_size)
+
+            for ttl in ax.get_yticklabels():
+                ttl.set_size(ticklabel_size)
+
         date_str = self.date.strftime('%Y %b %d')
-        ax.set_title(date_str,fontdict={'weight':'bold'})
+        title_fd = {'weight':'bold'}
+        if title_size is not None:
+            title_fd.update({'size':title_size})
+        ax.set_title(date_str,fontdict=title_fd)
 
         return
 

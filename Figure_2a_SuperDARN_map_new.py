@@ -606,6 +606,11 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=(23,27),output_dir='output',**kwarg
     map_cbar_ticklabel_size = 'small'
     map_cbar_label_size     = 'medium'
 
+    ham_title_size          = 'x-large'
+    ham_ticklabel_size      = 'small'
+    ham_label_size          = 'medium'
+    ham_cbar_ticklabel_size = 'small'
+    ham_cbar_label_size     = 'medium'
 
     # Panel Positioning ############################################################
     map_ht      = 0.55
@@ -654,8 +659,15 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=(23,27),output_dir='output',**kwarg
     plot_map_ax(fig,radars_dct,time,panel_rect=rect,**dims,**kwargs)
 
     # Plot Panel (b) Ham Radio Map #################################################
+    ham_fonts   = {}
+    ham_fonts['title_size']          = ham_title_size
+    ham_fonts['ticklabel_size']      = ham_ticklabel_size
+    ham_fonts['label_size']          = ham_label_size
+    ham_fonts['cbar_ticklabel_size'] = ham_cbar_ticklabel_size
+    ham_fonts['cbar_label_size']     = ham_cbar_label_size
+
     rect    = rects['b']
-    hsp.plot_map_ax(fig,panel_rect=rect)
+    hsp.plot_map_ax(fig,panel_rect=rect,**ham_fonts)
 
     # Plot Panel (c) Ham Radio Time Series #########################################
     rect            = rects['c']
@@ -665,6 +677,7 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=(23,27),output_dir='output',**kwarg
                        date + datetime.timedelta(hours=23))
     hspd['ylim']    = (750,2250)
     hspd['cb_pad']  = 0.01
+    hspd.update(ham_fonts)
     result          = hsp.plot_timeSeries_ax(ax,**hspd)
 
     # Plot Panel (d) Ray Trace Diagram #############################################
