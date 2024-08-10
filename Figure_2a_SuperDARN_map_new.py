@@ -612,6 +612,12 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=(23,27),output_dir='output',**kwarg
     ham_cbar_ticklabel_size = 'small'
     ham_cbar_label_size     = 'medium'
 
+    rt_title_size           = 'medium'
+    rt_ticklabel_size       = 'small'
+    rt_label_size           = 'medium'
+    rt_cbar_ticklabel_size  = 'small'
+    rt_cbar_label_size      = 'medium'
+
     # Panel Positioning ############################################################
     map_ht      = 0.55
     ham_ht      = 0.20
@@ -639,7 +645,7 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=(23,27),output_dir='output',**kwarg
     for key,rect in rects.items():
         rect[3] -= vpad
 
-    plot_fig_rects(fig,rects,vpad=vpad,plot_rects=False)
+    plot_fig_rects(fig,rects,vpad=vpad,plot_rects=False,plot_outer=False)
 
     rects['c'][0] += ham_hpad
 
@@ -681,9 +687,15 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=(23,27),output_dir='output',**kwarg
     result          = hsp.plot_timeSeries_ax(ax,**hspd)
 
     # Plot Panel (d) Ray Trace Diagram #############################################
+    rt_fonts   = {}
+    rt_fonts['title_size']          = rt_title_size
+    rt_fonts['ticklabel_size']      = rt_ticklabel_size
+    rt_fonts['label_size']          = rt_label_size
+    rt_fonts['cbar_ticklabel_size'] = rt_cbar_ticklabel_size
+    rt_fonts['cbar_label_size']     = rt_cbar_label_size
+
     rect            = rects['d']
-    title_fontdict  = {'weight':'bold','size':'small'}
-    RTaP.plot_ax(fig=fig,panel_rect=rect,title_fontdict=title_fontdict)
+    RTaP.plot_ax(fig=fig,panel_rect=rect,**rt_fonts)
 
     # Save Figure ##################################################################
     fname = 'map_{!s}.png'.format(time.strftime('%Y%m%d.%H%M'))

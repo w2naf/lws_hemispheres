@@ -388,8 +388,20 @@ class RayTraceAndPlot(object):
 
 
     def plot_ax(self,fig=None,end_range=3000,end_ht=500,
-            cbax=None,plot_colorbar=True,panel_rect=None,
-            title_fontdict=None,**kwargs):
+            cbax                = None,
+            plot_colorbar       = True,
+            panel_rect          = None,
+            title_size          = None,
+            ticklabel_size      = None,
+            label_size          = None,
+            cbar_ticklabel_size = None,
+            cbar_label_size     = None,
+            **kwargs):
+
+        if ticklabel_size is not None:
+            mpl.rcParams['xtick.labelsize']         = ticklabel_size
+            mpl.rcParams['ytick.labelsize']         = ticklabel_size
+
         prmd    = self.prmd
 
         _pltd    = {}
@@ -412,9 +424,9 @@ class RayTraceAndPlot(object):
 
         ax, aax, cbax   = plot_rays(**_pltd)
 
-        title_prms  = {}
-        if title_fontdict is not None:
-            title_prms['fontdict'] = title_fontdict
+        title_prms = {'weight':'bold'}
+        if title_size is not None:
+            title_prms.update({'size':title_size})
 
         title   = []
         title.append('IRI2016 Perturbed with TID')
@@ -428,9 +440,21 @@ class RayTraceAndPlot(object):
         title   = '\n'.join(title)
         ax.set_title(title,loc='right',**title_prms)
 
+        if label_size is not None:
+            ax.xaxis.label.set_size(label_size)
+            ax.yaxis.label.set_size(label_size)
+
+        if cbar_ticklabel_size is not None:
+            for ytl in cbax.get_yticklabels():
+                ytl.set_size(cbar_ticklabel_size)
+
+        if cbar_label_size is not None:
+            cbax.xaxis.label.set_size(cbar_label_size)
+            cbax.yaxis.label.set_size(cbar_label_size)
+
         if panel_rect is not None:
-            p_x00   = panel_rect[0]
-            p_y00   = panel_rect[1]
+            p_x00   = panel_rect[0] + 0.025
+            p_y00   = panel_rect[1] - 0.01
             p_wd    = panel_rect[2]
             p_ht    = panel_rect[3]
 
@@ -438,7 +462,7 @@ class RayTraceAndPlot(object):
             rt_x00  = p_x00
 
             cb_wd   = (1-rt_wd) * p_wd
-            cb_x00  = rt_x00 + rt_wd
+            cb_x00  = rt_x00 + rt_wd + 0.025
 
             rt_rect = [rt_x00, p_y00, rt_wd, p_ht]
             cb_rect = [cb_x00, p_y00, cb_wd, p_ht]
