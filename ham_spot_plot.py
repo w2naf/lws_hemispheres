@@ -46,7 +46,7 @@ def get_bins(lim, bin_size):
     return bins
 
 def fmt_xaxis(ax,xlim=None,label=True):
-    ax.xaxis.set_major_locator(mpl.dates.HourLocator(interval=1))
+    ax.xaxis.set_major_locator(mpl.dates.HourLocator(interval=2))
     ax.xaxis.set_major_formatter(mpl.dates.DateFormatter("%H%M"))
     ax.set_xlabel('Time [UTC]')
     ax.set_xlim(xlim)
@@ -152,6 +152,9 @@ class HamSpotPlot(object):
 
             ax.set_xlim(lon_lim)
             ax.set_ylim(lat_lim)
+
+        date_str = self.date.strftime('%Y %b %d')
+        ax.set_title(date_str,fontdict={'weight':'bold'})
     
     def plot_timeSeries_ax(self,ax,xlim=None,ylim=None,
             cb_pad=0.125,plot_fit=True,plot_CV=False):
@@ -187,10 +190,10 @@ class HamSpotPlot(object):
         if not plot_fit:
             ax.set_title(f'| {date} |')
         else:
-            ed0_line    = ax.plot(arr_times,edge_0,lw=2,label='Detected Edge')
+            ed0_line    = ax.plot(arr_times,edge_0,lw=2,color='Aqua',label='Detected Edge')
 
             if p0_sin_fit != {}:
-                ax.plot(sin_fit.index,sin_fit+poly_fit,label='Sin Fit',color='white',lw=3,ls='--')
+                ax.plot(sin_fit.index,sin_fit+poly_fit,label='Sin Fit',color='white',lw=4,ls='--')
 
             if plot_CV:
                 ax2 = ax.twinx()
@@ -204,11 +207,14 @@ class HamSpotPlot(object):
             for wl in fitWinLim:
                 ax.axvline(wl,color='lime',ls='--',lw=2)
 
-            ax.legend(loc='upper center',fontsize='x-small',ncols=4)
+            ax.legend(loc='upper center',fontsize='x-small',ncols=4,
+                    framealpha=0.2,labelcolor='linecolor')
 
         fmt_xaxis(ax,xlim)
         ax.set_ylabel('Range [km]')
         ax.set_ylim(ylim)
+        date_str = self.date.strftime('%Y %b %d')
+        ax.set_title(date_str,fontdict={'weight':'bold'})
 
         return
 

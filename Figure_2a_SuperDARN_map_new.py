@@ -565,6 +565,9 @@ def plot_fig_rects(fig,rects,vpad=0,color='k',lw=2,fill=False,
         if plot_names:
             tx  = rect[0] + 0.01
             ty  = rect[1] + rect[3] - 0.01
+
+#            if name == 'c':
+#                tx += 0.010
             fontdict    = {'weight':'bold','size':'x-large'}
             fig.text(tx,ty,'({!s})'.format(name),fontdict=fontdict,va='top')
 
@@ -581,10 +584,10 @@ def plot_fig_rects(fig,rects,vpad=0,color='k',lw=2,fill=False,
 def figure2(radars_dct,time,hsp,figsize=(21,24),output_dir='output',**kwargs):
     map_ht      = 0.60
     ham_ht      = (1- map_ht) / 2.
-    vpad        = 0.05
+    vpad        = 0.035
 
-    ham_hpad    = 0.10
-    ham_map_wd  = 0.35
+    ham_hpad    = 0.100
+    ham_map_wd  = 0.400
     ham_ts_wd   = 1 - ham_map_wd - ham_hpad
 
     ham_map_x00 = 0.
@@ -631,7 +634,7 @@ def figure2(radars_dct,time,hsp,figsize=(21,24),output_dir='output',**kwargs):
     hspd            = {}
     hspd['xlim']    = (date + datetime.timedelta(hours=13),
                        date + datetime.timedelta(hours=23))
-    hspd['ylim']    = (750,2500)
+    hspd['ylim']    = (750,2250)
     hspd['cb_pad']  = 0.01
     result      = hsp.plot_timeSeries_ax(ax,**hspd)
 
