@@ -153,13 +153,15 @@ class HamSpotPlot(object):
             ax.set_xlim(lon_lim)
             ax.set_ylim(lat_lim)
     
-    def plot_timeSeries_ax(self,ax,cb_pad=0.125,plot_fit=True,plot_CV=False):
+    def plot_timeSeries_ax(self,ax,xlim=None,ylim=None,
+            cb_pad=0.125,plot_fit=True,plot_CV=False):
         fig             = ax.get_figure()
 
         result_dct      = self.edge_data
         md              = result_dct.get('metaData')
         date            = md.get('date')
-        xlim            = md.get('xlim')
+        if xlim is None:
+            xlim            = md.get('xlim')
         winlim          = md.get('winlim')
         fitWinLim       = md.get('fitWinLim')
         lstid_criteria  = md.get('lstid_criteria')
@@ -206,7 +208,7 @@ class HamSpotPlot(object):
 
         fmt_xaxis(ax,xlim)
         ax.set_ylabel('Range [km]')
-        ax.set_ylim(1000,2000)
+        ax.set_ylim(ylim)
 
         return
 

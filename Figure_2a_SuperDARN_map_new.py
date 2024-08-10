@@ -388,6 +388,7 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
                     cb_ht       = 0.75,
                     cb_wd       = 0.10,
                     cb_hpad     = 0.07,
+                    extent      = None,
                     projection = ccrs.Orthographic(-100,70),
                     SD_scale=(0,30),
                     AIRS_GWv_scale=(0.,0.8),
@@ -432,7 +433,8 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
 
     # PANEL A - OVERVIEW MAP ####################################################### 
     ax  = fig.add_axes(map_rect,projection=projection)
-    ax.set_extent((0,360,25,90),crs=ccrs.PlateCarree())
+    if extent is not None:
+        ax.set_extent(extent,crs=ccrs.PlateCarree())
 
     # Plot Map Features - Coastlines #######
     ax.coastlines(color='0.7')
@@ -535,7 +537,7 @@ def plot_map(radars_dct,time,figsize=(18,14),output_dir='output',**kwargs):
     print(fpath)
 
 def plot_fig_rects(fig,rects,vpad=0,color='k',lw=2,fill=False,
-        plot_names=True,**kwargs):
+        plot_rects=True,plot_outer=True,plot_names=True,**kwargs):
     """
     Print boundaries directly on figure for a dictionary
     of rectangles.
@@ -555,9 +557,10 @@ def plot_fig_rects(fig,rects,vpad=0,color='k',lw=2,fill=False,
         width   = rect[2]
         height  = rect[3]
 
-        fig.patches.extend([plt.Rectangle(xy,width,height,
-            color=color,lw=lw,fill=fill,
-            transform=fig.transFigure, figure=fig,**kwargs)])
+        if plot_rects:
+            fig.patches.extend([plt.Rectangle(xy,width,height,
+                color=color,lw=lw,fill=fill,
+                transform=fig.transFigure, figure=fig,**kwargs)])
 
         if plot_names:
             tx  = rect[0] + 0.01
@@ -565,11 +568,27 @@ def plot_fig_rects(fig,rects,vpad=0,color='k',lw=2,fill=False,
             fontdict    = {'weight':'bold','size':'x-large'}
             fig.text(tx,ty,'({!s})'.format(name),fontdict=fontdict,va='top')
 
-def figure2(radars_dct,time,hsp,figsize=(22,26),output_dir='output',**kwargs):
+    if plot_outer:
+        rect = [0,0,1,1]
+        xy      = (rect[0], rect[1])
+        width   = rect[2]
+        height  = rect[3]
 
-    map_ht  = 0.60
-    ham_ht  = (1- map_ht) / 2.
-    vpad    = 0.05
+        fig.patches.extend([plt.Rectangle(xy,width,height,
+            color=color,lw=lw,fill=fill,ls=':',
+            transform=fig.transFigure, figure=fig,**kwargs)])
+
+def figure2(radars_dct,time,hsp,figsize=(21,24),output_dir='output',**kwargs):
+    map_ht      = 0.60
+    ham_ht      = (1- map_ht) / 2.
+    vpad        = 0.05
+
+    ham_hpad    = 0.10
+    ham_map_wd  = 0.35
+    ham_ts_wd   = 1 - ham_map_wd - ham_hpad
+
+    ham_map_x00 = 0.
+    ham_ts_x00  = ham_map_x00 + ham_map_wd
 
     r0_y00  = 1 - map_ht
     r1_y00  = r0_y00 - ham_ht
@@ -579,30 +598,42 @@ def figure2(radars_dct,time,hsp,figsize=(22,26),output_dir='output',**kwargs):
 
     rects   = {}
                 # [x00,  y00, width, height]
-    rects['a']   = [0.00, r0_y00, 1.00, map_ht]
-    rects['b']   = [0.00, r1_y00, 0.30, ham_ht]
-    rects['c']   = [0.30, r1_y00, 0.70, ham_ht]
-    rects['d']   = [0.00, r2_y00, 1.00, ham_ht]
+    rects['a']   = [       0.00, r0_y00,       1.00, map_ht]
+    rects['b']   = [ham_map_x00, r1_y00, ham_map_wd, ham_ht]
+    rects['c']   = [ ham_ts_x00, r1_y00,  ham_ts_wd, ham_ht]
+    rects['d']   = [       0.00, r2_y00,       1.00, ham_ht]
     for key,rect in rects.items():
         rect[3] -= vpad
 
-    plot_fig_rects(fig,rects,vpad=vpad)
+    plot_fig_rects(fig,rects,vpad=vpad,plot_rects=False)
+
+    rects['c'][0] += ham_hpad
 
     rect    = rects['a']
     dims    = {}
-    dims['map_wd']      = 0.80
+    dims['map_wd']      = 0.75
     dims['map_hpad']    = 0.00
     dims['cb_ht']       = 0.75
     dims['cb_wd']       = (1-dims['map_wd'])/3.
-    dims['cb_hpad']     = 0.65*dims['cb_wd']
+    dims['cb_hpad']     = 0.70*dims['cb_wd']
+#    dims['extent']      = (0,360,25,90)
+#    dims['projection']  = ccrs.Orthographic(-100,70)
+
+    dims['extent']      = (0,360,20,90)
+    dims['projection']  = ccrs.Orthographic(-100,70.0)
     plot_map_ax(fig,radars_dct,time,panel_rect=rect,**dims,**kwargs)
 
     rect    = rects['b']
     hsp.plot_map_ax(fig,panel_rect=rect)
 
-    rect    = rects['c']
-    ax      = fig.add_axes(rect)
-    result  = hsp.plot_timeSeries_ax(ax)
+    rect            = rects['c']
+    ax              = fig.add_axes(rect)
+    hspd            = {}
+    hspd['xlim']    = (date + datetime.timedelta(hours=13),
+                       date + datetime.timedelta(hours=23))
+    hspd['ylim']    = (750,2500)
+    hspd['cb_pad']  = 0.01
+    result      = hsp.plot_timeSeries_ax(ax,**hspd)
 
     # Save Figure ##################################################################
     fname = 'map_{!s}.png'.format(time.strftime('%Y%m%d.%H%M'))
@@ -637,4 +668,3 @@ if __name__ == '__main__':
 #    plot_map(**rd)
 
     figure2(**rd)
-    import ipdb; ipdb.set_trace()
