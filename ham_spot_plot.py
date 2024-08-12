@@ -73,10 +73,9 @@ class HamSpotPlot(object):
         self.eTime           = eTime
         self.range_lim_km    = range_lim_km
 
-        self.load_raw_spots()
-
-        self.load_geo_data()
         self.load_edge_data()
+        self.load_raw_spots()
+        self.calc_geographic_histogram()
 
     def load_raw_spots(self):
         data_dir        = os.path.join(self.data_dir,'raw_spots')
@@ -187,36 +186,34 @@ class HamSpotPlot(object):
                 # Create/append to one large dataframe with all requested networks.
                 df = pd.concat([df,dft],ignore_index=True)
 
-                # Sort values by timestamp.
-                df  = df.sort_values('timestamp')
+            # Sort values by timestamp.
+            df  = df.sort_values('timestamp')
 
-                # Build Header
-                hdr = []
-                hdr.append('# Amateur Radio Communications Spot Data File')
-                hdr.append('#')
-                hdr.append('# Networks: {!s}'.format(', '.join(networks)))
-                hdr.append('# Date: {!s}'.format(date.strftime('%Y %b %d')))
-                hdr.append('# Start Time [UTC]: {!s}'.format(sTime))
-                hdr.append('# End Time [UTC]: {!s}'.format(eTime))
-                hdr.append('# Midpoint Region: {!s}'.format(midpoint_region))
-                rgn = regions.get(midpoint_region)
-                if rgn is not None:
-                    for rkey, rval in rgn.items():
-                        hdr.append(f'#   {rkey}: {rval}')
-                hdr.append('# Frequency Range [kHz]: {!s}'.format(frang_khz))
-                hdr.append('# Range Limits [km]: {!s}'.format(range_lim_km))
-                hdr.append('#')
-                hdr.append('# N Spots: {!s}'.format(len(df)))
-                hdr.append('#\n')
-                hdr     = '\n'.join(hdr)
-                csv_str = hdr+df.to_csv(None,index=False)
+            # Build Header
+            hdr = []
+            hdr.append('# Amateur Radio Communications Spot Data File')
+            hdr.append('#')
+            hdr.append('# Networks: {!s}'.format(', '.join(networks)))
+            hdr.append('# Date: {!s}'.format(date.strftime('%Y %b %d')))
+            hdr.append('# Start Time [UTC]: {!s}'.format(sTime))
+            hdr.append('# End Time [UTC]: {!s}'.format(eTime))
+            hdr.append('# Midpoint Region: {!s}'.format(midpoint_region))
+            rgn = regions.get(midpoint_region)
+            if rgn is not None:
+                for rkey, rval in rgn.items():
+                    hdr.append(f'#   {rkey}: {rval}')
+            hdr.append('# Frequency Range [kHz]: {!s}'.format(frang_khz))
+            hdr.append('# Range Limits [km]: {!s}'.format(range_lim_km))
+            hdr.append('#')
+            hdr.append('# N Spots: {!s}'.format(len(df)))
+            hdr.append('#\n')
+            hdr     = '\n'.join(hdr)
+            csv_str = hdr+df.to_csv(None,index=False)
 
-                with bz2.open(cpath,'wt') as fl:
-                    fl.write(csv_str)
-
-                import ipdb; ipdb.set_trace()
-
-        import ipdb; ipdb.set_trace()
+            with bz2.open(cpath,'wt') as fl:
+                fl.write(csv_str)
+        
+        self.raw_spots_df = df
     
     def load_edge_data(self):
         date    = self.date
@@ -233,16 +230,11 @@ class HamSpotPlot(object):
         self.edge_data  = edge_data
         return edge_data
 
-    def load_geo_data(self,dlat=1,dlon=1):
-        # hamSpot_geo_2018_12_15.csv.bz2
-        date_str        = self.date.strftime('%Y_%m_%d')
-        fname           = f'hamSpot_geo_{date_str}.csv.bz2'
-        fpath           = os.path.join(self.data_dir,fname)
-        self.geo_fpath  = fpath
-        geo_df          = pd.read_csv(fpath)
+    def calc_geographic_histogram(self,dlat=1,dlon=1):
+        geo_df  = self.raw_spots_df
 
-        xkey    = 'lon'
-        ykey    = 'lat'
+        xkey    = 'lon_mid'
+        ykey    = 'lat_mid'
 
         xlim    = (-180,180)
         ylim    = ( -90, 90)
