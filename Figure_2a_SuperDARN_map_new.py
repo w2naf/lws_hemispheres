@@ -470,8 +470,10 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     map_data    = np.log10(map_data)
     tf          = np.isfinite(map_data)
     map_data.values[~tf]   = np.nan
-    xx  = map_data.lon.values
-    yy  = map_data.lat.values
+    lon_key = map_data.attrs['xkey']
+    lat_key = map_data.attrs['ykey']
+    xx  = map_data[lon_key].values
+    yy  = map_data[lat_key].values
     zz  = map_data.values.T
     tec_mpbl    = ax.contourf(xx,yy,zz,levels=30,cmap=mpl.cm.gray,transform=ccrs.PlateCarree())
 
