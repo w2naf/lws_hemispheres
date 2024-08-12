@@ -77,7 +77,6 @@ class HamSpotPlot(object):
         self.load_raw_spots()
         self.calc_geographic_histogram_from_raw()
         self.calc_timeseries_histogram_from_raw()
-        import ipdb; ipdb.set_trace()
 
     def load_raw_spots(self):
         data_dir        = os.path.join(self.data_dir,'raw_spots')
@@ -289,7 +288,7 @@ class HamSpotPlot(object):
         df  = df.rename(columns={'timestamp':'datetimes','range_km':'ranges_km'})
         df['dt_secs'] = [(x-datetimes[0]).total_seconds() for x in df['datetimes']]
 
-        # Calculate historgram
+        # Calculate histogram
         xkey    = 'dt_secs'
         ykey    = 'ranges_km'
         xvals   = df[xkey].values
@@ -299,9 +298,9 @@ class HamSpotPlot(object):
         # Put coordinates into dictionary.
         crds    = {}
         crds[ykey]          = yb[:-1]
-        crds[xkey]          = datetimes[:-1]
+        crds['datetimes']   = datetimes[:-1]
         
-        raw_spotArr = xr.DataArray(hist.T,crds,dims=[ykey,xkey])
+        raw_spotArr = xr.DataArray(hist.T,crds,dims=[ykey,'datetimes'])
         self.edge_data['raw_spotArr']   = raw_spotArr
 
     def plot_figure(self,png_fpath='output.png',figsize=(16,10),**kwargs):
@@ -334,15 +333,25 @@ class HamSpotPlot(object):
 
         # Plot Map #############################
         ax.coastlines(zorder=10,color='w')
+
         map_data        = self.geo_hist
-        map_data.name   = '14 MHz Midpoints'
+        lon_key = map_data.attrs['xkey']
+        lat_key = map_data.attrs['ykey']
+
+        lons    = map_data[lon_key].values
+        lats    = map_data[lat_key].values
+        dlon    = lons[1] - lons[0]
+        dlat    = lats[1] - lats[0]
+
+        bin_str = '{:0.0f}'.format(dlat)+u'\N{DEGREE SIGN} lat x '+'{:0.0f}'.format(dlon)+u'\N{DEGREE SIGN} lon'
+        map_data.name   = f'N per {bin_str}'
 
         tf          = map_data < 1
         map_n       = int(np.sum(map_data))
         map_data    = np.log10(map_data)
         map_data.values[tf] = 0
         map_data.name   = 'log({})'.format(map_data.name)
-        cntr    = map_data.plot.contourf(x=map_data.attrs['xkey'],y=map_data.attrs['ykey'],ax=ax,levels=30,cmap=mpl.cm.inferno)
+        cntr    = map_data.plot.contourf(x=lon_key,y=lat_key,ax=ax,levels=30,cmap=mpl.cm.inferno)
         cax     = cntr.colorbar.ax
         if cbar_ticklabel_size is not None:
             for ytl in cax.get_yticklabels():
@@ -381,6 +390,9 @@ class HamSpotPlot(object):
         ax.set_title(date_str,fontdict=title_fd)
     
     def plot_timeSeries_ax(self,ax,xlim=None,ylim=None,
+            heatmap_param       = 'raw_spotArr',
+            vmin                = None,
+            vmax                = None,
             plot_fit            = True,
             plot_CV             = False,
             cb_pad              = 0.125,
@@ -390,19 +402,31 @@ class HamSpotPlot(object):
             cbar_ticklabel_size = None,
             cbar_label_size     = None,
             cbar_label          = '14 MHz\nHam Radio Data'):
+        """
+        heatmap_param:  raw_spotArr' or 'spotArr'
+                        'raw_spotArr':  Heatmap computed from raw spot CSV files
+                        'spotArr':      Processed heamtmap used to compute edge detection.
+        """
 
         fig             = ax.get_figure()
 
         result_dct      = self.edge_data
         md              = result_dct.get('metaData')
         date            = md.get('date')
-        if xlim is None:
+        if xlim is None and hasattr(self,'sTime') and hasattr(self,'eTime'):
+            xlim        = (self.sTime,self.eTime)
+        elif xlim is None:
             xlim            = md.get('xlim')
+
+
+        if ylim is None and hasattr(self,'range_lim_km'):
+            ylim = self.range_lim_km
+
         winlim          = md.get('winlim')
         fitWinLim       = md.get('fitWinLim')
         lstid_criteria  = md.get('lstid_criteria')
 
-        arr             = result_dct.get('spotArr')
+        arr             = result_dct.get(heatmap_param)
         med_lines       = result_dct.get('med_lines')
         edge_0          = result_dct.get('000_detectedEdge')
         edge_1          = result_dct.get('001_windowLimits')
@@ -418,9 +442,40 @@ class HamSpotPlot(object):
         arr_times       = [pd.Timestamp(x) for x in arr.coords['datetimes'].values]
         Ts              = np.mean(np.diff(arr_times)) # Sampling Period
 
-        mpbl = ax.pcolormesh(arr_times,ranges_km,arr,cmap='plasma')
-        cbar = plt.colorbar(mpbl,aspect=10,pad=cb_pad,label=cbar_label)
+        d_km    = ranges_km[1] - ranges_km[0]
+        d_min   = (arr_times[1] - arr_times[0]).total_seconds()
+        bin_str = '{:0.0f} km x {:0.0f} min bin'.format(d_km,d_min)
+        if heatmap_param == 'raw_spotArr':
+
+#            tf = arr.values <= 0
+#            arr.values      = np.log(arr.values)
+#            arr.values[tf]  = 0
+#            vmin            = 1.5
+#            vmax            = 2.5
+#            mpbl            = ax.pcolormesh(arr_times,ranges_km,arr,vmin=vmin,vmax=vmax,cmap='plasma')
+
+            vmin    =  8
+            vmax    = 15
+            mpbl    = ax.pcolormesh(arr_times,ranges_km,arr,cmap='plasma',vmin=vmin,vmax=vmax)
+            cbar_label  = 'Amateur Radio Spots Per\n'+bin_str
+
+        else:
+            mpbl = ax.pcolormesh(arr_times,ranges_km,arr,cmap='plasma')
+
+        if (np.nanmin(arr) < mpbl.norm.vmin) and (np.nanmax(arr) > mpbl.norm.vmax):
+            extend = 'both'
+        elif (np.nanmin(arr) < mpbl.norm.vmin):
+            extend = 'min'
+        elif (np.nanmax(arr) > mpbl.norm.vmax):
+            extend = 'max'
+        else:
+            extend = 'neither'
+
+        cbar = plt.colorbar(mpbl,aspect=10,pad=cb_pad,label=cbar_label,extend=extend)
         cax  = cbar.ax
+        if vmin is not None and vmax is not None:
+            cax.set_ylim(vmin,vmax)
+
         if cbar_ticklabel_size is not None:
             for ytl in cax.get_yticklabels():
                 ytl.set_size(cbar_ticklabel_size)
