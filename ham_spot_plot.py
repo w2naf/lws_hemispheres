@@ -6,6 +6,7 @@ detection and spot maps.
 import os
 import datetime
 import pickle
+import bz2
 
 import numpy as np
 import pandas as pd
@@ -52,13 +53,170 @@ def fmt_xaxis(ax,xlim=None,label=True,fontdict={}):
     ax.set_xlim(xlim)
 
 class HamSpotPlot(object):
-    def __init__(self,date=datetime.datetime(2018,12,15),data_dir=None):
+    def __init__(self,
+            date            = datetime.datetime(2018,12,15),
+            sTime           = datetime.datetime(2018,12,15,13),
+            eTime           = datetime.datetime(2018,12,15,23),
+            range_lim_km    = (750,2250),
+            frang_khz       = (14000,14350),
+            midpoint_region = 'US',
+            data_dir        = None):
+
         if data_dir is None:
             data_dir    = os.path.join('data','lstid_ham')
-        self.data_dir   = data_dir
-        self.date       = date
+
+        self.data_dir        = data_dir
+        self.date            = date
+        self.frang_khz       = frang_khz
+        self.midpoint_region = midpoint_region
+        self.sTime           = sTime
+        self.eTime           = eTime
+        self.range_lim_km    = range_lim_km
+
+        self.load_raw_spots()
+
         self.load_geo_data()
         self.load_edge_data()
+
+    def load_raw_spots(self):
+        data_dir        = os.path.join(self.data_dir,'raw_spots')
+        date            = self.date
+        frang_khz       = self.frang_khz
+        midpoint_region = self.midpoint_region
+        sTime           = self.sTime
+        eTime           = self.eTime
+        range_lim_km    = self.range_lim_km
+
+        networks    = []
+        networks.append('WSPR')
+        networks.append('RBN')
+        networks.append('PSK')
+
+        # Build Cache Name
+        clst    = [date.strftime('%Y%m%d')]
+        if sTime is not None:
+            clst.append(sTime.strftime('%Y%m%d.%H%M'))
+        if eTime is not None:
+            clst.append(eTime.strftime('%Y%m%d.%H%M'))
+        for network in networks:
+            clst.append(network)
+        if midpoint_region is not None:
+            clst.append(midpoint_region)
+        if frang_khz is not None:
+            clst.append('{!s}-{!s}kHz'.format(*frang_khz))
+        if range_lim_km is not None:
+            clst.append('{!s}-{!s}km'.format(*range_lim_km))
+        
+        cname   = '_'.join(clst)+'.csv.bz2'
+        cpath   = os.path.join(data_dir,cname)
+        
+        if os.path.exists(cpath):
+            print('LOADING CACHED FILE: {!s}'.format(cpath))
+            df  = pd.read_csv(cpath,parse_dates=['timestamp'],comment='#')
+        else:
+            df          = pd.DataFrame()
+            date_str    = self.date.strftime('%Y-%m-%d')
+            for network in networks:
+                tic     = datetime.datetime.now()
+                fname   = f'{date_str}_{network}.csv.bz2'
+                fpath   = os.path.join(data_dir,fname)
+                if not os.path.exists(fpath):
+                    print(f'FILE NOT FOUND: {fpath}')
+                    continue
+
+                print(f'LOADING RAW SPOTS: {fpath}')
+
+                cols     = {}
+                cols[0]  = 'timestamp'
+                cols[1]  = 'call_0'
+                cols[3]  = 'lat_0'
+                cols[4]  = 'lon_0'
+                cols[6]  = 'call_1'
+                cols[8]  = 'lat_1'
+                cols[9]  = 'lon_1'
+                cols[11]  = 'f_hz'
+                cols[22] = 'range_km'
+                cols[23] = 'lat_mid'
+                cols[24] = 'lon_mid'
+                usecols  = list(cols.keys())
+                names    = list(cols.values())
+                dft      = pd.read_csv(fpath,header = None,usecols = usecols,names = names)
+                dft_0    = pd.read_csv(fpath,header = None)
+
+                # Filter data by frequency.
+                if frang_khz is not None:
+                    frang_hz = np.array(frang_khz)*1e3
+                    tf  = np.logical_and(dft['f_hz'] >= min(frang_hz), dft['f_hz'] < max(frang_hz))
+                    dft = dft[tf]
+
+                # Filter data by midpoint region.
+                if midpoint_region is not None:
+                    rgn = regions['US']
+                    lat_lim = rgn['lat_lim']
+                    lon_lim = rgn['lon_lim']
+                    
+                    lat_tf  = np.logical_and(dft['lat_mid'] >= lat_lim[0], dft['lat_mid'] < lat_lim[1])
+                    lon_tf  = np.logical_and(dft['lon_mid'] >= lon_lim[0], dft['lon_mid'] < lon_lim[1])
+                    tf      = np.logical_and(lat_tf,lon_tf)
+                    dft     = dft[tf]
+
+                # Filter by range_km.
+                if range_lim_km is not None:
+                    tf  = np.logical_and(dft['range_km'] >= min(range_lim_km),
+                                         dft['range_km'] <  max(range_lim_km))
+                    dft = dft[tf]
+
+                # Parse timestamps
+                dft['timestamp']    = dft['timestamp'].apply(pd.Timestamp)
+
+                # Filter by times.
+                if sTime is not None:
+                    tf  = dft['timestamp'] >= sTime
+                    dft = dft[tf]
+
+                if eTime is not None:
+                    tf  = dft['timestamp'] < eTime
+                    dft = dft[tf]
+
+                # Append Network Name
+                dft['network']      = network
+
+                toc     = datetime.datetime.now()
+                print('   Loading Time: {!s}'.format(toc-tic))
+                    
+                # Create/append to one large dataframe with all requested networks.
+                df = pd.concat([df,dft],ignore_index=True)
+
+                # Sort values by timestamp.
+                df  = df.sort_values('timestamp')
+
+                # Build Header
+                hdr = []
+                hdr.append('# Amateur Radio Communications Spot Data File')
+                hdr.append('#')
+                hdr.append('# Networks: {!s}'.format(', '.join(networks)))
+                hdr.append('# Date: {!s}'.format(date.strftime('%Y %b %d')))
+                hdr.append('# Start Time [UTC]: {!s}'.format(sTime))
+                hdr.append('# End Time [UTC]: {!s}'.format(eTime))
+                hdr.append('# Midpoint Region: {!s}'.format(midpoint_region))
+                rgn = regions.get(midpoint_region)
+                if rgn is not None:
+                    for rkey, rval in rgn.items():
+                        hdr.append(f'#   {rkey}: {rval}')
+                hdr.append('# Frequency Range [kHz]: {!s}'.format(frang_khz))
+                hdr.append('# Range Limits [km]: {!s}'.format(range_lim_km))
+                hdr.append('#')
+                hdr.append('# N Spots: {!s}'.format(len(df)))
+                hdr.append('#\n')
+                hdr     = '\n'.join(hdr)
+                csv_str = hdr+df.to_csv(None,index=False)
+
+                with bz2.open(cpath,'wt') as fl:
+                    fl.write(csv_str)
+
+                import ipdb; ipdb.set_trace()
+
+        import ipdb; ipdb.set_trace()
     
     def load_edge_data(self):
         date    = self.date
