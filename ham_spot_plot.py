@@ -75,7 +75,9 @@ class HamSpotPlot(object):
 
         self.load_edge_data()
         self.load_raw_spots()
-        self.calc_geographic_histogram()
+        self.calc_geographic_histogram_from_raw()
+        self.calc_timeseries_histogram_from_raw()
+        import ipdb; ipdb.set_trace()
 
     def load_raw_spots(self):
         data_dir        = os.path.join(self.data_dir,'raw_spots')
@@ -230,7 +232,7 @@ class HamSpotPlot(object):
         self.edge_data  = edge_data
         return edge_data
 
-    def calc_geographic_histogram(self,dlat=1,dlon=1):
+    def calc_geographic_histogram_from_raw(self,dlat=1,dlon=1):
         geo_df  = self.raw_spots_df
 
         xkey    = 'lon_mid'
@@ -257,6 +259,50 @@ class HamSpotPlot(object):
         geo_hist    = xr.DataArray(hist,crds,attrs=attrs,dims=[xkey,ykey])
         self.geo_df     = geo_df
         self.geo_hist   = geo_hist
+
+    def calc_timeseries_histogram_from_raw(self):
+        """
+        Calculate a timeseries 2D histogram/heatmap from raw spot data.
+        Make sure it matches the dimensions and format of the processed
+        self.edge_data['spotArr']
+        """
+
+        ed_spotArr  = self.edge_data['spotArr']
+
+        # Use the same grid as edge_data['SpotArr']
+        datetimes     = [pd.Timestamp(x) for x in ed_spotArr['datetimes'].values]
+        xbins         = [(x-datetimes[0]).total_seconds() for x in datetimes]
+        ybins         = ed_spotArr['ranges_km'].values.tolist()
+
+        # Calculate sample steps
+        dt  = datetimes[1] - datetimes[0]
+        dx  = xbins[1]     - xbins[0]
+        dy  = ybins[1]     - ybins[0]
+
+        # Add one more bound to each bin...
+        datetimes.append(datetimes[-1]+dt)
+        xbins.append(xbins[-1]+dx)
+        ybins.append(ybins[-1]+dy)
+
+        # Set-up raw spot data dataframe for histogramming.
+        df  = self.raw_spots_df[['timestamp','range_km']].copy()
+        df  = df.rename(columns={'timestamp':'datetimes','range_km':'ranges_km'})
+        df['dt_secs'] = [(x-datetimes[0]).total_seconds() for x in df['datetimes']]
+
+        # Calculate historgram
+        xkey    = 'dt_secs'
+        ykey    = 'ranges_km'
+        xvals   = df[xkey].values
+        yvals   = df[ykey].values
+        hist, xb, yb = np.histogram2d(xvals,yvals, bins=[xbins, ybins])
+
+        # Put coordinates into dictionary.
+        crds    = {}
+        crds[ykey]          = yb[:-1]
+        crds[xkey]          = datetimes[:-1]
+        
+        raw_spotArr = xr.DataArray(hist.T,crds,dims=[ykey,xkey])
+        self.edge_data['raw_spotArr']   = raw_spotArr
 
     def plot_figure(self,png_fpath='output.png',figsize=(16,10),**kwargs):
 
