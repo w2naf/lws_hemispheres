@@ -737,12 +737,11 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=0.95*np.array((26,30)),output_dir='
     RTaP_rng_km        = max(RTaP.prmd['ranges'])
     gresult            = geod.Direct(RTaP_path['lat_0'], RTaP_path['lon_0'], RTaP_azm, RTaP_rng_km*1e3)
     RTaP_path['lat_1'] = gresult['lat2']
-    RTaP_path['lon_1'] = gresult['lat2']
+    RTaP_path['lon_1'] = gresult['lon2']
     RTaP_color         = 'SpringGreen'
     plot_gc_path(**RTaP_path,ax=ax,color=RTaP_color,lw=5,ls='-')
     ax.scatter([RTaP_path['lon_0']],[RTaP_path['lat_0']],s=1000,marker='*',fc=RTaP_color,
             zorder=10000,transform=ccrs.PlateCarree())
-    import ipdb; ipdb.set_trace()
 
     # Plot Panel (c) Ham Radio Time Series #########################################
     rect            = rects['c']
