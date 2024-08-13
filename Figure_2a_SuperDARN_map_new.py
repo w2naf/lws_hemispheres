@@ -474,6 +474,7 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     cax.grid(False)
     cbar_ticks  = np.arange(SD_scale[0],SD_scale[1]+5,5)
     cbar        = fig.colorbar(result['pcoll'],cax=cax,ticks=cbar_ticks,extend='max')
+    SD_cbar     = cbar
     cbar.set_label('SuperDARN ' + result['cbarLabel'],fontdict=cbar_fd)
     if cbar_ticklabel_size is not None:
         for ytl in cax.get_yticklabels():
@@ -481,7 +482,7 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
 
     if 'gscat' in result['metadata']:
         if result['metadata']['gscat'] == 1:
-            cbar.ax.text(0.5,-0.075,'Ground\nScatter Only',ha='center',fontsize='x-small',transform=cbar.ax.transAxes)
+            cbar.ax.text(0.5,-0.060,'Ground\nScatter Only',ha='center',fontsize='x-small',transform=cbar.ax.transAxes)
 
     txt = 'Coordinates: ' + result['metadata']['coords'] +', Model: ' + result['metadata']['model']
     ax.text(1.01, 0, txt,
@@ -505,8 +506,8 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
 
     tec_mpbl    = map_data.plot.contourf(x=lon_key,y=lat_key,ax=ax,levels=30,
             cmap=mpl.cm.gray,vmin=dTEC_vmin,vmax=dTEC_vmax,transform=ccrs.PlateCarree())
-    cax         = tec_mpbl.colorbar.ax
-    cax.set_position(GNSS_TEC_cbar_rect)
+    GNSS_TEC_cbar   = tec_mpbl.colorbar
+    cax             = tec_mpbl.colorbar.ax
 
     tec_cbar_ticks = np.arange(dTEC_vmin,dTEC_vmax+0.1,0.1)
     cax.set_yticks(tec_cbar_ticks)
@@ -547,6 +548,11 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     if title_size is not None:
         fontdict.update({'size':title_size})
     ax.set_title(title,fontdict=fontdict)
+
+    GNSS_TEC_cbar.ax.set_position(GNSS_TEC_cbar_rect)
+    SD_cbar.ax.set_position(SD_cbar_rect)
+    mca_cbar.ax.set_position(AIRS_GWv_cbar_rect)
+    ax.set_position(map_rect)
 
 def plot_map(radars_dct,time,figsize=(18,14),output_dir='output',**kwargs):
 
@@ -605,7 +611,7 @@ def plot_fig_rects(fig,rects,vpad=0,color='k',lw=2,fill=False,
             color=color,lw=lw,fill=fill,ls=':',
             transform=fig.transFigure, figure=fig,**kwargs)])
 
-def figure2(radars_dct,time,hsp,RTaP,figsize=(23,30),output_dir='output',**kwargs):
+def figure2(radars_dct,time,hsp,RTaP,figsize=0.95*np.array((26,30)),output_dir='output',**kwargs):
     fig     = plt.figure(figsize=figsize)
     # Font Control ################################################################# 
     map_title_size          = 'x-large'
@@ -625,8 +631,8 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=(23,30),output_dir='output',**kwarg
     rt_cbar_label_size      = 'medium'
 
     # Panel Positioning ############################################################
-    map_ht      = 0.55
-    ham_ht      = 0.20
+    map_ht      = 0.635
+    ham_ht      = 0.16
     rt_ht       = (1- map_ht - ham_ht)
     vpad        = 0.055
 
@@ -658,11 +664,11 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=(23,30),output_dir='output',**kwarg
     # Plot Panel (a) Map ###########################################################
     rect    = rects['a']
     dims    = {}
-    dims['map_wd']              = 0.80
-    dims['map_hpad']            =  0.00
-    dims['cb_ht']               = 0.85
+    dims['map_wd']              = 0.770
+    dims['map_hpad']            = 0.025
+    dims['cb_ht']               = 0.55
     dims['cb_wd']               = (1-dims['map_wd'])/3.
-    dims['cb_hpad']             = 0.70*dims['cb_wd']
+    dims['cb_hpad']             = 0.750*dims['cb_wd']
     dims['extent']              = (0,360,20,90)
     dims['projection']          = ccrs.Orthographic(-100,70.0)
     dims['title_size']          = map_title_size
