@@ -577,15 +577,40 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     aTEC_path['lat_1'] = 50.
     aTEC_path['lon_0'] = -115.
     aTEC_path['lon_1'] = -115.
-    plot_gc_path(**aTEC_path,ax=ax,color='DeepPink',lw=5,ls='-')
+    aTEC_lbl    = 'GNSS aTEC Keogram Cut'
+    plot_gc_path(**aTEC_path,ax=ax,color='Lime',lw=5,ls='-',label=aTEC_lbl,zorder=9999)
 
-#    # Plot the path of the GNSS aTEC Keogram from Figure 3.
-#    dTEC_LSTID_path   = {}
-#    dTEC_LSTID_path['lat_0'] = 40.
-#    dTEC_LSTID_path['lat_1'] = 50.
-#    dTEC_LSTID_path['lon_0'] = -115.
-#    dTEC_LSTID_path['lon_1'] = -115.
-#    plot_gc_path(**dTEC_LSTID_path,ax=ax,color='DeepPink',lw=5,ls='-')
+    # Calculate the horizontal wavelenth of LSTID observed in GNSS dTEC and plot..
+    dTEC_LSTID_path   = {}
+    dTEC_LSTID_path['lat_0'] =  41.5
+    dTEC_LSTID_path['lon_0'] = -88.
+    dTEC_LSTID_path['lat_1'] =  33.
+    dTEC_LSTID_path['lon_1'] = -87.5
+    pts = [val for val in dTEC_LSTID_path.values()]
+    dTEC_LSTID_invl    = geod.InverseLine(*pts)
+    dTEC_LSTID_dist    = dTEC_LSTID_invl.s13*1e-3   # Distance in km
+    dTEC_LSTID_az      = dTEC_LSTID_invl.azi1
+    dTEC_LSTID_lbl  = '{:0.0f} km, {:0.0f}\N{DEGREE SIGN} Azm'.format(dTEC_LSTID_dist,dTEC_LSTID_az)
+
+    dTEC_LSTID_fmt = {'color':'Fuchsia','lw':5,'ls':'-'}
+    plot_gc_path(**dTEC_LSTID_path,ax=ax,label=dTEC_LSTID_lbl,**dTEC_LSTID_fmt)
+
+    lat_0,lon_0,lat_1,lon_1 = pts
+    aprops  = {}
+    head_width              = 0.80
+    head_length             = 1.00
+    aprops['arrowstyle']    = f"->,head_width={head_width},head_length={head_length}"
+    aprops['lw']            = 8
+    aprops['edgecolor']     = 'Fuchsia'
+
+    adct = {}
+    adct['text']        = ''
+    adct['xy']          = (lon_1,lat_1)
+    adct['xytext']      = (lon_0,lat_0)
+    adct['arrowprops']  = aprops
+    adct['transform']   = ccrs.PlateCarree()
+    ax.annotate(**adct)
+
 
     # AIRS GW Variance #####################
     m2ws = {}
@@ -621,6 +646,9 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     if title_size is not None:
         fontdict.update({'size':title_size})
     ax.set_title(title,fontdict=fontdict)
+
+    # Legend
+    ax.legend(loc='lower left')
 
     GNSS_TEC_cbar.ax.set_position(GNSS_TEC_cbar_rect)
     SD_cbar.ax.set_position(SD_cbar_rect)
