@@ -291,7 +291,11 @@ class Merra2AirsMaps(object):
         cyc_zz, cyc_lons = add_cyclic_point(merra2_windspeed,coord=merra2_lons)
         WS = ax.contour(cyc_lons,merra2_lats,cyc_zz,transform=ccrs.PlateCarree(),**m2ws)
         try:
-            ax.clabel(WS,inline=True)
+            clab_dct = {}
+            clfs = m2ws.get('fontsize')
+            if clfs is not None:
+                clab_dct['fontsize'] = clfs
+            ax.clabel(WS,inline=True,**clab_dct)
         except:
             pass
 

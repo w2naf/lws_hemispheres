@@ -339,7 +339,7 @@ def plot_radar_fov(radar,ax,time,fovModel='GS',fov_ranges=(0,50),fov_beams=None,
         ha      = 'left'
         text    = ' ' + radar.upper()
 
-    fontdict = {'color':'black','size':18,'weight':'bold'}
+    fontdict = {'color':'black','size':28,'weight':'bold'}
     ax.text(radar_lon,radar_lat,text,ha=ha,
             fontdict=fontdict,transform=ccrs.PlateCarree(),
             path_effects=[mpl.patheffects.withStroke(linewidth=2, foreground="white")],
@@ -520,12 +520,17 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
             ytl.set_size(cbar_ticklabel_size)
 
     # AIRS GW Variance #####################
+    m2ws = {}
+    m2ws['levels']      = [-10000,30,50]
+    m2ws['colors']      = ['white','orange','red']
+    m2ws['linewidths']  = 4 
+    m2ws['fontsize']    = 28
     mca = kwargs.get('mca')
     if mca is not None:
         date = datetime.datetime(time.year,time.month,time.day)
         if date in mca.get_dates():
             # Plot AIRS Data
-            mca_result      = mca.plot_ax(ax=ax,date=date,vmin=AIRS_GWv_scale[0],
+            mca_result      = mca.plot_ax(ax=ax,date=date,vmin=AIRS_GWv_scale[0],merra2_windspeed_kw=m2ws,
                                 vmax=AIRS_GWv_scale[1],cmap='RdPu',gridlines=False,coastlines=False)
 
             # Plot AIRS Colorbar
@@ -539,7 +544,7 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
                     ytl.set_size(cbar_ticklabel_size)
 
     # Star for approx center of GW Hotspot # 
-    ax.scatter([112],[60],s=500,marker='*',ec='black',fc='yellow',
+    ax.scatter([112],[60],s=1000,marker='*',ec='black',fc='yellow',
             zorder=10000,transform=ccrs.PlateCarree())
 
     # Axis Title ########################### 
@@ -620,9 +625,9 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=0.95*np.array((26,30)),output_dir='
 
     ham_title_size          = 'medium'
     ham_ticklabel_size      = 'small'
-    ham_label_size          = 'medium'
+    ham_label_size          = 'small'
     ham_cbar_ticklabel_size = 'small'
-    ham_cbar_label_size     = 'medium'
+    ham_cbar_label_size     = 'small'
 
     rt_title_size           = 'medium'
     rt_ticklabel_size       = 'small'
@@ -634,9 +639,9 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=0.95*np.array((26,30)),output_dir='
     map_ht      = 0.635
     ham_ht      = 0.16
     rt_ht       = (1- map_ht - ham_ht)
-    vpad        = 0.055
+    vpad        = 0.050
 
-    ham_hpad    = 0.100
+    ham_hpad    = 0.055
     ham_map_wd  = 0.380
     ham_ts_wd   = 1 - ham_map_wd - ham_hpad
 
@@ -693,7 +698,7 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=0.95*np.array((26,30)),output_dir='
     hspd            = {}
     hspd['xlim']    = (date + datetime.timedelta(hours=13),
                        date + datetime.timedelta(hours=23))
-    hspd['ylim']    = (750,2250)
+#    hspd['ylim']    = (750,2250)
     hspd['cb_pad']  = 0.01
     hspd.update(ham_fonts)
     result          = hsp.plot_timeSeries_ax(ax,**hspd)

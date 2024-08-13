@@ -57,7 +57,8 @@ class HamSpotPlot(object):
             date            = datetime.datetime(2018,12,15),
             sTime           = datetime.datetime(2018,12,15,13),
             eTime           = datetime.datetime(2018,12,15,23),
-            range_lim_km    = (750,2250),
+            range_lim_km    = (900,1700),
+#            range_lim_km    = (750,2250),
             frang_khz       = (14000,14350),
             midpoint_region = 'US',
             data_dir        = None):
@@ -474,9 +475,11 @@ class HamSpotPlot(object):
 #            mpbl            = ax.pcolormesh(arr_times,ranges_km,arr,vmin=vmin,vmax=vmax,cmap='plasma')
 
             vmin    =  8
-            vmax    = 15
+            vmax    = 16
+            cbar_ticks = np.arange(8,16+2,2)
             mpbl    = ax.pcolormesh(arr_times,ranges_km,arr,cmap='plasma',vmin=vmin,vmax=vmax)
-            cbar_label  = 'Amateur Radio Spots Per\n'+bin_str
+#            mpbl    = ax.contourf(arr_times,ranges_km,arr,cmap='plasma',vmin=vmin,vmax=vmax,levels=80)
+            cbar_label  = 'N Spots Per\n'+bin_str
 
         else:
             mpbl = ax.pcolormesh(arr_times,ranges_km,arr,cmap='plasma')
@@ -492,6 +495,7 @@ class HamSpotPlot(object):
 
         cbar = plt.colorbar(mpbl,aspect=10,pad=cb_pad,label=cbar_label,extend=extend)
         cax  = cbar.ax
+        cax.set_yticks(cbar_ticks)
         if vmin is not None and vmax is not None:
             cax.set_ylim(vmin,vmax)
 
@@ -537,11 +541,12 @@ class HamSpotPlot(object):
             for ttl in ax.get_yticklabels():
                 ttl.set_size(ticklabel_size)
 
-        date_str = self.date.strftime('%Y %b %d')
+        date_str = self.date.strftime('%d %b %Y')
         title_fd = {'weight':'bold'}
         if title_size is not None:
             title_fd.update({'size':title_size})
-        ax.set_title(date_str,fontdict=title_fd)
+        title = f'{self.f_label} Ham Radio Communications Distance\n{date_str}'
+        ax.set_title(title,fontdict=title_fd)
 
         return
 
