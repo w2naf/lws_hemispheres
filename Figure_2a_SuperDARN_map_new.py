@@ -618,7 +618,7 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=0.95*np.array((26,30)),output_dir='
     map_cbar_ticklabel_size = 'small'
     map_cbar_label_size     = 'medium'
 
-    ham_title_size          = 'x-large'
+    ham_title_size          = 'medium'
     ham_ticklabel_size      = 'small'
     ham_label_size          = 'medium'
     ham_cbar_ticklabel_size = 'small'

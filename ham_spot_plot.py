@@ -68,6 +68,11 @@ class HamSpotPlot(object):
         self.data_dir        = data_dir
         self.date            = date
         self.frang_khz       = frang_khz
+        if frang_khz == (14000,14350):
+            self.f_label    = '14 MHz'
+        else:
+            self.f_label    = '{!s} kHz'.format(frang_khz)
+
         self.midpoint_region = midpoint_region
         self.sTime           = sTime
         self.eTime           = eTime
@@ -320,6 +325,8 @@ class HamSpotPlot(object):
             subplot             = (1,1,1),
             panel_rect          = None,
             plot_region         = 'US',
+            vmin                = 0,
+            vmax                = 3.5,
             title_size          = None,
             ticklabel_size      = None,
             label_size          = None,
@@ -343,16 +350,27 @@ class HamSpotPlot(object):
         dlon    = lons[1] - lons[0]
         dlat    = lats[1] - lats[0]
 
-        bin_str = '{:0.0f}'.format(dlat)+u'\N{DEGREE SIGN} lat x '+'{:0.0f}'.format(dlon)+u'\N{DEGREE SIGN} lon'
-        map_data.name   = f'N per {bin_str}'
 
         tf          = map_data < 1
         map_n       = int(np.sum(map_data))
         map_data    = np.log10(map_data)
         map_data.values[tf] = 0
-        map_data.name   = 'log({})'.format(map_data.name)
-        cntr    = map_data.plot.contourf(x=lon_key,y=lat_key,ax=ax,levels=30,cmap=mpl.cm.inferno)
+
+        bin_str  = '({:0.0f}'.format(dlat)+u'\N{DEGREE SIGN} lat x '+'{:0.0f}'.format(dlon)+u'\N{DEGREE SIGN} lon bins)'
+        cbar_lbl = []
+        cbar_lbl.append('log(N Midpoints)')
+#        cbar_lbl.append(bin_str)
+        cbar_lbl        = '\n'.join(cbar_lbl)
+        map_data.name   = cbar_lbl
+
+        cntr    = map_data.plot.contourf(x=lon_key,y=lat_key,ax=ax,levels=30,cmap=mpl.cm.inferno,
+                vmin=vmin,vmax=vmax,cbar_kwargs={'aspect':10,'pad':0.025})
         cax     = cntr.colorbar.ax
+
+        cbar_ticks = np.arange(vmin,vmax+0.5,0.5)
+        cax.set_yticks(cbar_ticks)
+        cax.set_ylim(vmin,vmax)
+
         if cbar_ticklabel_size is not None:
             for ytl in cax.get_yticklabels():
                 ytl.set_size(cbar_ticklabel_size)
@@ -383,11 +401,12 @@ class HamSpotPlot(object):
             for ttl in ax.get_yticklabels():
                 ttl.set_size(ticklabel_size)
 
-        date_str = self.date.strftime('%Y %b %d')
+        date_str = self.date.strftime('%d %b %Y')
         title_fd = {'weight':'bold'}
         if title_size is not None:
             title_fd.update({'size':title_size})
-        ax.set_title(date_str,fontdict=title_fd)
+        title = f'{self.f_label} Ham Radio Midpoints\n{date_str}'
+        ax.set_title(title,fontdict=title_fd)
     
     def plot_timeSeries_ax(self,ax,xlim=None,ylim=None,
             heatmap_param       = 'raw_spotArr',
