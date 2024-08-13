@@ -601,9 +601,9 @@ def plot_fig_rects(fig,rects,vpad=0,color='k',lw=2,fill=False,
             tx  = rect[0] + 0.01
             ty  = rect[1] + rect[3] - 0.01
 
-#            if name == 'c':
-#                tx += 0.010
-            fontdict    = {'weight':'bold','size':'x-large'}
+            if name == 'd':
+                ty += 0.020
+            fontdict    = {'weight':'bold','size':'xx-large'}
             fig.text(tx,ty,'({!s})'.format(name),fontdict=fontdict,va='top')
 
     if plot_outer:
