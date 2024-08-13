@@ -402,11 +402,13 @@ class HamSpotPlot(object):
             for ttl in ax.get_yticklabels():
                 ttl.set_size(ticklabel_size)
 
-        date_str = self.date.strftime('%d %b %Y')
         title_fd = {'weight':'bold'}
         if title_size is not None:
             title_fd.update({'size':title_size})
-        title = f'{self.f_label} Ham Radio Midpoints\n{date_str}'
+
+        date_str  = self.sTime.strftime('%d %b %Y %H%M - ') + self.eTime.strftime('%H%M UTC')
+        range_str = 'Range Limits: {!s} - {!s} km'.format(*self.range_lim_km)
+        title     = f'{self.f_label} Ham Radio Midpoints\n{date_str}\n{range_str}'
         ax.set_title(title,fontdict=title_fd)
 
         return {'ax':ax}
@@ -526,7 +528,7 @@ class HamSpotPlot(object):
                 ax.axvline(wl,color='lime',ls='--',lw=2)
 
             ax.legend(loc='upper center',fontsize='small',ncols=4,
-                    framealpha=0.7,facecolor='black',labelcolor='linecolor')
+                    framealpha=0.9,facecolor='black',labelcolor='linecolor')
 
         label_fd = {}
         if label_size is not None:
@@ -547,7 +549,7 @@ class HamSpotPlot(object):
         title_fd = {'weight':'bold'}
         if title_size is not None:
             title_fd.update({'size':title_size})
-        title = f'{self.f_label} Ham Radio Communications Distance\n{date_str}'
+        title = f'{self.f_label} Ham Radio Communications Distance\n{date_str} - Midpoint Region: {self.midpoint_region}'
         ax.set_title(title,fontdict=title_fd)
 
         return

@@ -698,7 +698,10 @@ def plot_fig_rects(fig,rects,vpad=0,color='k',lw=2,fill=False,
             ty  = rect[1] + rect[3] - 0.01
 
             if name == 'd':
-                ty += 0.020
+                ty += 0.021
+            elif name in ['b','c']:
+                ty += 0.015
+
             fontdict    = {'weight':'bold','size':'xx-large'}
             fig.text(tx,ty,'({!s})'.format(name),fontdict=fontdict,va='top')
 
@@ -801,9 +804,10 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=0.95*np.array((26,30)),output_dir='
     RTaP_path['lat_1'] = gresult['lat2']
     RTaP_path['lon_1'] = gresult['lon2']
     RTaP_color         = 'SpringGreen'
-    plot_gc_path(**RTaP_path,ax=ax,color=RTaP_color,lw=5,ls='-')
+    plot_gc_path(**RTaP_path,ax=ax,color=RTaP_color,lw=5,ls='-',label='Ray Trace Path')
     ax.scatter([RTaP_path['lon_0']],[RTaP_path['lat_0']],s=1000,marker='*',fc=RTaP_color,
             zorder=10000,transform=ccrs.PlateCarree())
+    ax.legend(loc='lower left',fontsize='small',facecolor='white',framealpha=1.0)
 
     # Plot Panel (c) Ham Radio Time Series #########################################
     rect            = rects['c']
@@ -811,7 +815,6 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=0.95*np.array((26,30)),output_dir='
     hspd            = {}
     hspd['xlim']    = (date + datetime.timedelta(hours=13),
                        date + datetime.timedelta(hours=23))
-#    hspd['ylim']    = (750,2250)
     hspd['cb_pad']  = 0.01
     hspd.update(ham_fonts)
     result          = hsp.plot_timeSeries_ax(ax,**hspd)

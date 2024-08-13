@@ -429,7 +429,8 @@ class RayTraceAndPlot(object):
             title_prms.update({'size':title_size})
 
         title   = []
-        title.append('IRI2016 Perturbed with TID')
+        tid_str = ' ($\lambda_h$=1000 km)'
+        title.append('IRI2016 Perturbed with LSTID' + tid_str)
         title.append('{!s}'.format(prmd['UT'].strftime('%Y %b %d %H:%M UTC')))
         title   = '\n'.join(title)
         ax.set_title(title,loc='left',**title_prms)
