@@ -506,7 +506,7 @@ class HamSpotPlot(object):
             cax.set_ylabel(cbar_label,fontdict={'size':cbar_label_size})
 
         if plot_fit:
-            ed0_line    = ax.plot(arr_times,edge_0,lw=2,color='Aqua',label='Detected Edge')
+            ed0_line    = ax.plot(arr_times,edge_0,lw=3,color='Aqua',label='Detected Edge')
 
             if p0_sin_fit != {}:
                 ax.plot(sin_fit.index,sin_fit+poly_fit,label='Sin Fit',color='white',lw=4,ls='--')
@@ -524,7 +524,7 @@ class HamSpotPlot(object):
                 ax.axvline(wl,color='lime',ls='--',lw=2)
 
             ax.legend(loc='upper center',fontsize='small',ncols=4,
-                    framealpha=0.2,framecolor='black',labelcolor='linecolor')
+                    framealpha=0.5,facecolor='black',labelcolor='linecolor')
 
         label_fd = {}
         if label_size is not None:
