@@ -605,7 +605,7 @@ def plot_fig_rects(fig,rects,vpad=0,color='k',lw=2,fill=False,
             color=color,lw=lw,fill=fill,ls=':',
             transform=fig.transFigure, figure=fig,**kwargs)])
 
-def figure2(radars_dct,time,hsp,RTaP,figsize=(23,27),output_dir='output',**kwargs):
+def figure2(radars_dct,time,hsp,RTaP,figsize=(23,30),output_dir='output',**kwargs):
     fig     = plt.figure(figsize=figsize)
     # Font Control ################################################################# 
     map_title_size          = 'x-large'
@@ -658,9 +658,9 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=(23,27),output_dir='output',**kwarg
     # Plot Panel (a) Map ###########################################################
     rect    = rects['a']
     dims    = {}
-    dims['map_wd']              = 0.75
-    dims['map_hpad']            = 0.00
-    dims['cb_ht']               = 0.75
+    dims['map_wd']              = 0.80
+    dims['map_hpad']            =  0.00
+    dims['cb_ht']               = 0.85
     dims['cb_wd']               = (1-dims['map_wd'])/3.
     dims['cb_hpad']             = 0.70*dims['cb_wd']
     dims['extent']              = (0,360,20,90)
