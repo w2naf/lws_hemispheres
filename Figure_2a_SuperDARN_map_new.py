@@ -38,6 +38,7 @@ import mstid
 import merra2AirsMaps
 import ham_spot_plot
 import raytrace_and_plot
+import gnss_dtec_map
 
 Re = 6371 # Radius of the Earth in km
 
@@ -464,34 +465,11 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
         result = fan_plot(dataObj,dataSet=dataSet,
                 axis=ax,projection=projection,time=time,scale=SD_scale)
 
-    # GNSS aTEC
-    hsp = rd.get('hsp')
-    map_data    = hsp.geo_hist.copy()
-    map_data    = np.log10(map_data)
-    tf          = np.isfinite(map_data)
-    map_data.values[~tf]   = np.nan
-    lon_key = map_data.attrs['xkey']
-    lat_key = map_data.attrs['ykey']
-    xx  = map_data[lon_key].values
-    yy  = map_data[lat_key].values
-    zz  = map_data.values.T
-    tec_mpbl    = ax.contourf(xx,yy,zz,levels=30,cmap=mpl.cm.gray,transform=ccrs.PlateCarree())
-
-    # Plot aTEC Colorbar
-    cax  = fig.add_axes(GNSS_TEC_cbar_rect)
-    cax.grid(False)
-#    tec_cbar_ticks = np.arange(GNSS_TEC_scale[0],GNSS_TEC_scale[1]+0.5,0.5)
-#    tec_cbar = fig.colorbar(tec_mpbl,cax=cax,ticks=tec_cbar_ticks)
-    tec_cbar = fig.colorbar(tec_mpbl,cax=cax)
+    # SuperDARN Colorbar
     cbar_fd  = {}
     if cbar_label_size is not None:
         cbar_fd.update({'size':cbar_label_size})
-    tec_cbar.set_label('GNSS aTEC',fontdict=cbar_fd)
-    if cbar_ticklabel_size is not None:
-        for ytl in cax.get_yticklabels():
-            ytl.set_size(cbar_ticklabel_size)
 
-    # SuperDARN Colorbar
     cax         = fig.add_axes(SD_cbar_rect)
     cax.grid(False)
     cbar_ticks  = np.arange(SD_scale[0],SD_scale[1]+5,5)
@@ -513,6 +491,32 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
               size='x-small',
               weight='bold',
               transform=ax.transAxes)
+
+    # GNSS dTEC ############################ 
+    dTECmap   = gnss_dtec_map.GNSSdTECMap(time)
+    map_data  = dTECmap.gridded_dtec
+    lon_key   = map_data.attrs['xkey']
+    lat_key   = map_data.attrs['ykey']
+    xx        = map_data[lon_key].values
+    yy        = map_data[lat_key].values
+    zz        = map_data.values.T
+    dTEC_vmin = -0.25
+    dTEC_vmax =  0.25
+
+    tec_mpbl    = map_data.plot.contourf(x=lon_key,y=lat_key,ax=ax,levels=30,
+            cmap=mpl.cm.gray,vmin=dTEC_vmin,vmax=dTEC_vmax,transform=ccrs.PlateCarree())
+    cax         = tec_mpbl.colorbar.ax
+    cax.set_position(GNSS_TEC_cbar_rect)
+
+    tec_cbar_ticks = np.arange(dTEC_vmin,dTEC_vmax+0.1,0.1)
+    cax.set_yticks(tec_cbar_ticks)
+    cax.set_ylim(dTEC_vmin,dTEC_vmax)
+#    tec_lbl = map_data.attrs.get('label')
+    tec_lbl = 'Mean GNSS dTEC [TECu]'
+    cax.set_ylabel(tec_lbl,fontdict=cbar_fd)
+    if cbar_ticklabel_size is not None:
+        for ytl in cax.get_yticklabels():
+            ytl.set_size(cbar_ticklabel_size)
 
     # AIRS GW Variance #####################
     mca = kwargs.get('mca')
