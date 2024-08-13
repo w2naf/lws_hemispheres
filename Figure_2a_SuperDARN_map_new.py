@@ -24,6 +24,12 @@ from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 import cartopy.feature as cfeature
 from cartopy.feature.nightshade import Nightshade
 
+
+# Geographiclib - https://geographiclib.sourceforge.io/Python/2.0/
+# conda install conda-forge::geographiclib
+from geographiclib.geodesic import Geodesic
+geod = Geodesic.WGS84
+
 import pickle
 
 #from hamsci_psws import geopack
@@ -342,8 +348,8 @@ def plot_radar_fov(radar,ax,time,fovModel='GS',fov_ranges=(0,50),fov_beams=None,
     fontdict = {'color':'black','size':28,'weight':'bold'}
     ax.text(radar_lon,radar_lat,text,ha=ha,
             fontdict=fontdict,transform=ccrs.PlateCarree(),
-            path_effects=[mpl.patheffects.withStroke(linewidth=2, foreground="white")],
-            zorder=fov_zorder+1)
+            path_effects=[mpl.patheffects.withStroke(linewidth=3, foreground="white")],
+            zorder=10000)
 
 def plot_rtp(radars_dct,sTime,eTime,dataSet='active',output_dir='output',**kwargs):
 
@@ -382,6 +388,27 @@ def plot_rtp(radars_dct,sTime,eTime,dataSet='active',output_dir='output',**kwarg
     fig.savefig(fpath,bbox_inches='tight')
     plt.close(fig)
     print(fpath)
+
+def plot_gc_path(lat_0,lon_0,lat_1,lon_1,ax,range_step=1.,**kwargs):
+        # Determine the ranges and azimuth along the profile path.
+        invl    = geod.InverseLine(lat_0,lon_0,lat_1,lon_1)
+        dist    = invl.s13*1e-3   # Distance in km
+        az      = invl.azi1
+
+        ranges  = np.arange(0,dist,range_step)
+
+        glats   = []
+        glons   = []
+        for x in ranges:
+            s   = min(x*1e3,invl.s13) # invl.s13 is the total line distance in m
+            tmp = invl.Position(s,Geodesic.STANDARD)
+            glat        = tmp['lat2']
+            glon        = tmp['lon2']
+
+            glats.append(glat)
+            glons.append(glon)
+
+        ax.plot(glons,glats,transform=ccrs.PlateCarree(),**kwargs)
 
 def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
                     panel_rect          = [0,0,1,1],
@@ -518,6 +545,15 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     if cbar_ticklabel_size is not None:
         for ytl in cax.get_yticklabels():
             ytl.set_size(cbar_ticklabel_size)
+
+
+    # Plot the path of the GNSS aTEC Keogram from Figure 3.
+    aTEC_path   = {}
+    aTEC_path['lat_0'] = 40.
+    aTEC_path['lat_1'] = 50.
+    aTEC_path['lon_0'] = -115.
+    aTEC_path['lon_1'] = -115.
+    plot_gc_path(**aTEC_path,ax=ax,color='DeepPink',lw=5,ls='-')
 
     # AIRS GW Variance #####################
     m2ws = {}
@@ -690,7 +726,23 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=0.95*np.array((26,30)),output_dir='
     ham_fonts['cbar_label_size']     = ham_cbar_label_size
 
     rect    = rects['b']
-    hsp.plot_map_ax(fig,panel_rect=rect,**ham_fonts)
+    result  = hsp.plot_map_ax(fig,panel_rect=rect,**ham_fonts)
+    ax      = result['ax']
+
+    # Plot raytrace path on top of Ham Spots.
+    RTaP_path          = {}
+    RTaP_path['lat_0'] = RTaP.prmd['origin_lat']
+    RTaP_path['lon_0'] = RTaP.prmd['origin_lon']
+    RTaP_azm           = RTaP.prmd['ray_bear']
+    RTaP_rng_km        = max(RTaP.prmd['ranges'])
+    gresult            = geod.Direct(RTaP_path['lat_0'], RTaP_path['lon_0'], RTaP_azm, RTaP_rng_km*1e3)
+    RTaP_path['lat_1'] = gresult['lat2']
+    RTaP_path['lon_1'] = gresult['lat2']
+    RTaP_color         = 'SpringGreen'
+    plot_gc_path(**RTaP_path,ax=ax,color=RTaP_color,lw=5,ls='-')
+    ax.scatter([RTaP_path['lon_0']],[RTaP_path['lat_0']],s=1000,marker='*',fc=RTaP_color,
+            zorder=10000,transform=ccrs.PlateCarree())
+    import ipdb; ipdb.set_trace()
 
     # Plot Panel (c) Ham Radio Time Series #########################################
     rect            = rects['c']
@@ -702,6 +754,7 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=0.95*np.array((26,30)),output_dir='
     hspd['cb_pad']  = 0.01
     hspd.update(ham_fonts)
     result          = hsp.plot_timeSeries_ax(ax,**hspd)
+
 
     # Plot Panel (d) Ray Trace Diagram #############################################
     rt_fonts   = {}

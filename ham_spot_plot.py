@@ -408,6 +408,8 @@ class HamSpotPlot(object):
             title_fd.update({'size':title_size})
         title = f'{self.f_label} Ham Radio Midpoints\n{date_str}'
         ax.set_title(title,fontdict=title_fd)
+
+        return {'ax':ax}
     
     def plot_timeSeries_ax(self,ax,xlim=None,ylim=None,
             heatmap_param       = 'raw_spotArr',
@@ -524,7 +526,7 @@ class HamSpotPlot(object):
                 ax.axvline(wl,color='lime',ls='--',lw=2)
 
             ax.legend(loc='upper center',fontsize='small',ncols=4,
-                    framealpha=0.5,facecolor='black',labelcolor='linecolor')
+                    framealpha=0.7,facecolor='black',labelcolor='linecolor')
 
         label_fd = {}
         if label_size is not None:
