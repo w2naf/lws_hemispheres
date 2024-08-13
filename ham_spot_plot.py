@@ -523,8 +523,8 @@ class HamSpotPlot(object):
             for wl in fitWinLim:
                 ax.axvline(wl,color='lime',ls='--',lw=2)
 
-            ax.legend(loc='upper center',fontsize='x-small',ncols=4,
-                    framealpha=0.2,labelcolor='linecolor')
+            ax.legend(loc='upper center',fontsize='small',ncols=4,
+                    framealpha=0.2,framecolor='black',labelcolor='linecolor')
 
         label_fd = {}
         if label_size is not None:
