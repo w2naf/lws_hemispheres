@@ -420,6 +420,7 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
                     extent              = None,
                     projection          = ccrs.Orthographic(-100,70),
                     title_size          = None,
+                    ticklabel_size      = 'medium',
                     cbar_ticklabel_size = None,
                     cbar_label_size     = None,
                     SD_scale            = (0,30),
@@ -473,7 +474,30 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     ax.add_feature(cfeature.LAND, color='lightgrey')
     ax.add_feature(cfeature.OCEAN, color = 'white')
     ax.add_feature(Nightshade(time, alpha=0.2))
-    ax.gridlines(draw_labels=['left','bottom'])
+#    ax.gridlines(draw_labels=['left','bottom'])
+
+    
+    grd_fmt = {'color':'gray','alpha':0.5}
+    grdl    = ax.gridlines(linewidth=2, linestyle='--',draw_labels=False,**grd_fmt)
+    lon_tks = np.arange(-180,180,60)
+    lat_tks = np.arange(20,90+10,20)
+    grdl.xlocator = mpl.ticker.FixedLocator(lon_tks)
+    grdl.ylocator = mpl.ticker.FixedLocator(lat_tks)
+
+    grd_fmt = {'color':'gray','alpha':0.9}
+    lon_pos = -150
+    for lat_tk in lat_tks:
+        lat_lbl = u'{!s}\N{DEGREE SIGN}N'.format(lat_tk)
+        ax.text(lon_pos,lat_tk,lat_lbl,transform=ccrs.PlateCarree(),fontdict={'size':ticklabel_size},ha='center',va='center',**grd_fmt)
+
+    lat_pos = 25.0
+    for lon_tk in lon_tks:
+        if lon_tk >= 0:
+            lon_lbl = u'{!s}\N{DEGREE SIGN}E'.format(lon_tk)
+        else:
+            lon_lbl = u'{!s}\N{DEGREE SIGN}W'.format(np.abs(lon_tk))
+        ax.text(lon_tk,lat_pos,lon_lbl,transform=ccrs.PlateCarree(),fontdict={'size':ticklabel_size},ha='center',va='center',**grd_fmt)
+
 
     # Plot SuperDARN FOVs and Data #########
     for radar,dct in radars_dct.items():
@@ -554,6 +578,14 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     aTEC_path['lon_0'] = -115.
     aTEC_path['lon_1'] = -115.
     plot_gc_path(**aTEC_path,ax=ax,color='DeepPink',lw=5,ls='-')
+
+#    # Plot the path of the GNSS aTEC Keogram from Figure 3.
+#    dTEC_LSTID_path   = {}
+#    dTEC_LSTID_path['lat_0'] = 40.
+#    dTEC_LSTID_path['lat_1'] = 50.
+#    dTEC_LSTID_path['lon_0'] = -115.
+#    dTEC_LSTID_path['lon_1'] = -115.
+#    plot_gc_path(**dTEC_LSTID_path,ax=ax,color='DeepPink',lw=5,ls='-')
 
     # AIRS GW Variance #####################
     m2ws = {}
@@ -656,6 +688,7 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=0.95*np.array((26,30)),output_dir='
     fig     = plt.figure(figsize=figsize)
     # Font Control ################################################################# 
     map_title_size          = 'x-large'
+    map_ticklabel_size      = 'medium'
     map_cbar_ticklabel_size = 'small'
     map_cbar_label_size     = 'medium'
 
@@ -713,6 +746,7 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=0.95*np.array((26,30)),output_dir='
     dims['extent']              = (0,360,20,90)
     dims['projection']          = ccrs.Orthographic(-100,70.0)
     dims['title_size']          = map_title_size
+    dims['ticklabel_size']      = map_ticklabel_size
     dims['cbar_ticklabel_size'] = map_cbar_ticklabel_size
     dims['cbar_label_size']     = map_cbar_label_size
     plot_map_ax(fig,radars_dct,time,panel_rect=rect,**dims,**kwargs)
