@@ -2,7 +2,7 @@
 """
 Figure_1_Vortex_GW_Maps.py
 Nathaniel A. Frissell
-February 2024
+August 2024
 
 This script is used to generate Figure 1 of the Frissell et al. (2024)
 GRL manuscript on multi-instrument measurements of AGWs, MSTIDs, and LSTIDs.
@@ -52,20 +52,10 @@ if __name__ == "__main__":
 
     mca = merra2AirsMaps.Merra2AirsMaps()
 
-    # Create a dictionary with information about each row, especially
-    # the base filename of the AIRS3D profile data file we want to use.
     rows_dct = {}
     rowd = rows_dct[datetime.datetime(2018,12,15)] = {}
-    rowd['a3d_prof_bname']   = 'NEW_2018 12 10_AIRS_3D_alt_data_45_deg_lat'
-    rowd['a3d_prof_lat']     = 45
-
     rowd = rows_dct[datetime.datetime(2019,1,5)] = {}
-    rowd['a3d_prof_bname']   = 'NEW_2019 01 05_AIRS_3D_alt_data_50_deg_lat'
-    rowd['a3d_prof_lat']     = 50
-
     rowd = rows_dct[datetime.datetime(2019,2,1)] = {}
-    rowd['a3d_prof_bname']   = 'NEW_2019 02 01_AIRS_3D_alt_data_48_deg_lat'
-    rowd['a3d_prof_lat']     = 48
 
     png_name    = 'Fig1_Vortex_GW_Maps_revised.png'
     png_fpath   = os.path.join(output_dir,png_name)
@@ -79,7 +69,6 @@ if __name__ == "__main__":
     nrows           = len(rows_dct)
     row_heights     = 1./nrows
     row_pad         = 0.175*row_heights
-
 
     # Create array of letters for labeling panels.
     letters = np.array(list(string.ascii_lowercase[:nrows*(ncols-1)]))
@@ -99,7 +88,6 @@ if __name__ == "__main__":
     letter_fontdict = {'weight':'bold','size':32}
     for row_inx,(date,rowd) in enumerate(rows_dct.items()):
         print(date)
-        # fig.add_axes([left,bottom,width,height])
         bottom  = 1. - row_heights*(row_inx+1)
         height  = row_heights - row_pad
 
@@ -109,17 +97,11 @@ if __name__ == "__main__":
         width   = col_fwidths[col_inx]
 
         ax      = fig.add_axes([left,bottom,width,height],projection=ccrs.Orthographic(lon_down,90))
-#        AIRS_GWv_vmin       = 0.
-#        AIRS_GWv_vmax       = 0.8
-#        AIRS_GWv_cmap       = 'RdPu'
 
         AIRS_GWv_vmin       = 0.
         AIRS_GWv_vmax       = 1.
         AIRS_GWv_cmap       = 'IDL'
         AIRS_GWv_levels     = np.arange(AIRS_GWv_vmin,AIRS_GWv_vmax+0.005,0.005)
-        # Loosely dashed negative linestyle
-        # See https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html
-#        merra2_vortex_kw    = {'linewidths':3,'negative_linestyles':(0, (1, 3))}
         m2vx = {}
         m2vx['colors']      = '0.7'
 
@@ -148,19 +130,8 @@ if __name__ == "__main__":
             cbar    = fig.colorbar(result['cbar_pcoll'],cax=cax,ticks=AIRS_cbar_ticks,orientation='horizontal')
             cbar.set_label(result['cbar_label'])
 
-        profile_lat     = rowd['a3d_prof_lat']
-
         print(' --> Loading AIRS3D Data')
         a3dw    = AIRS3D.AIRS3DWorld(date)
-        a3dlp   = AIRS3D.AIRS3DLatProfile(rowd['a3d_prof_bname'],date,lat=profile_lat)
-
-        # Determine Longitude Boundaries for region where there is valid data.
-        if a3dlp.Tpert is not None:
-            tf              = np.isfinite(a3dlp.Tpert)
-            LONS            = a3dlp.lons.copy()
-            LONS.shape      = (len(LONS),1)
-            LONS            = LONS*np.ones_like(tf,dtype=float)
-            profile_lons    = [np.min(LONS[tf]),np.max(LONS[tf])]
 
         print(' --> Plotting AIRS Global Temperature Perturbation Map')
         m2vx = {}
@@ -169,8 +140,7 @@ if __name__ == "__main__":
         left    = np.sum(col_fwidths[:col_inx])
         width   = col_fwidths[col_inx]
         ax      = fig.add_axes([left,bottom,width,height],projection=ccrs.Orthographic(lon_down,90))
-        if a3dlp.Tpert is not None:
-            result  = a3dw.plot_ax(ax=ax,vmin=-0.5,vmax=0.5)
+        result  = a3dw.plot_ax(ax=ax,vmin=-0.5,vmax=0.5)
         mca.overlay_windspeed(ax,date, merra2_windspeed_kw=m2ws)
         mca.overlay_vortex(ax,date,merra2_vortex_kw=m2vx)
         ax.set_title(title,pad=18,fontdict=title_fontdict)
