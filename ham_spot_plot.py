@@ -408,7 +408,7 @@ class HamSpotPlot(object):
 
         date_str  = self.sTime.strftime('%d %b %Y %H%M - ') + self.eTime.strftime('%H%M UTC')
         range_str = 'Range Limits: {!s} - {!s} km'.format(*self.range_lim_km)
-        title     = f'{self.f_label} Ham Radio Midpoints\n{date_str}\n{range_str}'
+        title     = f'{self.f_label} Amateur Radio Midpoints\n{date_str}\n{range_str}'
         ax.set_title(title,fontdict=title_fd)
 
         return {'ax':ax}
@@ -549,7 +549,7 @@ class HamSpotPlot(object):
         title_fd = {'weight':'bold'}
         if title_size is not None:
             title_fd.update({'size':title_size})
-        title = f'{self.f_label} Ham Radio Communications Distance\n{date_str} - Midpoint Region: {self.midpoint_region}'
+        title = f'{self.f_label} Amateur Radio Communications Distance\n{date_str} - Midpoint Region: {self.midpoint_region}'
         ax.set_title(title,fontdict=title_fd)
 
         return

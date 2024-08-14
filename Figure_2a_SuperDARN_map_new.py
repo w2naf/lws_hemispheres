@@ -584,8 +584,14 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     dTEC_LSTID_path   = {}
     dTEC_LSTID_path['lat_0'] =  41.5
     dTEC_LSTID_path['lon_0'] = -88.
-    dTEC_LSTID_path['lat_1'] =  33.
-    dTEC_LSTID_path['lon_1'] = -87.5
+    dTEC_LSTID_azm           = 175
+    dTEC_LSTID_rng_km        = 950
+    gresult            = geod.Direct(dTEC_LSTID_path['lat_0'], dTEC_LSTID_path['lon_0'], dTEC_LSTID_azm, dTEC_LSTID_rng_km*1e3)
+    dTEC_LSTID_path['lat_1'] = gresult['lat2']
+    dTEC_LSTID_path['lon_1'] = gresult['lon2']
+
+#    dTEC_LSTID_path['lat_1'] =  33.
+#    dTEC_LSTID_path['lon_1'] = -87.5
     pts = [val for val in dTEC_LSTID_path.values()]
     dTEC_LSTID_invl    = geod.InverseLine(*pts)
     dTEC_LSTID_dist    = dTEC_LSTID_invl.s13*1e-3   # Distance in km
