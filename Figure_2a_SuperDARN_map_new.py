@@ -556,7 +556,7 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     dTEC_vmax =  0.25
 
     tec_mpbl    = map_data.plot.contourf(x=lon_key,y=lat_key,ax=ax,levels=30,
-            cmap=mpl.cm.gray,vmin=dTEC_vmin,vmax=dTEC_vmax,transform=ccrs.PlateCarree())
+            cmap=mpl.cm.bwr,vmin=dTEC_vmin,vmax=dTEC_vmax,transform=ccrs.PlateCarree())
     GNSS_TEC_cbar   = tec_mpbl.colorbar
     cax             = tec_mpbl.colorbar.ax
 
@@ -578,7 +578,7 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     aTEC_path['lon_0'] = -115.
     aTEC_path['lon_1'] = -115.
     aTEC_lbl    = 'GNSS aTEC Keogram Cut'
-    plot_gc_path(**aTEC_path,ax=ax,color='Lime',lw=5,ls='-',label=aTEC_lbl,zorder=9999)
+    plot_gc_path(**aTEC_path,ax=ax,color='SeaGreen',lw=8,ls='-',label=aTEC_lbl,zorder=9999)
 
     # Calculate the horizontal wavelenth of LSTID observed in GNSS dTEC and plot..
     dTEC_LSTID_path   = {}
@@ -598,7 +598,9 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     dTEC_LSTID_az      = dTEC_LSTID_invl.azi1
     dTEC_LSTID_lbl  = '{:0.0f} km, {:0.0f}\N{DEGREE SIGN} Azm'.format(dTEC_LSTID_dist,dTEC_LSTID_az)
 
-    dTEC_LSTID_fmt = {'color':'Fuchsia','lw':5,'ls':'-'}
+
+    dTEC_LSTID_color    = 'black'
+    dTEC_LSTID_fmt = {'color':dTEC_LSTID_color,'lw':5,'ls':'-'}
     plot_gc_path(**dTEC_LSTID_path,ax=ax,label=dTEC_LSTID_lbl,**dTEC_LSTID_fmt)
 
     lat_0,lon_0,lat_1,lon_1 = pts
@@ -607,7 +609,7 @@ def plot_map_ax(fig,radars_dct,time,dataSet='active',fovModel='GS',
     head_length             = 1.00
     aprops['arrowstyle']    = f"->,head_width={head_width},head_length={head_length}"
     aprops['lw']            = 8
-    aprops['edgecolor']     = 'Fuchsia'
+    aprops['edgecolor']     = dTEC_LSTID_color
 
     adct = {}
     adct['text']        = ''

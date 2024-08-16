@@ -467,7 +467,7 @@ class HamSpotPlot(object):
         Ts              = np.mean(np.diff(arr_times)) # Sampling Period
 
         d_km    = ranges_km[1] - ranges_km[0]
-        d_min   = (arr_times[1] - arr_times[0]).total_seconds()
+        d_min   = (arr_times[1] - arr_times[0]).total_seconds()/60.
         bin_str = '{:0.0f} km x {:0.0f} min bin'.format(d_km,d_min)
         if heatmap_param == 'raw_spotArr':
 
