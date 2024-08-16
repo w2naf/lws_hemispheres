@@ -1647,18 +1647,18 @@ if __name__ == '__main__':
 ################################################################################
 # STACKPLOTS ###################################################################
 
-#    mark_dates = []
-#    mark_dates.append(datetime.datetime(2018,12,19))
-#    mark_dates.append(datetime.datetime(2019,1,15))
-#    mark_dates.append(datetime.datetime(2019,3,3))
+    mark_dates = []
+    mark_dates.append(datetime.datetime(2018,12,19))
+    mark_dates.append(datetime.datetime(2019,1,15))
+    mark_dates.append(datetime.datetime(2019,3,3))
 
 #    mark_dates = []
 #    mark_dates.append(datetime.datetime(2018,12,15))
 
-    mark_dates = []
-    mark_dates.append(datetime.datetime(2018,12,10))
-    mark_dates.append(datetime.datetime(2019,2,2))
-    mark_dates.append(datetime.datetime(2019,2,11))
+#    mark_dates = []
+#    mark_dates.append(datetime.datetime(2018,12,10))
+#    mark_dates.append(datetime.datetime(2019,2,2))
+#    mark_dates.append(datetime.datetime(2019,2,11))
     
 
     stack_sets  = {}
