@@ -1647,19 +1647,19 @@ if __name__ == '__main__':
 ################################################################################
 # STACKPLOTS ###################################################################
 
+#    GW/TID Inflection Dates
     mark_dates = []
     mark_dates.append(datetime.datetime(2018,12,19))
     mark_dates.append(datetime.datetime(2019,1,15))
     mark_dates.append(datetime.datetime(2019,3,3))
 
+##   Days with GWs/TIDs in all instruments
 #    mark_dates = []
-#    mark_dates.append(datetime.datetime(2018,12,15))
-
-#    mark_dates = []
-#    mark_dates.append(datetime.datetime(2018,12,10))
-#    mark_dates.append(datetime.datetime(2019,2,2))
-#    mark_dates.append(datetime.datetime(2019,2,11))
-    
+#    mark_dates.append(datetime.datetime(2018,12,10))    # All instruments
+#    mark_dates.append(datetime.datetime(2018,12,19))    # GWs and MSTIDs; LSTIDs enhance on 21 Dec
+#    mark_dates.append(datetime.datetime(2019,2,2))      # All instruments
+#    mark_dates.append(datetime.datetime(2019,2,11))     # All instruments
+#    mark_dates.append(datetime.datetime(2019,2,25))     # GWs and MSTIDs; LSTIDs enhance on 28 Feb
 
     stack_sets  = {}
     ss = stack_sets['figure_3'] = []
@@ -1674,10 +1674,12 @@ if __name__ == '__main__':
     ss.append('sme')
 
     ss = stack_sets['lstid_mstid_stack'] = []
+    ss.append('merra2CipsAirsTimeSeries')
     ss.append('HIAMCM')
     ss.append('gnss_dtec_gw')
     ss.append('meanSubIntSpect_by_rtiCnt')
     ss.append('lstid_ham')
+    ss.append('sme')
 
     if plot_stackplots:
         for stack_code,stack_params in stack_sets.items():
