@@ -837,7 +837,38 @@ def figure2(radars_dct,time,hsp,RTaP,figsize=0.95*np.array((26,30)),output_dir='
     rt_fonts['cbar_label_size']     = rt_cbar_label_size
 
     rect            = rects['d']
-    RTaP.plot_ax(fig=fig,panel_rect=rect,**rt_fonts)
+    result          = RTaP.plot_ax(fig=fig,panel_rect=rect,**rt_fonts)
+
+    ######################################## 
+    # Annotate Skip Distance on Ray Trace Plot
+    aax              = result['aax']
+    rt_sd            = {}
+    rt_sd['color']   = 'OrangeRed'
+    rt_sd['lw']      =  8
+    rt_sd['zorder']  = 100
+    rt_sd['clip_on'] = False
+    Re               = 6371
+    
+    # Ground Line
+    xx  = np.arange(0,1500)/Re
+    yy  = xx*0 + Re + 5
+    aax.plot(xx,yy,**rt_sd)
+
+    # Vertical Markers
+    _xx  =    np.zeros(2)
+    _yy  =  20*np.array([-1,1]) + yy[0]
+    aax.plot(_xx,_yy,**rt_sd)
+    _xx  =    np.zeros(2)+np.max(xx)
+    aax.plot(_xx,_yy,**rt_sd)
+
+    # Annotation Text
+    xx_txt  = xx.max()/2.
+    yy_txt  = Re - 115
+    rt_fd   = {}
+    rt_fd['weight'] = 'bold'
+    rt_fd['size']   = rt_label_size
+    aax.text(xx_txt,yy_txt,'Skip Distance',ha='center',
+            fontdict=rt_fd,color=rt_sd['color'],rotation=6.)
 
     # Save Figure ##################################################################
     fname = 'map_{!s}.png'.format(time.strftime('%Y%m%d.%H%M'))
