@@ -79,7 +79,7 @@ if __name__ == "__main__":
     cbar_width  = 0.015
 
     # Longitude at bottom of map.
-    lon_down = -90
+    lon_down = 0
 
     cbar_bottom = -0.05
     cbar_height =  0.025
