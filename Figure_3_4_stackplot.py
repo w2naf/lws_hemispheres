@@ -455,7 +455,8 @@ def annotate_lstid_ham(params,ax_list):
         ax1.scatter([ae_x],**sdct)
         ax2.scatter([ae_x],**sdct)
 
-def mark_axvline(dates,sDate,eDate,ax,radar_ax=False,extend=0.020,lw=6,ls=':',color='k'):
+#def mark_axvline(dates,sDate,eDate,ax,radar_ax=False,extend=0.020,lw=6,ls=':',color='k'):
+def mark_axvline(dates,sDate,eDate,ax,radar_ax=False,extend=0.020,lw=6,ls='-',color='DarkGoldenRod'):
     ytransaxes = mpl.transforms.blended_transform_factory(ax.transData,ax.transAxes)
     for date in dates:
         if radar_ax:
@@ -463,7 +464,7 @@ def mark_axvline(dates,sDate,eDate,ax,radar_ax=False,extend=0.020,lw=6,ls=':',co
         else:
             xpos    = date
 
-        axvline = ax.axvline(xpos,-1*extend,lw=lw,color=color,ls=ls)
+        axvline = ax.axvline(xpos,-1*extend,lw=lw,color=color,ls=ls,zorder=5000)
         axvline.set_clip_on(False)
 
 def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,short_labels=False,
@@ -1647,11 +1648,16 @@ if __name__ == '__main__':
 ################################################################################
 # STACKPLOTS ###################################################################
 
-#    GW/TID Inflection Dates
+#   SSW Start/End Dates
     mark_dates = []
-    mark_dates.append(datetime.datetime(2018,12,19))
-    mark_dates.append(datetime.datetime(2019,1,15))
-    mark_dates.append(datetime.datetime(2019,3,3))
+    mark_dates.append(datetime.datetime(2018,12,25))
+    mark_dates.append(datetime.datetime(2019,1,10))
+
+##    GW/TID Inflection Dates
+#    mark_dates = []
+#    mark_dates.append(datetime.datetime(2018,12,19))
+#    mark_dates.append(datetime.datetime(2019,1,15))
+#    mark_dates.append(datetime.datetime(2019,3,3))
 
 ##   Days with GWs/TIDs in all instruments
 #    mark_dates = []
