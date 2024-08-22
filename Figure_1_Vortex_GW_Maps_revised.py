@@ -14,6 +14,7 @@ import glob
 import string
 
 import datetime
+import pytz
 
 import numpy as np
 import scipy as sp
@@ -176,20 +177,71 @@ if __name__ == "__main__":
             vmin=AIRS_GWv_vmin,vmax=AIRS_GWv_vmax,cmap=AIRS_GWv_cmap,levels=AIRS_GWv_levels,
             merra2_windspeed_kw=m2ws,ylim=ylim)
 
+    ########################################
+    # Add lines showing times of maps in left columns.
     hlines  = list(rows_dct.keys())
     for hline in hlines:
         ax.axhline(hline,lw=5,color='fuchsia',zorder=10000)
 
-    yticks  = ax.get_yticks()
-    ytls    = []
+    ########################################
+    # Add horizontal lines for the start and end of the SSW.
+    ssw_hlines  = []
+    ssw_hlines.append(datetime.datetime(2018,12,25))
+    ssw_hlines.append(datetime.datetime(2019,1,10))
+#    for ssw_hline in ssw_hlines:
+#        ax.axhline(ssw_hline,lw=5,color='orange',zorder=10000)
+
+    # Right-hand bracket for SSW.
+    transform = mpl.transforms.blended_transform_factory(ax.transAxes, ax.transData)
+    ssw_x0  = 0
+    ssw_x1  = 1.025
+    ssw_ls  = {'lw':8,'clip_on':False,'color':'DarkGoldenRod','zorder':10000}
+
+    xx  = [ssw_x0,ssw_x1]
+    yy  = [ssw_hlines[0],ssw_hlines[0]]
+    ax.plot(xx,yy,transform=transform,**ssw_ls)
+
+    xx  = [ssw_x0,ssw_x1]
+    yy  = [ssw_hlines[1],ssw_hlines[1]]
+    ax.plot(xx,yy,transform=transform,**ssw_ls)
+
+    xx  = [ssw_x1,ssw_x1]
+    yy  = [ssw_hlines[0],ssw_hlines[1]]
+    ax.plot(xx,yy,transform=transform,**ssw_ls)
+
+    xx  = [ssw_x1,ssw_x1+0.025]
+    yy  = [ssw_hlines[0]+(ssw_hlines[1]-ssw_hlines[0])/2]*2
+    ax.plot(xx,yy,transform=transform,**ssw_ls)
+    xx_txt  = xx[1]+0.01
+    yy_txt  = yy[1]
+    ax.text(xx_txt,yy_txt,'SSW',transform=transform,va='center',
+            fontdict={'weight':'bold','size':'x-large'},color=ssw_ls.get('color'))
+
+    ########################################
+    # Format yticks correctly.
+    extra_dates = []
+    extra_dates += hlines
+    extra_dates += ssw_hlines
+
+    yticks      = ax.get_yticks()
+    ytl_dates   = []
     for ytick in yticks:
         date    = mpl.dates.num2date(ytick)
+        ytl_dates.append(date)
+
+    for extra_date in extra_dates:
+        extra_date = extra_date.replace(tzinfo=pytz.UTC)
+        if extra_date not in ytl_dates:
+            ytl_dates.append(extra_date)
+
+    ytl_dates.sort()
+
+    ytls    = []
+    for date in ytl_dates:
         ytl     = date.strftime('%b %d')
         ytls.append(ytl)
-
-    ax.set_yticks(yticks)
+    ax.set_yticks(ytl_dates)
     ax.set_yticklabels(ytls)
-
     title_pad   = 15.
     title       = '{!s} - {!s}'.format(min(ylim).strftime('%d %b %Y'),max(ylim).strftime('%d %b %Y'))
     ax.set_title(title,fontdict=title_fontdict,pad=title_pad)
