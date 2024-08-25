@@ -21,27 +21,6 @@ mpl.rcParams['grid.linestyle'] = ':'
 mpl.rcParams['figure.figsize'] = np.array([15, 8])
 mpl.rcParams['axes.xmargin']   = 0
 
-def load_omni():
-    data_dir    = os.path.join('data','cdaweb_omni')
-    fpath       = os.path.join(data_dir,'20230530_OMNI2_H0_MRG1HR_99633.csv')
-
-    df_0        = pd.read_csv(fpath,parse_dates=[0],comment='#')
-    dt_key      = 'TIME_AT_CENTER_OF_HOUR_yyyy-mm-ddThh:mm:ss.sssZ'
-    df_0.index  = df_0[dt_key].apply(lambda x: x.replace(tzinfo=None)).values
-    del df_0[dt_key]
-
-    params  = ['DAILY_SUNSPOT_NO_', 'DAILY_F10.7_', '1-H_DST_nT', '1-H_AE_nT'] 
-
-    # Set bad values to NaN.
-    bad = {}
-    bad['DAILY_F10.7_'] = 999.9
-    bad['1-H_AE_nT']    = 9999
-    for col,val in bad.items():
-        tf = df_0[col] == val
-        df_0.loc[tf,col] = np.nan
-
-    return df_0
-
 def load_supermag():
 #    # Load Raw SuperMAG data, remove out of range and bad data, and 
 #    # compute SME.
@@ -79,30 +58,19 @@ def load_supermag():
 class LSTID_HAM(object):
     def __init__(self,dataSet='sinFit'):
         """
-        dataSet: ['MLW', 'sinFit']
+        dataSet: ['sinFit']
         """
         self.dataSet = dataSet
         self.load_data()
     
     def load_data(self):
-        if self.dataSet == 'MLW':
-            data_in='data/lstid_ham/WinterHam_2018_19.csv'
+        data_in         = 'data/lstid_ham/20181101-20181101_sinFit.csv'
+        df              = pd.read_csv(data_in,usecols=[0, 1, 2,3],names=['date','period_hr','amplitude_km','is_lstid'],parse_dates=[0],header=1)
 
-            df  = pd.read_csv(data_in,comment='#',parse_dates=[0])
-
-            # Convert data columns to floats.
-            cols_numeric = ['start_time', 'end_time', 'low_range_km', 'high_range_km', 'tid_hours', 'range_km', 'cycles', 'period_hr']
-            for col in cols_numeric:
-                df.loc[:,col] = pd.to_numeric(df[col],errors='coerce')
-        elif self.dataSet == 'sinFit':
-            data_in         = 'data/lstid_ham/20181101-20181101_sinFit.csv'
-#            data_in         = 'data/lstid_ham/20170101-20170101_sinFit.csv'
-            df              = pd.read_csv(data_in,usecols=[0, 1, 2,3],names=['date','period_hr','amplitude_km','is_lstid'],parse_dates=[0],header=1)
-
-            # Convert data columns to floats.
-            cols_numeric    = ['period_hr','amplitude_km']
-            for col in cols_numeric:
-                df.loc[:,col] = pd.to_numeric(df[col],errors='coerce')
+        # Convert data columns to floats.
+        cols_numeric    = ['period_hr','amplitude_km']
+        for col in cols_numeric:
+            df.loc[:,col] = pd.to_numeric(df[col],errors='coerce')
 
         self.data_in    = data_in
         self.df         = df
@@ -119,34 +87,19 @@ class LSTID_HAM(object):
         plt.close(fig)
     
     def plot_ax(self,ax,xlim=None,ylabel_fontdict={},legend_fontsize='large',
-            legend_ncols=2,plot_ae=False,plot_dst=False,plot_sme=False,**kwargs):
+            legend_ncols=2,plot_sme=False,**kwargs):
         
         fig      = ax.get_figure()
         
         df       = self.df
         hndls    = []
         
-        # Eliminate waves with period > 5 hr.
-#        tf = df['period_hr'] > 5
-#        df.loc[tf,'period_hr']      = np.nan
-#        df.loc[tf,'amplitude_km']   = np.nan
-
-        # Eliminate waves with amplitudes < 15 km.
-#        tf = df['amplitude_km'] < 15
-#        df.loc[tf,'period_hr']      = np.nan
-#        df.loc[tf,'amplitude_km']   = np.nan
-
         # Eliminate waves with amplitudes > 80 km.
         tf = df['amplitude_km'] > 80
         df.loc[tf,'period_hr']      = np.nan
         df.loc[tf,'amplitude_km']   = np.nan
         df.loc[tf,'is_lstid']       = np.nan
 
-        # Eliminate non TID selected days
-#        tf = df['is_lstid'] == False
-#        df.loc[tf,'is_lstid']     = np.nan
-#        df.loc[tf,'period_hr']      = np.nan
-#        df.loc[tf,'amplitude_km']   = np.nan
         
         df['amplitude_km'] = df['amplitude_km'].interpolate(method='linear')
 #        df    = df.dropna()
@@ -201,31 +154,6 @@ class LSTID_HAM(object):
         hndls = list(itertools.chain.from_iterable(hndls))
         legend_ncols = 1
         ax.legend(handles=hndls,loc='upper right',fontsize=legend_fontsize,ncols=legend_ncols)
-
-        if plot_ae:
-            omni = load_omni()
-            tf = np.logical_and(omni.index >= xlim[0], omni.index < xlim[1])
-            omni = omni[tf].copy()
-
-            ax2 = ax.twinx()
-            ax2_xx = omni.index
-            ax2_yy = omni['1-H_AE_nT']
-            ax2.plot(ax2_xx,ax2_yy,color='k',alpha=0.5)
-            ax2.set_ylabel('AE [nT]')
-            ax2.grid(False)
-            
-
-        if plot_dst:
-            omni = load_omni()
-            tf = np.logical_and(omni.index >= xlim[0], omni.index < xlim[1])
-            omni = omni[tf].copy()
-
-            ax2 = ax.twinx()
-            ax2_xx = omni.index
-            ax2_yy = omni['1-H_DST_nT']
-            ax2.plot(ax2_xx,ax2_yy,color='k')
-            ax2.axhline(0,color='k')
-            ax2.set_ylabel('DST [nT]')
 
         if plot_sme:
             supermag = load_supermag()
