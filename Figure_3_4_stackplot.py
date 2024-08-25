@@ -1487,9 +1487,9 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,
 
     fig.tight_layout()
 
-    if (params == ['merra2CipsAirsTimeSeries', 'lstid_ham', 'sme']) \
-            and season == '20181101_20190501':
-        annotate_lstid_ham(params,ax_list)
+#    if (params == ['merra2CipsAirsTimeSeries', 'lstid_ham', 'sme']) \
+#            and season == '20181101_20190501':
+#        annotate_lstid_ham(params,ax_list)
 
     axs = [x['ax'] for x in ax_list]
     alpha_rectangle(axs)

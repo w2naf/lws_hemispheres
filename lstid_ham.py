@@ -9,6 +9,8 @@ import itertools
 
 import numpy as np
 import pandas as pd
+# <stdin>:1: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+pd.set_option('future.no_silent_downcasting', True)
 
 import matplotlib as mpl
 mpl.use('Agg')
@@ -53,8 +55,6 @@ def load_supermag():
 
     return df_0
 
-
-
 class LSTID_HAM(object):
     def __init__(self,dataSet='sinFit'):
         """
@@ -64,12 +64,39 @@ class LSTID_HAM(object):
         self.load_data()
     
     def load_data(self):
-        data_in         = 'data/lstid_ham/20181101-20181101_sinFit.csv'
-        df              = pd.read_csv(data_in,usecols=[0, 1, 2,3],names=['date','period_hr','amplitude_km','is_lstid'],parse_dates=[0],header=1)
+        data_in         = 'data/lstid_ham/20181101-20190430_allSinFits.csv'
+#        df              = pd.read_csv(data_in,usecols=[0, 1, 2,3],names=['date','period_hr','amplitude_km','is_lstid'],parse_dates=[0],header=1)
+        cols             = {}
+        cols[0]          = 'date'
+        cols[1]          = 'period_hr'
+        cols[2]          = 'amplitude_km'
+        #        cols[3] = 'phase_hr'
+        #        cols[4] = 'offset_km'
+        #        cols[5] = 'slope_kmph'
+        cols[6]          = 'r2'
+        #        cols[7] = 't_hr_guess'
+        cols[8]          = 'selected' # this tells us the fit that was actually used!
+        cols[11]         = 'duration_hr'
+        
+        usecols = list(cols.keys())
+        names   = list(cols.values())
+        df      = pd.read_csv(data_in,usecols = usecols,names = names,parse_dates = [0],header = 1)
+        df      = df[df['selected']].copy()
 
         # Convert data columns to floats.
-        cols_numeric    = ['period_hr','amplitude_km']
+        cols_numeric    = []
+        cols_numeric.append('period_hr')
+        cols_numeric.append('amplitude_km')
+        cols_numeric.append('phase_hr')
+        cols_numeric.append('offset_km')
+        cols_numeric.append('slope_kmph')
+        cols_numeric.append('r2')
+        cols_numeric.append('T_hr_guess')
+        cols_numeric.append('duration_hr')
+
         for col in cols_numeric:
+            if col not in df.keys():
+               continue 
             df.loc[:,col] = pd.to_numeric(df[col],errors='coerce')
 
         self.data_in    = data_in
@@ -94,14 +121,25 @@ class LSTID_HAM(object):
         df       = self.df
         hndls    = []
         
-        # Eliminate waves with amplitudes > 80 km.
-        tf = df['amplitude_km'] > 80
-        df.loc[tf,'period_hr']      = np.nan
-        df.loc[tf,'amplitude_km']   = np.nan
-        df.loc[tf,'is_lstid']       = np.nan
+        # Set Criteria for Classifying as LSTID
+        lims    = {}
+        lims['amplitude_km']    = (0, 80)
+        lims['r2']              = (0.35, 1.1)
+        lims['period_hr']       = (1, 4.5)
+        lims['duration_hr']     = (2, 24)
 
-        
-        df['amplitude_km'] = df['amplitude_km'].interpolate(method='linear')
+        # Apply LSTID Classification Criteria.
+        tfs = []
+        for key,limits in lims.items():
+            tf = (np.logical_and(df[key] >= limits[0], df[key] < limits[1])).values
+            tfs.append(tf)
+        is_lstid    = np.logical_and.reduce(tfs)
+
+#         Set days that do not meet the criteria to NaN so they do not plot.
+        df.loc[~is_lstid,'period_hr']      = np.nan
+        df.loc[~is_lstid,'amplitude_km']   = np.nan
+
+#        df['amplitude_km'] = df['amplitude_km'].interpolate(method='linear')
 #        df    = df.dropna()
         
         xx      = df['date']
@@ -109,46 +147,30 @@ class LSTID_HAM(object):
         if xlim is None:
             xlim = (min(xx), max(xx))
 
-        if self.dataSet == 'MLW':
-            yy      = df['tid_hours']
-            label  = 'TID Occurrence [hr]'
-            hndl    = ax.bar(xx,yy,width=1,label=label,color='green',align='edge')
-            hndls.append(hndl)
-            ylabel  = 'LSTID Occurrence [hr]\nLSTID Period [hr]'
-            ax.set_ylabel(ylabel,fontdict=ylabel_fontdict)
-            ax.set_xlabel('UTC Date')
+        yy           = df['amplitude_km']
+        rolling_days = 2
+        yy_roll      = df['amplitude_km'].rolling(rolling_days,center=True).mean()
+        ylabel       = 'LSTID Amplitude [km]'
+        hndl         = ax.plot(xx,yy,label='Raw Data',color='grey')
+        hndls.append(hndl)
+        hndl         = ax.plot(xx,yy_roll,label=f'{rolling_days} Day Rolling Mean',color='blue',lw=3)
+        hndls.append(hndl)
+        ax.set_ylabel(ylabel,fontdict=ylabel_fontdict)
+        ax.set_xlabel('UTC Date')
 
-            yy      = df['period_hr']
-            ylabel  = 'LSTID Period [hr]'
-            hndl    = ax.bar(xx,yy,label=ylabel,color='orange',align='edge')
-            hndls.append(hndl)
-            text = 'MLW Manual'
-        elif self.dataSet == 'sinFit':
-            yy           = df['amplitude_km']
-            rolling_days = 3
-            yy_roll      = df['amplitude_km'].rolling(rolling_days,center=True).mean()
-            ylabel       = 'LSTID Amplitude [km]'
-#            hndl         = ax.plot(xx,yy,width=1,label=ylabel,color='green',align='edge')
-            hndl         = ax.plot(xx,yy,label='Raw Data',color='grey')
-            hndls.append(hndl)
-            hndl         = ax.plot(xx,yy_roll,label='3 Day Rolling Mean',color='blue',lw=3)
-            hndls.append(hndl)
-            ax.set_ylabel(ylabel,fontdict=ylabel_fontdict)
-            ax.set_xlabel('UTC Date')
+        vmin            = np.nanmin(yy_roll)
+        vmax            = 50
+        T_hr_cmap       = 'rainbow'
+        cmap            = mpl.colormaps.get_cmap(T_hr_cmap)
+        cmap.set_bad(color='white')
+        norm            = mpl.colors.Normalize(vmin=vmin,vmax=vmax)
+        mpbl            = mpl.cm.ScalarMappable(norm,cmap)
+        color           = mpbl.to_rgba(yy_roll)
+        trans           = mpl.transforms.blended_transform_factory( ax.transData, ax.transAxes)
+        cbar_pcoll      = ax.bar(xx,1,width=1,color=color,align='edge',zorder=-1,transform=trans,alpha=0.5)
+        cbar_label      = 'Amplitude [km]'
 
-            vmin            = np.nanmin(yy_roll)
-            vmax            = 50
-            T_hr_cmap       = 'rainbow'
-            cmap            = mpl.colormaps.get_cmap(T_hr_cmap)
-            cmap.set_bad(color='white')
-            norm            = mpl.colors.Normalize(vmin=vmin,vmax=vmax)
-            mpbl            = mpl.cm.ScalarMappable(norm,cmap)
-            color           = mpbl.to_rgba(yy_roll)
-            trans           = mpl.transforms.blended_transform_factory( ax.transData, ax.transAxes)
-            cbar_pcoll      = ax.bar(xx,1,width=1,color=color,align='edge',zorder=-1,transform=trans,alpha=0.5)
-            cbar_label      = 'Amplitude [km]'
-
-            text = 'Automated SinFit'
+        text = 'Automated SinFit'
         
         ax.text(0.01,0.95,text,transform=ax.transAxes)
         hndls = list(itertools.chain.from_iterable(hndls))
