@@ -455,8 +455,8 @@ def annotate_lstid_ham(params,ax_list):
         ax1.scatter([ae_x],**sdct)
         ax2.scatter([ae_x],**sdct)
 
-#def mark_axvline(dates,sDate,eDate,ax,radar_ax=False,extend=0.020,lw=6,ls=':',color='k'):
-def mark_axvline(dates,sDate,eDate,ax,radar_ax=False,extend=0.020,lw=6,ls='-',color='DarkGoldenRod'):
+mark_line_dict = dict(lw=6,ls='-',color='DarkGoldenRod')
+def mark_axvline(dates,sDate,eDate,ax,radar_ax=False,extend=0.020,mark_line_dict=mark_line_dict):
     ytransaxes = mpl.transforms.blended_transform_factory(ax.transData,ax.transAxes)
     for date in dates:
         if radar_ax:
@@ -464,7 +464,7 @@ def mark_axvline(dates,sDate,eDate,ax,radar_ax=False,extend=0.020,lw=6,ls='-',co
         else:
             xpos    = date
 
-        axvline = ax.axvline(xpos,-1*extend,lw=lw,color=color,ls=ls,zorder=5000)
+        axvline = ax.axvline(xpos,-1*extend,zorder=5000,**mark_line_dict)
         axvline.set_clip_on(False)
 
 def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,short_labels=False,
@@ -1561,6 +1561,37 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,
                     label.set_fontweight(fontweight)
                 if fontsize:
                     label.set_fontsize(fontsize)
+
+
+    # Annotate SSW on bottom. ############## 
+    ax_info           = ax_list[-1]
+    ax                = ax_info.get('ax')
+    _mld              = mark_line_dict.copy()
+    _mld['transform'] = mpl.transforms.blended_transform_factory(ax.transData,ax.transAxes)
+    _mld['clip_on']   = False
+
+    xx_0              = datetime.datetime(2018,12,25)
+    xx_1              = datetime.datetime(2019,1,10)
+    yy_0              = 0
+    yy_1              = -0.125
+    if ax_info.get('radar_ax',False):
+        xx_0    = get_x_coords(xx_0,sDate,eDate)
+        xx_1    = get_x_coords(xx_1,sDate,eDate)
+
+    ax.plot([xx_0,xx_1],[yy_1,yy_1],**_mld)
+    ax.plot([xx_0,xx_0],[yy_0,yy_1],**_mld)
+    ax.plot([xx_1,xx_1],[yy_0,yy_1],**_mld)
+
+    txtd    = {}
+    txtd['x']         = xx_0 + (xx_1-xx_0)/2
+    txtd['y']         = 1.15 * yy_1
+    txtd['s']         = 'SSW'
+    txtd['ha']        = 'center'
+    txtd['va']        = 'top'
+    txtd['fontdict']  = xtick_fontdict
+    txtd['color']     = _mld.get('color')
+    txtd['transform'] = _mld.get('transform')
+    ax.text(**txtd)
 
     fig.savefig(fpath,bbox_inches='tight')
 
