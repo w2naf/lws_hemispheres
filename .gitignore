@@ -142,3 +142,5 @@ mstid_index/data/
 
 *~
 data/
+data.all/
+.virtual_documents/
