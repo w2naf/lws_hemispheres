@@ -199,7 +199,7 @@ def fan_plot(dataObject,
     return result
 
 def load_data(load_sTime=None,load_eTime=None,fovModel='GS',
-        cache_base='cache',clear_cache=False,
+        cache_base='data/superdarn-cache',clear_cache=False,
         data_dir='/data/sd-data',use_preprocessed = False,**kwargs):
     radars_dct  = {}
     radars_dct['pgr'] = {}
