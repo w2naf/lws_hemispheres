@@ -2,7 +2,7 @@
 """
 Figure_1_Vortex_GW_Maps.py
 Nathaniel A. Frissell
-February 2024
+August 2024
 
 This script is used to generate Figure 1 of the Frissell et al. (2024)
 GRL manuscript on multi-instrument measurements of AGWs, MSTIDs, and LSTIDs.
@@ -14,6 +14,7 @@ import glob
 import string
 
 import datetime
+import pytz
 
 import numpy as np
 import scipy as sp
@@ -30,10 +31,11 @@ import cartopy.feature as cfeature
 
 import AIRS3D
 import merra2AirsMaps
+import hovmoller
 
 pd.set_option('display.max_rows', None)
 
-mpl.rcParams['font.size']      = 18
+mpl.rcParams['font.size']      = 22
 mpl.rcParams['font.weight']    = 'bold'
 mpl.rcParams['axes.titleweight']   = 'bold'
 mpl.rcParams['axes.labelweight']   = 'bold'
@@ -51,140 +53,208 @@ if __name__ == "__main__":
 
     mca = merra2AirsMaps.Merra2AirsMaps()
 
-    # Create a dictionary with information about each column, especially
-    # the base filename of the AIRS3D profile data file we want to use.
-    cols_dct = {}
-    cld = cols_dct[datetime.datetime(2018,12,10)] = {}
-    cld['a3d_prof_bname']   = 'NEW_2018 12 10_AIRS_3D_alt_data_45_deg_lat'
-    cld['a3d_prof_lat']     = 45
+    rows_dct = {}
+    rowd = rows_dct[datetime.datetime(2018,12,15)] = {}
+    rowd = rows_dct[datetime.datetime(2019,1,5)] = {}
+    rowd = rows_dct[datetime.datetime(2019,2,1)] = {}
 
-    cld = cols_dct[datetime.datetime(2019,1,5)] = {}
-    cld['a3d_prof_bname']   = 'NEW_2019 01 05_AIRS_3D_alt_data_50_deg_lat'
-    cld['a3d_prof_lat']     = 50
-
-    cld = cols_dct[datetime.datetime(2019,2,1)] = {}
-    cld['a3d_prof_bname']   = 'NEW_2019 02 01_AIRS_3D_alt_data_48_deg_lat'
-    cld['a3d_prof_lat']     = 48
-
-    png_name    = 'Fig1_Vortex_GW_Maps.png'
+    png_name    = 'Fig1_Vortex_GW_Maps_revised.png'
     png_fpath   = os.path.join(output_dir,png_name)
 
-    figsize = (22.5,20)
+    figsize = (22.5,24)
     fig     = plt.figure(figsize=figsize)
 
-    ncols           = len(cols_dct)
-    col_fwidth      = 1./ncols
-    col_padded      = 0.90*col_fwidth
+    col_fwidths     = [0.35,0.35,0.50]
+    ncols           = len(col_fwidths)
 
-#    row_heights     = [0.35,0.15,0.2]
-    row_heights     = [0.35,0.35]
-    row_pad         = 0.05 
-    nrows           = len(row_heights)
+    nrows           = len(rows_dct)
+    row_heights     = 1./nrows
+    row_pad         = 0.175*row_heights
 
     # Create array of letters for labeling panels.
-    letters = np.array(list(string.ascii_lowercase[:nrows*ncols]))
-    letters.shape = (nrows,ncols)
+    letters = np.array(list(string.ascii_lowercase[:nrows*(ncols-1)]))
+    letters.shape = (ncols-1,nrows)
+    letters = letters.T
 
     cbar_left   = 1.
     cbar_width  = 0.015
 
     # Longitude at bottom of map.
-    lon_down = -90
+    lon_down = 0
 
-    for col_inx,(date,cld) in enumerate(cols_dct.items()):
+    cbar_bottom = -0.05
+    cbar_height =  0.025
+
+    title_fontdict  = {'weight':'bold','size':32}
+    letter_fontdict = {'weight':'bold','size':32}
+    for row_inx,(date,rowd) in enumerate(rows_dct.items()):
         print(date)
-        # fig.add_axes([left,bottom,width,height])
-        left    = col_inx*col_fwidth
-        width   = col_padded
+        bottom  = 1. - row_heights*(row_inx+1)
+        height  = row_heights - row_pad
 
         print(' --> Plotting Vortex Map')
-        row_inx = 0
-        bottom  = 1. - np.sum(row_heights[:row_inx+1])
-        height  = row_heights[row_inx] - row_pad
+        col_inx = 0
+        left    = np.sum(col_fwidths[:col_inx])
+        width   = col_fwidths[col_inx]
+
         ax      = fig.add_axes([left,bottom,width,height],projection=ccrs.Orthographic(lon_down,90))
+
         AIRS_GWv_vmin       = 0.
-        AIRS_GWv_vmax       = 0.8
-        # Loosely dashed negative linestyle
-        # See https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html
-        merra2_vortex_kw    = {'linewidths':3,'negative_linestyles':(0, (1, 3))}
-#        merra2_vortex_kw    = {'linewidths':3,'vmin':0}
-        result  = mca.plot_ax(ax,date,vmin=AIRS_GWv_vmin,vmax=AIRS_GWv_vmax,cmap='RdPu',
-                merra2_vortex_kw=merra2_vortex_kw)
+        AIRS_GWv_vmax       = 1.
+        AIRS_GWv_cmap       = 'IDL'
+        AIRS_GWv_levels     = np.arange(AIRS_GWv_vmin,AIRS_GWv_vmax+0.005,0.005)
+        m2vx = {}
+        m2vx['colors']      = '0.7'
+
+        m2sf = {}
+        m2sf['colors']      = '0.5'
+
+        m2ws = {}
+        m2ws['levels']      = [-10000,30,50]
+        m2ws['colors']      = ['white','orange','red']
+
+        result  = mca.plot_ax(ax,date,
+                vmin=AIRS_GWv_vmin,vmax=AIRS_GWv_vmax,cmap=AIRS_GWv_cmap,
+                merra2_vortex_kw=m2vx,merra2_windspeed_kw=m2ws,merra2_streamfunction_kw=m2sf)
         title   = date.strftime('%d %b %Y')
-        ax.set_title(title,pad=18,fontdict={'weight':'bold','size':36})
+        ax.set_title(title,pad=18,fontdict=title_fontdict)
 
         letter = '({!s})'.format(letters[row_inx,col_inx])
-        ax.text(0.025,0.95,letter,transform=ax.transAxes,
-                    fontdict={'weight':'bold','size':24})
+        ax.text(0.025,0.95,letter,transform=ax.transAxes,fontdict=letter_fontdict)
 
-        if col_inx == nrows-1:
-            cbar_bottom = bottom
-            cbar_height = height
-
+        if row_inx == nrows-1:
+            cbar_width  = 0.8*width
+            cbar_left   = left + (width-cbar_width)/2.
             cax     = fig.add_axes([cbar_left,cbar_bottom,cbar_width,cbar_height])
             cax.grid(False)
-            AIRS_cbar_ticks = np.arange(AIRS_GWv_vmin,AIRS_GWv_vmax+0.1,0.1)
-            cbar    = fig.colorbar(result['cbar_pcoll'],cax=cax,ticks=AIRS_cbar_ticks)
+            AIRS_cbar_ticks = np.arange(AIRS_GWv_vmin,AIRS_GWv_vmax+0.2,0.2)
+            cbar    = fig.colorbar(result['cbar_pcoll'],cax=cax,ticks=AIRS_cbar_ticks,orientation='horizontal')
             cbar.set_label(result['cbar_label'])
-
-        profile_lat     = cld['a3d_prof_lat']
 
         print(' --> Loading AIRS3D Data')
         a3dw    = AIRS3D.AIRS3DWorld(date)
-        a3dlp   = AIRS3D.AIRS3DLatProfile(cld['a3d_prof_bname'],date,lat=profile_lat)
-
-        # Determine Longitude Boundaries for region where there is valid data.
-        tf              = np.isfinite(a3dlp.Tpert)
-        LONS            = a3dlp.lons.copy()
-        LONS.shape      = (len(LONS),1)
-        LONS            = LONS*np.ones_like(tf,dtype=float)
-        profile_lons    = [np.min(LONS[tf]),np.max(LONS[tf])]
 
         print(' --> Plotting AIRS Global Temperature Perturbation Map')
-        row_inx += 1
-        bottom  = 1. - np.sum(row_heights[:row_inx+1])
-        height  = row_heights[row_inx] - row_pad
+        m2vx = {}
+        m2vx['colors']      = 'white'
+        col_inx += 1
+        left    = np.sum(col_fwidths[:col_inx])
+        width   = col_fwidths[col_inx]
         ax      = fig.add_axes([left,bottom,width,height],projection=ccrs.Orthographic(lon_down,90))
         result  = a3dw.plot_ax(ax=ax,vmin=-0.5,vmax=0.5)
-        mca.overlay_windspeed(ax,date)
-        mca.overlay_vortex(ax,date,merra2_vortex_kw=merra2_vortex_kw)
+        mca.overlay_windspeed(ax,date, merra2_windspeed_kw=m2ws)
+        mca.overlay_vortex(ax,date,merra2_vortex_kw=m2vx)
+        ax.set_title(title,pad=18,fontdict=title_fontdict)
 
         letter = '({!s})'.format(letters[row_inx,col_inx])
-        ax.text(0.025,0.95,letter,transform=ax.transAxes,
-                    fontdict={'weight':'bold','size':24})
+        ax.text(0.025,0.95,letter,transform=ax.transAxes,fontdict=letter_fontdict)
 
-#        ax.hlines(profile_lat,profile_lons[0],profile_lons[1],color='#FE6100',lw=4)
-        if col_inx == nrows-1:
-            cbar_bottom = bottom
-            cbar_height = height
-
+        if row_inx == nrows-1:
+            cbar_width  = 0.8*width
+            cbar_left   = left + (width-cbar_width)/2.
             cax     = fig.add_axes([cbar_left,cbar_bottom,cbar_width,cbar_height])
             cax.grid(False)
-            cbar    = fig.colorbar(result['cbar_pcoll'],cax=cax,extend='both')
+            cbar    = fig.colorbar(result['cbar_pcoll'],cax=cax,extend='both',orientation='horizontal')
             cbar.set_label(result['cbar_label'])
 
-#        # We were originally going to have altitude profiles of the AIRS data,
-#        # but later decided those plots were not necessary for this paper.
-#        print(' --> Plotting AIRS Temperature Perturbation Profile')
-#        row_inx += 1
-#        bottom  = 1. - np.sum(row_heights[:row_inx+1])
-#        height  = row_heights[row_inx] - row_pad
-#        ax      = fig.add_axes([left,bottom,width,height])
-#        result  = a3dlp.plot_ax(ax=ax,vmin=-3,vmax=3,xlim=profile_lons)
-#        ax.set_title(result['title'])
-#        if col_inx == nrows-1:
-#            cbar_bottom = bottom
-#            cbar_height = height
-#
-#            cax     = fig.add_axes([cbar_left,cbar_bottom,cbar_width,cbar_height])
-#            cax.grid(False)
-#            cbar    = fig.colorbar(result['cbar_pcoll'],cax=cax,extend='both')
-#            cbar.set_label(result['cbar_label'])
+    ################################################################################ 
+    # Hovmoller Diagram
+    col_inx += 1
+    left    = np.sum(col_fwidths[:col_inx]) + 0.075
+    width   = col_fwidths[col_inx]
+    bottom  = 0.020
+    height  = 0.940 - bottom
+    ax = fig.add_axes([left,bottom,width,height])
 
+    hov     = hovmoller.Hovmoller()
+    ylim    = (datetime.datetime(2019,3,1),datetime.datetime(2018,12,1))
 
-#        cbar_pcoll = result.get('cbar_pcoll')
-#        if cbar_pcoll is not None:
-#            fig.colorbar(cbar_pcoll,label=result['cbar_label'])
+    m2ws = {}
+    m2ws['levels']      = [-20,0,30,50]
+    m2ws['colors']      = ['0.5','0.5','orange','red']
+
+    result  = hov.plot_ax(ax,
+            vmin=AIRS_GWv_vmin,vmax=AIRS_GWv_vmax,cmap=AIRS_GWv_cmap,levels=AIRS_GWv_levels,
+            merra2_windspeed_kw=m2ws,ylim=ylim)
+
+    ########################################
+    # Add lines showing times of maps in left columns.
+    hlines  = list(rows_dct.keys())
+    for hline in hlines:
+        ax.axhline(hline,lw=5,color='fuchsia',zorder=10000)
+
+    ########################################
+    # Add horizontal lines for the start and end of the SSW.
+    ssw_hlines  = []
+    ssw_hlines.append(datetime.datetime(2018,12,25))
+    ssw_hlines.append(datetime.datetime(2019,1,10))
+#    for ssw_hline in ssw_hlines:
+#        ax.axhline(ssw_hline,lw=5,color='orange',zorder=10000)
+
+    # Right-hand bracket for SSW.
+    transform = mpl.transforms.blended_transform_factory(ax.transAxes, ax.transData)
+    ssw_x0  = 0
+    ssw_x1  = 1.025
+    ssw_ls  = {'lw':8,'clip_on':False,'color':'DarkGoldenRod','zorder':10000}
+
+    xx  = [ssw_x0,ssw_x1]
+    yy  = [ssw_hlines[0],ssw_hlines[0]]
+    ax.plot(xx,yy,transform=transform,**ssw_ls)
+
+    xx  = [ssw_x0,ssw_x1]
+    yy  = [ssw_hlines[1],ssw_hlines[1]]
+    ax.plot(xx,yy,transform=transform,**ssw_ls)
+
+    xx  = [ssw_x1,ssw_x1]
+    yy  = [ssw_hlines[0],ssw_hlines[1]]
+    ax.plot(xx,yy,transform=transform,**ssw_ls)
+
+    xx  = [ssw_x1,ssw_x1+0.025]
+    yy  = [ssw_hlines[0]+(ssw_hlines[1]-ssw_hlines[0])/2]*2
+    ax.plot(xx,yy,transform=transform,**ssw_ls)
+    xx_txt  = xx[1]+0.01
+    yy_txt  = yy[1]
+    ax.text(xx_txt,yy_txt,'SSW',transform=transform,va='center',
+            fontdict={'weight':'bold','size':'x-large'},color=ssw_ls.get('color'))
+
+    ########################################
+    # Format yticks correctly.
+    extra_dates = []
+    extra_dates += hlines
+    extra_dates += ssw_hlines
+
+    yticks      = ax.get_yticks()
+    ytl_dates   = []
+    for ytick in yticks:
+        date    = mpl.dates.num2date(ytick)
+        ytl_dates.append(date)
+
+    for extra_date in extra_dates:
+        extra_date = extra_date.replace(tzinfo=pytz.UTC)
+        if extra_date not in ytl_dates:
+            ytl_dates.append(extra_date)
+
+    ytl_dates.sort()
+
+    ytls    = []
+    for date in ytl_dates:
+        ytl     = date.strftime('%b %d')
+        ytls.append(ytl)
+    ax.set_yticks(ytl_dates)
+    ax.set_yticklabels(ytls)
+    title_pad   = 15.
+    title       = '{!s} - {!s}'.format(min(ylim).strftime('%d %b %Y'),max(ylim).strftime('%d %b %Y'))
+    ax.set_title(title,fontdict=title_fontdict,pad=title_pad)
+    ax.set_title('(g)',loc='left',fontdict=letter_fontdict,pad=title_pad)
+
+    cbar_width  = 0.8*width
+    cbar_left   = left + (width-cbar_width)/2.
+    cax     = fig.add_axes([cbar_left,cbar_bottom,cbar_width,cbar_height])
+    cax.grid(False)
+    cbar    = fig.colorbar(result['cbar_pcoll'],cax=cax,extend='both',orientation='horizontal')
+    cbar.set_label(result['cbar_label'])
+    dtick   = 0.2
+    cax.set_xticks(np.arange(AIRS_GWv_vmin,AIRS_GWv_vmax+dtick,dtick))
 
     fig.savefig(png_fpath,bbox_inches='tight')
     plt.close(fig)
