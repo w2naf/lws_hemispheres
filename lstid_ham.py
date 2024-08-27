@@ -116,6 +116,8 @@ class LSTID_HAM(object):
     def plot_ax(self,ax,xlim=None,ylabel_fontdict={},legend_fontsize='large',
             legend_ncols=2,plot_sme=False,**kwargs):
         
+#        plot_sme=True
+
         fig      = ax.get_figure()
         
         df       = self.df
@@ -148,18 +150,23 @@ class LSTID_HAM(object):
             xlim = (min(xx), max(xx))
 
         yy           = df['amplitude_km']
-        rolling_days = 2
-        yy_roll      = df['amplitude_km'].rolling(rolling_days,center=True).mean()
+        rolling_days = 3 
+        min_periods  = 2
+        yy_roll      = df['amplitude_km'].rolling(rolling_days,min_periods=min_periods,center=True).mean()
         ylabel       = 'LSTID Amplitude [km]'
-        hndl         = ax.plot(xx,yy,label='Raw Data',color='grey')
+        hndl         = ax.plot(xx,yy,label='Raw Data',color='grey',lw=2)
         hndls.append(hndl)
-        hndl         = ax.plot(xx,yy_roll,label=f'{rolling_days} Day Rolling Mean',color='blue',lw=3)
+
+        nans                = np.isnan(yy)
+        yy_roll_nans        = yy_roll.copy()
+        yy_roll_nans[nans]  = np.nan
+        hndl         = ax.plot(xx,yy_roll_nans,label=f'{rolling_days} Day Rolling Mean',color='blue',lw=3)
         hndls.append(hndl)
         ax.set_ylabel(ylabel,fontdict=ylabel_fontdict)
         ax.set_xlabel('UTC Date')
 
         vmin            = np.nanmin(yy_roll)
-        vmax            = 50
+        vmax            = 45
         T_hr_cmap       = 'rainbow'
         cmap            = mpl.colormaps.get_cmap(T_hr_cmap)
         cmap.set_bad(color='white')

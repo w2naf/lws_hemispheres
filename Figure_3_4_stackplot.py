@@ -376,35 +376,68 @@ def annotate_lstid_ham(params,ax_list):
     ax2 = ax_list[2]['ax']
     fig = ax1.get_figure()
 
+    # Original attemped at arrows
+        # Original attemped at arrows
+#    gw_arrows   = []
+#    gw_arrows.append(datetime.datetime(2018,11,10))
+#    gw_arrows.append(datetime.datetime(2018,11,15))
+#    gw_arrows.append(datetime.datetime(2018,11,27))
+#    gw_arrows.append(datetime.datetime(2018,12,9))
+#    gw_arrows.append(datetime.datetime(2018,12,14))
+#    gw_arrows.append(datetime.datetime(2018,12,23))
+#    gw_arrows.append(datetime.datetime(2019,2,11))
+#    gw_arrows.append(datetime.datetime(2019,3,1))
+#
+#    ae_arrows   = []
+#    ae_arrows.append(datetime.datetime(2018,11,10))
+#    ae_arrows.append(datetime.datetime(2018,11,20))
+#    ae_arrows.append(datetime.datetime(2018,11,27))
+#    ae_arrows.append(datetime.datetime(2018,12,3))
+#    ae_arrows.append(datetime.datetime(2018,12,9))
+#    ae_arrows.append(datetime.datetime(2019,2,1))
+#    ae_arrows.append(datetime.datetime(2019,3,1))
+#    ae_arrows.append(datetime.datetime(2019,3,16))
+#
+#    ae_xs   = []
+#    ae_xs.append(datetime.datetime(2018,12,19))
+#    ae_xs.append(datetime.datetime(2018,12,29))
+#    ae_xs.append(datetime.datetime(2019,1,7))
+#    ae_xs.append(datetime.datetime(2019,1,25))
+#    ae_xs.append(datetime.datetime(2019,3,29))
+#    ae_xs.append(datetime.datetime(2019,4,6))
+#    ae_xs.append(datetime.datetime(2019,4,15))
+#    ae_xs.append(datetime.datetime(2019,4,24))
+
+    # Revised Attempt
     gw_arrows   = []
-    gw_arrows.append(datetime.datetime(2018,11,10))
+    gw_arrows.append(datetime.datetime(2018,11,9))
     gw_arrows.append(datetime.datetime(2018,11,15))
-    gw_arrows.append(datetime.datetime(2018,11,27))
-    gw_arrows.append(datetime.datetime(2018,12,9))
-    gw_arrows.append(datetime.datetime(2018,12,14))
+    gw_arrows.append(datetime.datetime(2018,11,20))
+    gw_arrows.append(datetime.datetime(2018,12,3))
+    gw_arrows.append(datetime.datetime(2018,12,7))
+    gw_arrows.append(datetime.datetime(2018,12,15))
     gw_arrows.append(datetime.datetime(2018,12,23))
+    gw_arrows.append(datetime.datetime(2019,1,15))
     gw_arrows.append(datetime.datetime(2019,2,11))
     gw_arrows.append(datetime.datetime(2019,3,1))
 
     ae_arrows   = []
-    ae_arrows.append(datetime.datetime(2018,11,10))
     ae_arrows.append(datetime.datetime(2018,11,20))
-    ae_arrows.append(datetime.datetime(2018,11,27))
     ae_arrows.append(datetime.datetime(2018,12,3))
-    ae_arrows.append(datetime.datetime(2018,12,9))
+    ae_arrows.append(datetime.datetime(2019,1,5))
+    ae_arrows.append(datetime.datetime(2019,1,26))
     ae_arrows.append(datetime.datetime(2019,2,1))
     ae_arrows.append(datetime.datetime(2019,3,1))
-    ae_arrows.append(datetime.datetime(2019,3,16))
 
     ae_xs   = []
-    ae_xs.append(datetime.datetime(2018,12,19))
-    ae_xs.append(datetime.datetime(2018,12,29))
-    ae_xs.append(datetime.datetime(2019,1,7))
-    ae_xs.append(datetime.datetime(2019,1,25))
-    ae_xs.append(datetime.datetime(2019,3,29))
-    ae_xs.append(datetime.datetime(2019,4,6))
-    ae_xs.append(datetime.datetime(2019,4,15))
-    ae_xs.append(datetime.datetime(2019,4,24))
+#    ae_xs.append(datetime.datetime(2018,12,19))
+#    ae_xs.append(datetime.datetime(2018,12,29))
+#    ae_xs.append(datetime.datetime(2019,1,7))
+#    ae_xs.append(datetime.datetime(2019,1,25))
+#    ae_xs.append(datetime.datetime(2019,3,29))
+#    ae_xs.append(datetime.datetime(2019,4,6))
+#    ae_xs.append(datetime.datetime(2019,4,15))
+#    ae_xs.append(datetime.datetime(2019,4,24))
 
     aprops  = {}
     head_width              = 1.25
@@ -1487,9 +1520,9 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,
 
     fig.tight_layout()
 
-#    if (params == ['merra2CipsAirsTimeSeries', 'lstid_ham', 'sme']) \
-#            and season == '20181101_20190501':
-#        annotate_lstid_ham(params,ax_list)
+    if (params == ['merra2CipsAirsTimeSeries', 'lstid_ham', 'sme']) \
+            and season == '20181101_20190501':
+        annotate_lstid_ham(params,ax_list)
 
     axs = [x['ax'] for x in ax_list]
     alpha_rectangle(axs)
@@ -1699,15 +1732,16 @@ if __name__ == '__main__':
 #    mark_dates.append(datetime.datetime(2019,2,25))     # GWs and MSTIDs; LSTIDs enhance on 28 Feb
 
     stack_sets  = {}
-    ss = stack_sets['figure_3'] = []
-    ss.append('merra2CipsAirsTimeSeries')
-    ss.append('HIAMCM')
-    ss.append('gnss_dtec_gw')
-    ss.append('meanSubIntSpect_by_rtiCnt')
-
+#    ss = stack_sets['figure_3'] = []
+#    ss.append('merra2CipsAirsTimeSeries')
+#    ss.append('HIAMCM')
+#    ss.append('gnss_dtec_gw')
+#    ss.append('meanSubIntSpect_by_rtiCnt')
+#
     ss = stack_sets['figure_4'] = []
     ss.append('merra2CipsAirsTimeSeries')
     ss.append('lstid_ham')
+#    ss.append('meanSubIntSpect_by_rtiCnt')
     ss.append('sme')
 
     ss = stack_sets['lstid_mstid_stack'] = []

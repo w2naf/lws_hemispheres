@@ -77,6 +77,8 @@ class SME_PLOT(object):
         tf      = np.logical_and(df.index >= xlim[0], df.index < xlim[1])
         df      = df[tf].copy()
 
+#        df      = df.rolling('D').median()
+
         xx      = df.index
         yy      = df['SME']
         ylabel  = 'SME Index [nT]'
@@ -89,6 +91,7 @@ class SME_PLOT(object):
         ax.set_title(title)
 
         ax.set_xlim(xlim)
+
 
         result  = {}
         result['title'] = title
