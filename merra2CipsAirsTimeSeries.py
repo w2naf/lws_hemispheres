@@ -89,6 +89,17 @@ class Merra2CipsAirsTS(object):
         lbl     = 'CIPS (50 km)'
         ax1.plot(xx,yy,color='fuchsia',lw=airs_cips_lw,zorder=100,label=lbl)
         
+        # Save CIPS and AIRS GW Variance to CSV
+        dfd = {}
+        dfd['AIRS_GW_VARIANCE']  = ds['AIRS_GW_VARIANCE']
+        dfd['CIPS_GW_VARIANCE']  = ds['CIPS_GW_VARIANCE']
+        df = pd.DataFrame(dfd,index=dates)
+        sDate_str  = sDate.strftime('%Y%m%d')
+        eDate_str  = eDate.strftime('%Y%m%d')
+        csv_path    = os.path.join(output_dir,f'{sDate_str}-{eDate_str}_AIRS_CIPS_GW.csv')
+        print('SAVE csv: {!s}'.format(csv_path))
+        df.to_csv(csv_path)
+        
         lbl     = 'CIPS (%$^{2}$) and AIRS (K$^{2}$)\nGW Variance'
         ax1.set_ylabel(lbl,fontdict=ylabel_fontdict)
         ax1.grid(False)
