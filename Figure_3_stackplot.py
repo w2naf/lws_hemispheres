@@ -493,20 +493,23 @@ def annotate_lstid_ham_all(params,ax_list,sDate,eDate):
     gw_arrows   = []
     ae_arrows   = []
 
+    gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,11,9)})
     gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,11,20)})
+    gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,12,7)})
     gw_arrows.append({'height':0.40,'color':'maroon', 'date':datetime.datetime(2018,12,15)})
     gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,12,20)})
     gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2019,2,2)})
     gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2019,2,11)})
 
+    ae_arrows.append(datetime.datetime(2018,11,9)) # Mystery Day
     ae_arrows.append(datetime.datetime(2018,11,20))
-    ae_arrows.append(datetime.datetime(2018,12,3))
-    ae_arrows.append(datetime.datetime(2018,12,7))
+#    ae_arrows.append(datetime.datetime(2018,12,3))
+#    ae_arrows.append(datetime.datetime(2018,12,7))
     ae_arrows.append(datetime.datetime(2018,12,20))
-    ae_arrows.append(datetime.datetime(2019,1,6))
+#    ae_arrows.append(datetime.datetime(2019,1,6))
     ae_arrows.append(datetime.datetime(2019,2,2))
     ae_arrows.append(datetime.datetime(2019,3,1))
-    ae_arrows.append(datetime.datetime(2019,1,26))
+#    ae_arrows.append(datetime.datetime(2019,1,26))
 
     aprops  = {}
     head_width              = 1.25
