@@ -490,26 +490,36 @@ def annotate_lstid_ham_all(params,ax_list,sDate,eDate):
 
     fig = ax1.get_figure()
 
+#    9 LSTID days >= 55 km oscillation amplitude
+#      2018-11-09: 75 km
+#      2018-12-07: 65 km
+#      2018-12-15: 58 km
+#      2018-12-22: 76 km
+#      2018-12-24: 64 km
+#      2018-12-25: 65 km
+#      2018-12-28: 61 km
+#      2019-02-11: 62 km
+#      2019-03-01: 56 km
+
     gw_arrows   = []
     ae_arrows   = []
 
     gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,11,9)})
-    gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,11,20)})
+    ae_arrows.append(datetime.datetime(2018,11,9)) # Mystery Day
+
     gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,12,7)})
+    ae_arrows.append(datetime.datetime(2018,12,7))
+
     gw_arrows.append({'height':0.40,'color':'maroon', 'date':datetime.datetime(2018,12,15)})
-    gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,12,20)})
-    gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2019,2,2)})
+
+    gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,12,22)})
+#    gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,12,24)})
+#    gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,12,25)})
+    ae_arrows.append(datetime.datetime(2018,12,28))
+
     gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2019,2,11)})
 
-    ae_arrows.append(datetime.datetime(2018,11,9)) # Mystery Day
-    ae_arrows.append(datetime.datetime(2018,11,20))
-#    ae_arrows.append(datetime.datetime(2018,12,3))
-#    ae_arrows.append(datetime.datetime(2018,12,7))
-    ae_arrows.append(datetime.datetime(2018,12,20))
-#    ae_arrows.append(datetime.datetime(2019,1,6))
-    ae_arrows.append(datetime.datetime(2019,2,2))
     ae_arrows.append(datetime.datetime(2019,3,1))
-#    ae_arrows.append(datetime.datetime(2019,1,26))
 
     aprops  = {}
     head_width              = 1.25

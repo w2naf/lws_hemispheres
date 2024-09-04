@@ -116,8 +116,6 @@ class LSTID_HAM(object):
     def plot_ax(self,ax,xlim=None,ylabel_fontdict={},legend_fontsize='large',
             legend_ncols=2,plot_sme=False,**kwargs):
         
-#        plot_sme=True
-
         fig      = ax.get_figure()
         
         df       = self.df
@@ -174,9 +172,26 @@ class LSTID_HAM(object):
         cbar_pcoll      = ax.bar(xx,1,width=1,color=color,align='edge',zorder=-1,transform=trans,alpha=0.5)
         cbar_label      = 'Amplitude [km]'
 
+        # Identify LSTID Events above a threshold.
+
+        min_amp     = 55
+        tf          = df['amplitude_km'] >= min_amp
+        df_min_amp  = df[tf].copy()
+
+        xx  = df_min_amp['date']+datetime.timedelta(hours=12)
+        yy  = df_min_amp['amplitude_km']
+        lbl = '{!s} Days $>=$ {!s} km Amplitude'.format(len(df_min_amp),min_amp)
+        hndl    = ax.scatter(xx,yy,marker='*',fc='yellow',ec='black',s=400,zorder=7000,label=lbl)
+        hndls.append([hndl])
+#        ax.axhline(min_amp,zorder=7000)
+
+        print(lbl)
+        for rinx,row in df_min_amp.iterrows():
+            print('  {!s}: {:0.0f} km'.format(row['date'].strftime('%Y-%m-%d'),row['amplitude_km']))
+
         text = 'Automated SinFit'
-        
         ax.text(0.01,0.95,text,transform=ax.transAxes)
+
         hndls = list(itertools.chain.from_iterable(hndls))
         legend_ncols = 1
         ax.legend(handles=hndls,loc='upper right',fontsize=legend_fontsize,ncols=legend_ncols)
@@ -210,7 +225,7 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    for plot_sme in [True,False]:
+    for plot_sme in [False]:
         lstid = LSTID_HAM()
         if plot_sme:
             png_fname   = 'lstid_ham_sme.png'
