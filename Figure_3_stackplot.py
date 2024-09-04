@@ -1801,34 +1801,8 @@ if __name__ == '__main__':
     mark_dates.append(datetime.datetime(2018,12,25))
     mark_dates.append(datetime.datetime(2019,1,10))
 
-##    GW/TID Inflection Dates
-#    mark_dates = []
-#    mark_dates.append(datetime.datetime(2018,12,19))
-#    mark_dates.append(datetime.datetime(2019,1,15))
-#    mark_dates.append(datetime.datetime(2019,3,3))
-
-##   Days with GWs/TIDs in all instruments
-#    mark_dates = []
-#    mark_dates.append(datetime.datetime(2018,12,10))    # All instruments
-#    mark_dates.append(datetime.datetime(2018,12,19))    # GWs and MSTIDs; LSTIDs enhance on 21 Dec
-#    mark_dates.append(datetime.datetime(2019,2,2))      # All instruments
-#    mark_dates.append(datetime.datetime(2019,2,11))     # All instruments
-#    mark_dates.append(datetime.datetime(2019,2,25))     # GWs and MSTIDs; LSTIDs enhance on 28 Feb
-
     stack_sets  = {}
-#    ss = stack_sets['figure_3'] = []
-#    ss.append('merra2CipsAirsTimeSeries')
-#    ss.append('HIAMCM')
-#    ss.append('gnss_dtec_gw')
-#    ss.append('meanSubIntSpect_by_rtiCnt')
-#
-#    ss = stack_sets['figure_4'] = []
-#    ss.append('merra2CipsAirsTimeSeries')
-#    ss.append('lstid_ham')
-##    ss.append('meanSubIntSpect_by_rtiCnt')
-#    ss.append('sme')
-
-    ss = stack_sets['lstid_mstid_stack'] = []
+    ss = stack_sets['figure_3'] = []
     ss.append('merra2CipsAirsTimeSeries')
     ss.append('HIAMCM')
     ss.append('gnss_dtec_gw')
@@ -1841,7 +1815,7 @@ if __name__ == '__main__':
             stack_dir  = os.path.join(output_base_dir,'stackplots',stack_code)
             prep_dir(stack_dir,clear=True)
             for season in seasons:
-                if stack_code in ['figure_3','figure_4']:
+                if stack_code in ['figure_3']:
                     if season != '20181101_20190501':
                         continue
                 png_name    = '{!s}_stack_{!s}.png'.format(season,stack_code)
