@@ -1602,11 +1602,11 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,
         my_xticks(sDate,eDate,ax,radar_ax=radar_ax,
                   labels=False,short_labels=True,plot_axvline=False)
 
-#        if mark_dates is not None:
-#            bottom = 0.5
-#            if inx == len(params) - 1:
-#                bottom = 0.020
-#            mark_axvline(mark_dates,sDate,eDate,ax,radar_ax=radar_ax,bottom=bottom)
+        if mark_dates is not None:
+            bottom = 0.5
+            if inx == len(params) - 1:
+                bottom = 0.020
+            mark_axvline(mark_dates,sDate,eDate,ax,radar_ax=radar_ax,bottom=bottom)
 
     fig.tight_layout()
 
@@ -1815,11 +1815,6 @@ if __name__ == '__main__':
 ################################################################################
 # STACKPLOTS ###################################################################
 
-#   SSW Start/End Dates
-    mark_dates = []
-    mark_dates.append(datetime.datetime(2018,12,25))
-    mark_dates.append(datetime.datetime(2019,1,10))
-
     stack_sets  = {}
     ss = stack_sets['figure_3'] = []
     ss.append('merra2CipsAirsTimeSeries')
@@ -1839,5 +1834,4 @@ if __name__ == '__main__':
                         continue
                 png_name    = '{!s}_stack_{!s}.png'.format(season,stack_code)
                 png_path    = os.path.join(stack_dir,png_name) 
-                stackplot(po_dct,stack_params,season,fpath=png_path,
-                        mark_dates=mark_dates)
+                stackplot(po_dct,stack_params,season,fpath=png_path)
