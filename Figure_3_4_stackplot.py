@@ -490,42 +490,23 @@ def annotate_lstid_ham_all(params,ax_list,sDate,eDate):
 
     fig = ax1.get_figure()
 
-    # Revised Attempt
-    # Maroon --> Source is AIRS or CIPS
-    # Blue   --> Source is Low MERRA2 Winds at 35 km Geopotential Height
-    # Red    --> Source is SME
     gw_arrows   = []
     ae_arrows   = []
-    gw_arrows.append({'height':0.40,'color':'blue', 'date':datetime.datetime(2018,11,9)})
 
+    gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,11,20)})
+    gw_arrows.append({'height':0.40,'color':'maroon', 'date':datetime.datetime(2018,12,15)})
+    gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,12,20)})
+    gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2019,2,2)})
+    gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2019,2,11)})
 
-    gw_arrows.append({'height':0.40,'color':'blue', 'date':datetime.datetime(2018,12,3)})
-    ae_arrows.append(datetime.datetime(2018,12,3))
-
-    gw_arrows.append({'height':0.10,'color':'maroon', 'date':datetime.datetime(2018,12,7)})
-    ae_arrows.append(datetime.datetime(2018,12,7))
-
-    gw_arrows.append({'height':0.10,'color':'maroon', 'date':datetime.datetime(2018,12,15)})
-
-    # 22 December 2018 should be both Maroon and Blue
-    gw_arrows.append({'height':0.40,'color':'blue', 'date':datetime.datetime(2018,12,22)})
-
-    gw_arrows.append({'height':0.40,'color':'blue', 'date':datetime.datetime(2019,1,6)})
-    ae_arrows.append(datetime.datetime(2019,1,6))
-
-    ae_arrows.append(datetime.datetime(2019,2,2))
-
-    gw_arrows.append({'height':0.10,'color':'maroon', 'date':datetime.datetime(2019,2,11)})
-
-    gw_arrows.append({'height':0.10,'color':'maroon', 'date':datetime.datetime(2019,3,1)})
-    ae_arrows.append(datetime.datetime(2019,3,1))
-
-    gw_arrows.append({'height':0.10,'color':'maroon', 'date':datetime.datetime(2019,1,20)})
-
-    ae_arrows.append(datetime.datetime(2019,1,26))
-
-#    gw_arrows.append({'height':0.10,'color':'maroon', 'date':datetime.datetime(2018,11,15)})
     ae_arrows.append(datetime.datetime(2018,11,20))
+    ae_arrows.append(datetime.datetime(2018,12,3))
+    ae_arrows.append(datetime.datetime(2018,12,7))
+    ae_arrows.append(datetime.datetime(2018,12,20))
+    ae_arrows.append(datetime.datetime(2019,1,6))
+    ae_arrows.append(datetime.datetime(2019,2,2))
+    ae_arrows.append(datetime.datetime(2019,3,1))
+    ae_arrows.append(datetime.datetime(2019,1,26))
 
     aprops  = {}
     head_width              = 1.25
@@ -536,7 +517,7 @@ def annotate_lstid_ham_all(params,ax_list,sDate,eDate):
 
     # Overlay the Gravity Wave Arrows
     for arrow_dct in gw_arrows:
-        arrow                   = arrow_dct.get('date')
+        arrow                   = arrow_dct.get('date') + datetime.timedelta(hours=12) # Make arrow plot in middle of day.
         aprops['edgecolor']     = arrow_dct['color']
         _arrow  = mpl.dates.date2num(arrow)
 
@@ -574,7 +555,7 @@ def annotate_lstid_ham_all(params,ax_list,sDate,eDate):
     # Overlay the Auroral Electrojet Arrows.
     aprops['edgecolor']     = 'red'
     for arrow in ae_arrows:
-        _arrow  = mpl.dates.date2num(arrow)
+        _arrow  = mpl.dates.date2num(arrow + datetime.timedelta(hours=12)) # Make arrow plot in middle of day.
         adct = {}
         adct['text']        = ''
         adct['xy']          = (_arrow, 0.25)
@@ -1706,8 +1687,8 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,
     _mld['transform'] = mpl.transforms.blended_transform_factory(ax.transData,ax.transAxes)
     _mld['clip_on']   = False
 
-    xx_0              = datetime.datetime(2018,12,25)
-    xx_1              = datetime.datetime(2019,1,10)
+    xx_0              = datetime.datetime(2018,12,25) + datetime.timedelta(hours=12)
+    xx_1              = datetime.datetime(2019,1,10)  + datetime.timedelta(hours=12)
     yy_0              = 0
     yy_1              = -0.125
     if ax_info.get('radar_ax',False):

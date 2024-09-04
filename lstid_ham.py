@@ -137,31 +137,28 @@ class LSTID_HAM(object):
             tfs.append(tf)
         is_lstid    = np.logical_and.reduce(tfs)
 
-#         Set days that do not meet the criteria to NaN so they do not plot.
+#       Set days that do not meet the criteria to NaN so they do not plot.
         df.loc[~is_lstid,'period_hr']      = np.nan
         df.loc[~is_lstid,'amplitude_km']   = np.nan
 
-#        df['amplitude_km'] = df['amplitude_km'].interpolate(method='linear')
-#        df    = df.dropna()
-        
-        xx      = df['date']
-        
+        xx          = df['date']
+        # Make daily values plot in the middle of the day.
+        xx_midday   = xx + datetime.timedelta(hours=12)
         if xlim is None:
             xlim = (min(xx), max(xx))
 
         yy           = df['amplitude_km']
-        rolling_days = 3 
-        min_periods  = 2
-        yy_roll      = df['amplitude_km'].rolling(rolling_days,min_periods=min_periods,center=True).mean()
-        ylabel       = 'LSTID Amplitude [km]'
-        hndl         = ax.plot(xx,yy,label='Raw Data',color='grey',lw=2)
+
+        hndl         = ax.plot(xx_midday,yy,label='Raw Data',color='grey',lw=2,zorder=6000)
         hndls.append(hndl)
 
-        nans                = np.isnan(yy)
-        yy_roll_nans        = yy_roll.copy()
-        yy_roll_nans[nans]  = np.nan
-        hndl         = ax.plot(xx,yy_roll_nans,label=f'{rolling_days} Day Rolling Mean',color='blue',lw=3)
+        rolling_days = 3 
+        min_periods  = 3
+        yy_roll      = df['amplitude_km'].rolling(rolling_days,min_periods=min_periods,center=True).mean()
+        hndl         = ax.plot(xx_midday,yy_roll,label=f'{rolling_days} Day Rolling Mean',color='blue',lw=3,zorder=6001)
         hndls.append(hndl)
+
+        ylabel       = 'LSTID Amplitude [km]'
         ax.set_ylabel(ylabel,fontdict=ylabel_fontdict)
         ax.set_xlabel('UTC Date')
 
@@ -173,7 +170,7 @@ class LSTID_HAM(object):
         norm            = mpl.colors.Normalize(vmin=vmin,vmax=vmax)
         mpbl            = mpl.cm.ScalarMappable(norm,cmap)
         color           = mpbl.to_rgba(yy_roll)
-        trans           = mpl.transforms.blended_transform_factory( ax.transData, ax.transAxes)
+        trans           = mpl.transforms.blended_transform_factory(ax.transData, ax.transAxes)
         cbar_pcoll      = ax.bar(xx,1,width=1,color=color,align='edge',zorder=-1,transform=trans,alpha=0.5)
         cbar_label      = 'Amplitude [km]'
 
