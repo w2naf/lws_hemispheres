@@ -1602,11 +1602,11 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,
         my_xticks(sDate,eDate,ax,radar_ax=radar_ax,
                   labels=False,short_labels=True,plot_axvline=False)
 
-        if mark_dates is not None:
-            bottom = 0.5
-            if inx == len(params) - 1:
-                bottom = 0.020
-            mark_axvline(mark_dates,sDate,eDate,ax,radar_ax=radar_ax,bottom=bottom)
+#        if mark_dates is not None:
+#            bottom = 0.5
+#            if inx == len(params) - 1:
+#                bottom = 0.020
+#            mark_axvline(mark_dates,sDate,eDate,ax,radar_ax=radar_ax,bottom=bottom)
 
     fig.tight_layout()
 
@@ -1688,17 +1688,26 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,
     alpha_rectangle(axs)
     pop_xticklabels(axs)
 
-
-
     # Annotate SSW on bottom. ############## 
+    ssw_0              = datetime.datetime(2018,12,25) + datetime.timedelta(hours=12)
+    ssw_1              = datetime.datetime(2019,1,10)  + datetime.timedelta(hours=12)
+
+    for inx,(param,ax_info) in enumerate(zip(params,ax_list)):
+        ax          = ax_info.get('ax')
+        radar_ax    = ax_info.get('radar_ax',False)
+        bottom = 0.5
+        if inx == len(params) - 1:
+            bottom = 0.020
+        mark_axvline([ssw_0,ssw_1],sDate,eDate,ax,radar_ax=radar_ax,bottom=bottom)
+
     ax_info           = ax_list[-1]
     ax                = ax_info.get('ax')
     _mld              = mark_line_dict.copy()
     _mld['transform'] = mpl.transforms.blended_transform_factory(ax.transData,ax.transAxes)
     _mld['clip_on']   = False
 
-    xx_0              = datetime.datetime(2018,12,25) + datetime.timedelta(hours=12)
-    xx_1              = datetime.datetime(2019,1,10)  + datetime.timedelta(hours=12)
+    xx_0              = ssw_0
+    xx_1              = ssw_1
     yy_0              = 0
     yy_1              = -0.125
     if ax_info.get('radar_ax',False):
