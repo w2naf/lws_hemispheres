@@ -180,7 +180,7 @@ class LSTID_HAM(object):
 
         xx  = df_min_amp['date']+datetime.timedelta(hours=12)
         yy  = df_min_amp['amplitude_km']
-        lbl = '{!s} Days $>=$ {!s} km Amplitude'.format(len(df_min_amp),min_amp)
+        lbl = '{!s} Days '.format(len(df_min_amp)) + '$\geq$'+ ' {!s} km Amplitude'.format(min_amp)
         hndl    = ax.scatter(xx,yy,marker='*',fc='yellow',ec='black',s=400,zorder=7000,label=lbl)
         hndls.append([hndl])
 #        ax.axhline(min_amp,zorder=7000)

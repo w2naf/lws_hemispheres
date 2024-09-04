@@ -113,11 +113,11 @@ if __name__ == '__main__':
         os.makedirs(output_dir)
 
     xlim    = []
-#    xlim.append(datetime.datetime(2018,11,1))
-#    xlim.append(datetime.datetime(2019,5,1))
+    xlim.append(datetime.datetime(2018,11,1))
+    xlim.append(datetime.datetime(2019,5,1))
 
-    xlim.append(datetime.datetime(2018,11,19))
-    xlim.append(datetime.datetime(2018,11,21))
+#    xlim.append(datetime.datetime(2018,11,19))
+#    xlim.append(datetime.datetime(2018,11,21))
 
     png_fname   = 'sme_plot.png'
     png_fpath   = os.path.join(output_dir,png_fname)

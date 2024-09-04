@@ -510,7 +510,7 @@ def annotate_lstid_ham_all(params,ax_list,sDate,eDate):
     gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,12,7)})
     ae_arrows.append(datetime.datetime(2018,12,7))
 
-    gw_arrows.append({'height':0.40,'color':'maroon', 'date':datetime.datetime(2018,12,15)})
+    gw_arrows.append({'height':0.40,'color':'blue', 'date':datetime.datetime(2018,12,15)})
 
     gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,12,22)})
 #    gw_arrows.append({'height':0.40,'color':'blue',   'date':datetime.datetime(2018,12,24)})
