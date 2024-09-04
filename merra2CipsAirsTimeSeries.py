@@ -45,7 +45,7 @@ class Merra2CipsAirsTS(object):
     
     def plot_ax(self,ax,vmin=-20,vmax=100,levels=11,cmap='jet',
                 plot_cbar=True,cbar_pad=0.05,cbar_aspect=20,
-                ylabel_fontdict={},**kwargs):
+                ylabel_fontdict={},output_csv=False,**kwargs):
         fig     = ax.get_figure()
 
         ds      = self.ds
@@ -64,6 +64,23 @@ class Merra2CipsAirsTS(object):
         tf  = np.isfinite(yy)
         yy  = yy[tf]
         zz  = zz[tf,:]
+
+        if output_csv:
+            # Save Geopotential Height at Altitude of Interest to CSV
+            output_dir      = os.path.dirname(png_fpath)
+            alt_interest_inx = np.argmin(np.abs(yy-35))
+            alt_interest    = yy[alt_interest_inx]
+            zmzw_interest    = zz[alt_interest_inx,:]
+
+            dfd = {}
+            gph_key      = 'MERRA2ZonalWinds{:0.1f}kmGPH'.format(alt_interest)
+            dfd[gph_key] = zmzw_interest
+            df           = pd.DataFrame(dfd,index = dates)
+            sDate_str    = sDate.strftime('%Y%m%d')
+            eDate_str    = eDate.strftime('%Y%m%d')
+            csv_path     = os.path.join(output_dir,f'{sDate_str}-{eDate_str}_{gph_key}.csv')
+            print('SAVE csv: {!s}'.format(csv_path))
+            df.to_csv(csv_path)
 
         cbar_pcoll  = ax.contourf(xx,yy,zz,levels=levels,vmin=vmin,vmax=vmax,cmap=cmap)
         cntr        = ax.contour(xx,yy,zz,levels=levels,colors='0.3')
@@ -89,16 +106,17 @@ class Merra2CipsAirsTS(object):
         lbl     = 'CIPS (50 km)'
         ax1.plot(xx,yy,color='fuchsia',lw=airs_cips_lw,zorder=100,label=lbl)
         
-        # Save CIPS and AIRS GW Variance to CSV
-        dfd = {}
-        dfd['AIRS_GW_VARIANCE']  = ds['AIRS_GW_VARIANCE']
-        dfd['CIPS_GW_VARIANCE']  = ds['CIPS_GW_VARIANCE']
-        df = pd.DataFrame(dfd,index=dates)
-        sDate_str  = sDate.strftime('%Y%m%d')
-        eDate_str  = eDate.strftime('%Y%m%d')
-        csv_path    = os.path.join(output_dir,f'{sDate_str}-{eDate_str}_AIRS_CIPS_GW.csv')
-        print('SAVE csv: {!s}'.format(csv_path))
-        df.to_csv(csv_path)
+        if output_csv:
+            # Save CIPS and AIRS GW Variance to CSV
+            dfd = {}
+            dfd['AIRS_GW_VARIANCE']  = ds['AIRS_GW_VARIANCE']
+            dfd['CIPS_GW_VARIANCE']  = ds['CIPS_GW_VARIANCE']
+            df = pd.DataFrame(dfd,index=dates)
+            sDate_str  = sDate.strftime('%Y%m%d')
+            eDate_str  = eDate.strftime('%Y%m%d')
+            csv_path    = os.path.join(output_dir,f'{sDate_str}-{eDate_str}_AIRS_CIPS_GW.csv')
+            print('SAVE csv: {!s}'.format(csv_path))
+            df.to_csv(csv_path)
         
         lbl     = 'CIPS (%$^{2}$) and AIRS (K$^{2}$)\nGW Variance'
         ax1.set_ylabel(lbl,fontdict=ylabel_fontdict)
@@ -120,4 +138,4 @@ if __name__ == '__main__':
     png_fpath   = os.path.join(output_dir,png_fname)
 
     mca = Merra2CipsAirsTS()
-    mca.plot_figure(png_fpath=png_fpath)
+    mca.plot_figure(png_fpath=png_fpath,output_csv=True)

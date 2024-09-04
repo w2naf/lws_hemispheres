@@ -55,7 +55,7 @@ class SME_PLOT(object):
     def __init__(self):
         self.df = load_supermag()
 
-    def plot_figure(self,png_fpath='output.png',figsize=(16,5),**kwargs):
+    def plot_figure(self,png_fpath='output.png',figsize=(16,5),output_csv=True,**kwargs):
         fig     = plt.figure(figsize=figsize)
         ax      = fig.add_subplot(1,1,1)
 
@@ -64,8 +64,15 @@ class SME_PLOT(object):
         fig.tight_layout()
         fig.savefig(png_fpath,bbox_inches='tight')
         plt.close(fig)
-    
-    def plot_ax(self,ax,xlim=None,ylabel_fontdict={},legend_fontsize='large',**kwargs):
+
+        if output_csv:
+            df_daily = result['df_daily']
+            csv_fpath   = png_fpath.replace('.png','_daily_avg.csv')
+            df_daily['SME'].to_csv(csv_fpath)
+            print('SAVING: {!s}'.format(csv_fpath))
+
+    def plot_ax(self,ax,xlim=None,ylabel_fontdict={},legend_fontsize='large',
+            **kwargs):
         fig     = ax.get_figure()
         
         df      = self.df
@@ -77,24 +84,27 @@ class SME_PLOT(object):
         tf      = np.logical_and(df.index >= xlim[0], df.index < xlim[1])
         df      = df[tf].copy()
 
-#        df      = df.rolling('D').median()
+#        xx       = df.index
+#        yy       = df['SME']
+#        ax.plot(xx,yy,ls='-',color='black',label='SME 1-Minute')
 
-        xx      = df.index
-        yy      = df['SME']
-        ylabel  = 'SME Index [nT]'
-        ax.set_ylabel(ylabel,fontdict=ylabel_fontdict)
-        ax.set_xlabel('UTC Date')
+        df_daily = df.resample('D').mean()
+        xx       = df_daily.index
+        yy       = df_daily['SME']
+        ax.bar(xx,yy,align='edge',ls='',color='black',label='SME Daily Average')
 
-        ax.plot(xx,yy,color='k')
+        ax.set_ylabel('nT',fontdict=ylabel_fontdict)
+        ax.legend(loc='upper right',fontsize=legend_fontsize)
 
         title   = 'SuperMAG SME Index'
         ax.set_title(title)
 
         ax.set_xlim(xlim)
 
-
         result  = {}
-        result['title'] = title
+        result['title']    = title
+        result['df']       = df
+        result['df_daily'] = df_daily
         return result
 
 if __name__ == '__main__':
@@ -102,9 +112,16 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    xlim    = []
+#    xlim.append(datetime.datetime(2018,11,1))
+#    xlim.append(datetime.datetime(2019,5,1))
+
+    xlim.append(datetime.datetime(2018,11,19))
+    xlim.append(datetime.datetime(2018,11,21))
+
     png_fname   = 'sme_plot.png'
     png_fpath   = os.path.join(output_dir,png_fname)
 
     sme_plot    = SME_PLOT()
-    sme_plot.plot_figure(png_fpath=png_fpath)
+    sme_plot.plot_figure(xlim=xlim,png_fpath=png_fpath)
     print(png_fpath)

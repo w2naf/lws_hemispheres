@@ -333,7 +333,7 @@ def alpha_rectangle(axs,height=0.2):
     """
     bdct    = {}
     bdct['color']   = 'white'
-    bdct['alpha']   = 0.8
+    bdct['alpha']   = 0.6
     bdct['width']   = 1
     bdct['zorder']  = 50
     bdct['clip_on'] = False
@@ -363,133 +363,9 @@ def pop_xticklabels(axs):
             if txt.get_text() in xtnames:
                 fig.texts.append(txt)
 
-def annotate_lstid_ham(params,ax_list):
-    """
-    Add arrows to the lstid_ham panel to show relationship
-    with gravity waves and supermag (auroral) electrojet.
 
-    This is specifically for the 2018-2019 northern
-    hemisphere winter season.
-    """
-    ax0 = ax_list[0]['ax']
-    ax1 = ax_list[1]['ax']
-    ax2 = ax_list[2]['ax']
-    fig = ax1.get_figure()
-
-    # Original attemped at arrows
-        # Original attemped at arrows
-#    gw_arrows   = []
-#    gw_arrows.append(datetime.datetime(2018,11,10))
-#    gw_arrows.append(datetime.datetime(2018,11,15))
-#    gw_arrows.append(datetime.datetime(2018,11,27))
-#    gw_arrows.append(datetime.datetime(2018,12,9))
-#    gw_arrows.append(datetime.datetime(2018,12,14))
-#    gw_arrows.append(datetime.datetime(2018,12,23))
-#    gw_arrows.append(datetime.datetime(2019,2,11))
-#    gw_arrows.append(datetime.datetime(2019,3,1))
-#
-#    ae_arrows   = []
-#    ae_arrows.append(datetime.datetime(2018,11,10))
-#    ae_arrows.append(datetime.datetime(2018,11,20))
-#    ae_arrows.append(datetime.datetime(2018,11,27))
-#    ae_arrows.append(datetime.datetime(2018,12,3))
-#    ae_arrows.append(datetime.datetime(2018,12,9))
-#    ae_arrows.append(datetime.datetime(2019,2,1))
-#    ae_arrows.append(datetime.datetime(2019,3,1))
-#    ae_arrows.append(datetime.datetime(2019,3,16))
-#
-#    ae_xs   = []
-#    ae_xs.append(datetime.datetime(2018,12,19))
-#    ae_xs.append(datetime.datetime(2018,12,29))
-#    ae_xs.append(datetime.datetime(2019,1,7))
-#    ae_xs.append(datetime.datetime(2019,1,25))
-#    ae_xs.append(datetime.datetime(2019,3,29))
-#    ae_xs.append(datetime.datetime(2019,4,6))
-#    ae_xs.append(datetime.datetime(2019,4,15))
-#    ae_xs.append(datetime.datetime(2019,4,24))
-
-    # Revised Attempt
-    gw_arrows   = []
-    gw_arrows.append(datetime.datetime(2018,11,9))
-    gw_arrows.append(datetime.datetime(2018,11,15))
-    gw_arrows.append(datetime.datetime(2018,11,20))
-    gw_arrows.append(datetime.datetime(2018,12,3))
-    gw_arrows.append(datetime.datetime(2018,12,7))
-    gw_arrows.append(datetime.datetime(2018,12,15))
-    gw_arrows.append(datetime.datetime(2018,12,23))
-    gw_arrows.append(datetime.datetime(2019,1,15))
-    gw_arrows.append(datetime.datetime(2019,2,11))
-    gw_arrows.append(datetime.datetime(2019,3,1))
-
-    ae_arrows   = []
-    ae_arrows.append(datetime.datetime(2018,11,20))
-    ae_arrows.append(datetime.datetime(2018,12,3))
-    ae_arrows.append(datetime.datetime(2019,1,5))
-    ae_arrows.append(datetime.datetime(2019,1,26))
-    ae_arrows.append(datetime.datetime(2019,2,1))
-    ae_arrows.append(datetime.datetime(2019,3,1))
-
-    ae_xs   = []
-#    ae_xs.append(datetime.datetime(2018,12,19))
-#    ae_xs.append(datetime.datetime(2018,12,29))
-#    ae_xs.append(datetime.datetime(2019,1,7))
-#    ae_xs.append(datetime.datetime(2019,1,25))
-#    ae_xs.append(datetime.datetime(2019,3,29))
-#    ae_xs.append(datetime.datetime(2019,4,6))
-#    ae_xs.append(datetime.datetime(2019,4,15))
-#    ae_xs.append(datetime.datetime(2019,4,24))
-
-    aprops  = {}
-    head_width              = 1.25
-    head_length             = 1.75
-    aprops['arrowstyle']    = f"->,head_width={head_width},head_length={head_length}"
-    aprops['lw']            = 8
-    aprops['edgecolor']     = 'blue'
-    ytransaxes              = mpl.transforms.blended_transform_factory(ax1.transData,ax1.transAxes)
-
-    # Overlay the Gravity Wave Arrows
-    for arrow in gw_arrows:
-        _arrow  = mpl.dates.date2num(arrow)
-
-        adct = {}
-        adct['text']        = ''
-        adct['xy']          = (_arrow,0.675)
-        adct['xytext']      = (_arrow,1.30)
-        adct['arrowprops']  = aprops
-        adct['xycoords']    = ytransaxes
-        adct['textcoords']  = ytransaxes
-        ax1.annotate(**adct)
-
-    # Overlay the Auroral Electrojet Arrows.
-    aprops['edgecolor']     = 'red'
-    for arrow in ae_arrows:
-        _arrow  = mpl.dates.date2num(arrow)
-        adct = {}
-        adct['text']        = ''
-        adct['xy']          = (_arrow, 0.25)
-        adct['xytext']      = (_arrow,-0.40)
-        adct['arrowprops']  = aprops
-        adct['xycoords']    = ytransaxes
-        adct['textcoords']  = ytransaxes
-        ax1.annotate(**adct)
-        ax2.annotate(**adct)
-
-    # Overlay the Auroral Electrojet Xs
-    sdct = {}
-    sdct['y']           = [-0.300]
-    sdct['s']           = 750 
-    sdct['ec']          = 'black'
-    sdct['fc']          = 'red'
-    sdct['marker']      = 'X'
-    sdct['zorder']      = 500
-    sdct['transform']   = ytransaxes
-    sdct['clip_on']     = False
-    for ae_x in ae_xs:
-        ax1.scatter([ae_x],**sdct)
-        ax2.scatter([ae_x],**sdct)
-
-mark_line_dict = dict(lw=6,ls='-',color='DarkGoldenRod')
-def mark_axvline(dates,sDate,eDate,ax,radar_ax=False,extend=0.020,mark_line_dict=mark_line_dict):
+mark_line_dict = dict(lw=6,ls='-',color='DarkGoldenRod',zorder=5000)
+def mark_axvline(dates,sDate,eDate,ax,radar_ax=False,bottom=0.020,mark_line_dict=mark_line_dict):
     ytransaxes = mpl.transforms.blended_transform_factory(ax.transData,ax.transAxes)
     for date in dates:
         if radar_ax:
@@ -497,7 +373,7 @@ def mark_axvline(dates,sDate,eDate,ax,radar_ax=False,extend=0.020,mark_line_dict
         else:
             xpos    = date
 
-        axvline = ax.axvline(xpos,-1*extend,zorder=5000,**mark_line_dict)
+        axvline = ax.axvline(xpos,-1*bottom,**mark_line_dict)
         axvline.set_clip_on(False)
 
 def my_xticks(sDate,eDate,ax,radar_ax=False,labels=True,short_labels=False,
@@ -592,6 +468,228 @@ def get_coords(radar,win_sDate,radars,sDate,eDate,st_uts,verts=True):
         x0      = x1 + 0.5
         y0      = y1 + 0.5
         return (x0, y0)
+
+def annotate_lstid_ham_all(params,ax_list,sDate,eDate):
+    """
+    Add arrows to the lstid_ham panel to show relationship
+    with gravity waves and supermag (auroral) electrojet.
+
+    This is specifically for the 2018-2019 northern
+    hemisphere winter season.
+    """
+
+    # Find the ham_lstid axis and the one below it.
+    ham_ax = None
+    for ax_inx,ax_info in enumerate(ax_list):
+        if ax_info.get('param') == 'lstid_ham':
+            ham_ax_inx = ax_inx
+
+    ax1 = ax_list[ham_ax_inx]['ax']
+    if len(ax_list) > ham_ax_inx:
+        ax2 = ax_list[ham_ax_inx+1]['ax']
+
+    fig = ax1.get_figure()
+
+    # Revised Attempt
+    # Maroon --> Source is AIRS or CIPS
+    # Blue   --> Source is Low MERRA2 Winds at 35 km Geopotential Height
+    # Red    --> Source is SME
+    gw_arrows   = []
+    ae_arrows   = []
+    gw_arrows.append({'height':0.40,'color':'blue', 'date':datetime.datetime(2018,11,9)})
+
+
+    gw_arrows.append({'height':0.40,'color':'blue', 'date':datetime.datetime(2018,12,3)})
+    ae_arrows.append(datetime.datetime(2018,12,3))
+
+    gw_arrows.append({'height':0.10,'color':'maroon', 'date':datetime.datetime(2018,12,7)})
+    ae_arrows.append(datetime.datetime(2018,12,7))
+
+    gw_arrows.append({'height':0.10,'color':'maroon', 'date':datetime.datetime(2018,12,15)})
+
+    # 22 December 2018 should be both Maroon and Blue
+    gw_arrows.append({'height':0.40,'color':'blue', 'date':datetime.datetime(2018,12,22)})
+
+    gw_arrows.append({'height':0.40,'color':'blue', 'date':datetime.datetime(2019,1,6)})
+    ae_arrows.append(datetime.datetime(2019,1,6))
+
+    ae_arrows.append(datetime.datetime(2019,2,2))
+
+    gw_arrows.append({'height':0.10,'color':'maroon', 'date':datetime.datetime(2019,2,11)})
+
+    gw_arrows.append({'height':0.10,'color':'maroon', 'date':datetime.datetime(2019,3,1)})
+    ae_arrows.append(datetime.datetime(2019,3,1))
+
+    gw_arrows.append({'height':0.10,'color':'maroon', 'date':datetime.datetime(2019,1,20)})
+
+    ae_arrows.append(datetime.datetime(2019,1,26))
+
+#    gw_arrows.append({'height':0.10,'color':'maroon', 'date':datetime.datetime(2018,11,15)})
+    ae_arrows.append(datetime.datetime(2018,11,20))
+
+    aprops  = {}
+    head_width              = 1.25
+    head_length             = 1.75
+    aprops['arrowstyle']    = f"->,head_width={head_width},head_length={head_length}"
+    aprops['lw']            = 8
+    ytransaxes              = mpl.transforms.blended_transform_factory(ax1.transData,ax1.transAxes)
+
+    # Overlay the Gravity Wave Arrows
+    for arrow_dct in gw_arrows:
+        arrow                   = arrow_dct.get('date')
+        aprops['edgecolor']     = arrow_dct['color']
+        _arrow  = mpl.dates.date2num(arrow)
+
+        adct = {}
+        adct['text']        = ''
+        adct['xy']          = (_arrow,0.675)
+        adct['xytext']      = (_arrow,1.00)
+        adct['arrowprops']  = aprops
+        adct['xycoords']    = ytransaxes
+        adct['textcoords']  = ytransaxes
+        ax1.annotate(**adct)
+
+        for ax_inx,ax_info in enumerate(ax_list):
+            if ax_inx >= ham_ax_inx:
+                continue
+            
+            param = ax_info.get('param')
+
+            ax          = ax_info.get('ax')
+            radar_ax    = ax_info.get('radar_ax')
+            mark_line_dict = dict(lw=aprops['lw'],ls='-',color=aprops['edgecolor'],zorder=-500)
+            mark_axvline([arrow],sDate,eDate,ax,radar_ax=radar_ax,mark_line_dict=mark_line_dict,bottom=0.35)
+
+            if param == 'merra2CipsAirsTimeSeries':
+                _tmp_dict           = mark_line_dict.copy()
+                _tmp_dict['zorder'] = 5000
+                ax.axvline(arrow,0,arrow_dct['height'],**_tmp_dict)
+            elif param == 'meanSubIntSpect_by_rtiCnt':
+                xlim    = ax.get_xlim()
+                ax.axvspan(*xlim,color='#e6e6e6')
+            elif param == 'HIAMCM':
+                xlim    = ax.get_xlim()
+                ax.axvspan(*xlim,color='white',zorder=-1)
+
+    # Overlay the Auroral Electrojet Arrows.
+    aprops['edgecolor']     = 'red'
+    for arrow in ae_arrows:
+        _arrow  = mpl.dates.date2num(arrow)
+        adct = {}
+        adct['text']        = ''
+        adct['xy']          = (_arrow, 0.25)
+        adct['xytext']      = (_arrow,-0.40)
+        adct['arrowprops']  = aprops
+        adct['xycoords']    = ytransaxes
+        adct['textcoords']  = ytransaxes
+        ax1.annotate(**adct)
+        if ax2 is not None:
+            ax2.annotate(**adct)
+
+#    ae_xs   = []
+##    ae_xs.append(datetime.datetime(2018,12,19))
+#
+#    # Overlay the Auroral Electrojet Xs
+#    sdct = {}
+#    sdct['y']           = [-0.300]
+#    sdct['s']           = 750 
+#    sdct['ec']          = 'black'
+#    sdct['fc']          = 'red'
+#    sdct['marker']      = 'X'
+#    sdct['zorder']      = 500
+#    sdct['transform']   = ytransaxes
+#    sdct['clip_on']     = False
+#    for ae_x in ae_xs:
+#        ax1.scatter([ae_x],**sdct)
+#        if ax2 is not None:
+#            ax2.scatter([ae_x],**sdct)
+
+def annotate_lstid_ham(params,ax_list):
+    """
+    Add arrows to the lstid_ham panel to show relationship
+    with gravity waves and supermag (auroral) electrojet.
+
+    This is specifically for the 2018-2019 northern
+    hemisphere winter season.
+    """
+    ax0 = ax_list[0]['ax']
+    ax1 = ax_list[1]['ax']
+    ax2 = ax_list[2]['ax']
+    fig = ax1.get_figure()
+
+    # Revised Attempt
+    gw_arrows   = []
+    gw_arrows.append(datetime.datetime(2018,11,9))
+    gw_arrows.append(datetime.datetime(2018,11,15))
+    gw_arrows.append(datetime.datetime(2018,11,20))
+    gw_arrows.append(datetime.datetime(2018,12,3))
+    gw_arrows.append(datetime.datetime(2018,12,7))
+    gw_arrows.append(datetime.datetime(2018,12,15))
+    gw_arrows.append(datetime.datetime(2018,12,23))
+    gw_arrows.append(datetime.datetime(2019,1,15))
+    gw_arrows.append(datetime.datetime(2019,2,11))
+    gw_arrows.append(datetime.datetime(2019,3,1))
+
+    ae_arrows   = []
+    ae_arrows.append(datetime.datetime(2018,11,20))
+    ae_arrows.append(datetime.datetime(2018,12,3))
+    ae_arrows.append(datetime.datetime(2019,1,5))
+    ae_arrows.append(datetime.datetime(2019,1,26))
+    ae_arrows.append(datetime.datetime(2019,2,1))
+    ae_arrows.append(datetime.datetime(2019,3,1))
+
+    aprops  = {}
+    head_width              = 1.25
+    head_length             = 1.75
+    aprops['arrowstyle']    = f"->,head_width={head_width},head_length={head_length}"
+    aprops['lw']            = 8
+    aprops['edgecolor']     = 'blue'
+    ytransaxes              = mpl.transforms.blended_transform_factory(ax1.transData,ax1.transAxes)
+
+    # Overlay the Gravity Wave Arrows
+    for arrow in gw_arrows:
+        _arrow  = mpl.dates.date2num(arrow)
+
+        adct = {}
+        adct['text']        = ''
+        adct['xy']          = (_arrow,0.675)
+        adct['xytext']      = (_arrow,1.30)
+        adct['arrowprops']  = aprops
+        adct['xycoords']    = ytransaxes
+        adct['textcoords']  = ytransaxes
+        ax1.annotate(**adct)
+
+    # Overlay the Auroral Electrojet Arrows.
+    aprops['edgecolor']     = 'red'
+    for arrow in ae_arrows:
+        _arrow  = mpl.dates.date2num(arrow)
+        adct = {}
+        adct['text']        = ''
+        adct['xy']          = (_arrow, 0.25)
+        adct['xytext']      = (_arrow,-0.40)
+        adct['arrowprops']  = aprops
+        adct['xycoords']    = ytransaxes
+        adct['textcoords']  = ytransaxes
+        ax1.annotate(**adct)
+        ax2.annotate(**adct)
+
+
+    ae_xs   = []
+#    ae_xs.append(datetime.datetime(2018,12,19))
+
+    # Overlay the Auroral Electrojet Xs
+    sdct = {}
+    sdct['y']           = [-0.300]
+    sdct['s']           = 750 
+    sdct['ec']          = 'black'
+    sdct['fc']          = 'red'
+    sdct['marker']      = 'X'
+    sdct['zorder']      = 500
+    sdct['transform']   = ytransaxes
+    sdct['clip_on']     = False
+    for ae_x in ae_xs:
+        ax1.scatter([ae_x],**sdct)
+        ax2.scatter([ae_x],**sdct)
 
 def plot_mstid_values(data_df,ax,sDate=None,eDate=None,
         st_uts=[14, 16, 18, 20],
@@ -1279,7 +1377,7 @@ class ParameterObject(object):
             ax.set_ylim(ylim)
 
             stats       = hist_dct[radar]['stats']
-            bbox        = {'boxstyle':'round','facecolor':'white','alpha':0.8}
+            bbox        = {'boxstyle':'round','facecolor':'white','alpha':0.9}
             ax.text(stats_x,stats_y,'\n'.join(stats),va='top',transform=ax.transAxes,bbox=bbox)
             ax.set_title(radar,fontdict=title_fontdict)
 
@@ -1476,6 +1574,7 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,
             min_orf   = po.data[season]['attrs_season'].get('min_orig_rti_fraction')
             ax_info['ax'].set_title('RTI Fraction > {:0.2f}'.format(min_orf),loc='right',zorder=1000)
             ax_info['radar_ax']     = True
+        ax_info['param']        = param 
         ax_list.append(ax_info)
 
         ylim    = prmd.get('ylim')
@@ -1513,20 +1612,12 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,
                   labels=False,short_labels=True,plot_axvline=False)
 
         if mark_dates is not None:
-            extend = 0.5
+            bottom = 0.5
             if inx == len(params) - 1:
-                extend = 0.020
-            mark_axvline(mark_dates,sDate,eDate,ax,radar_ax=radar_ax,extend=extend)
+                bottom = 0.020
+            mark_axvline(mark_dates,sDate,eDate,ax,radar_ax=radar_ax,bottom=bottom)
 
     fig.tight_layout()
-
-    if (params == ['merra2CipsAirsTimeSeries', 'lstid_ham', 'sme']) \
-            and season == '20181101_20190501':
-        annotate_lstid_ham(params,ax_list)
-
-    axs = [x['ax'] for x in ax_list]
-    alpha_rectangle(axs)
-    pop_xticklabels(axs)
 
     for param,ax_info in zip(params,ax_list):
         # Plot Colorbar ################################################################
@@ -1594,6 +1685,18 @@ def stackplot(po_dct,params,season,radars=None,sDate=None,eDate=None,
                     label.set_fontweight(fontweight)
                 if fontsize:
                     label.set_fontsize(fontsize)
+
+    # Add Arrows ###################################################################
+    if (params == ['merra2CipsAirsTimeSeries', 'lstid_ham', 'sme']) \
+            and season == '20181101_20190501':
+        annotate_lstid_ham(params,ax_list)
+    elif season == '20181101_20190501':
+        annotate_lstid_ham_all(params,ax_list,sDate,eDate)
+
+    axs = [x['ax'] for x in ax_list]
+    alpha_rectangle(axs)
+    pop_xticklabels(axs)
+
 
 
     # Annotate SSW on bottom. ############## 
@@ -1738,11 +1841,11 @@ if __name__ == '__main__':
 #    ss.append('gnss_dtec_gw')
 #    ss.append('meanSubIntSpect_by_rtiCnt')
 #
-    ss = stack_sets['figure_4'] = []
-    ss.append('merra2CipsAirsTimeSeries')
-    ss.append('lstid_ham')
-#    ss.append('meanSubIntSpect_by_rtiCnt')
-    ss.append('sme')
+#    ss = stack_sets['figure_4'] = []
+#    ss.append('merra2CipsAirsTimeSeries')
+#    ss.append('lstid_ham')
+##    ss.append('meanSubIntSpect_by_rtiCnt')
+#    ss.append('sme')
 
     ss = stack_sets['lstid_mstid_stack'] = []
     ss.append('merra2CipsAirsTimeSeries')

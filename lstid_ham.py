@@ -128,7 +128,7 @@ class LSTID_HAM(object):
         lims['amplitude_km']    = (0, 80)
         lims['r2']              = (0.35, 1.1)
         lims['period_hr']       = (1, 4.5)
-        lims['duration_hr']     = (2, 24)
+        lims['duration_hr']     = (4, 24)
 
         # Apply LSTID Classification Criteria.
         tfs = []
