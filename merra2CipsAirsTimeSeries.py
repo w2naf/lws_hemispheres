@@ -98,7 +98,7 @@ class Merra2CipsAirsTS(object):
         airs_cips_lw = 4
         xx      = dates
         yy      = np.array(ds['AIRS_GW_VARIANCE'])
-        lbl     = 'AIRS (30 km)'
+        lbl     = 'AIRS (35 km)'
         ax1.plot(xx,yy,color='black',lw=airs_cips_lw,zorder=100,label=lbl)
 
         xx      = dates
