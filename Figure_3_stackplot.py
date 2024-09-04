@@ -369,7 +369,7 @@ def mark_axvline(dates,sDate,eDate,ax,radar_ax=False,bottom=0.020,mark_line_dict
     ytransaxes = mpl.transforms.blended_transform_factory(ax.transData,ax.transAxes)
     for date in dates:
         if radar_ax:
-            xpos    = get_x_coords(date,sDate,eDate)
+            xpos    = get_x_coords(date,sDate,eDate,full=True)
         else:
             xpos    = date
 
@@ -515,9 +515,16 @@ def annotate_lstid_ham_all(params,ax_list,sDate,eDate):
     aprops['lw']            = 8
     ytransaxes              = mpl.transforms.blended_transform_factory(ax1.transData,ax1.transAxes)
 
+    # Make arrow show up in middle of the day.
+    for arrow_dct in gw_arrows:
+        arrow_dct['date'] = arrow_dct.get('date') + datetime.timedelta(hours=12)
+
+    for ae_arrow_inx,ae_arrow in enumerate(ae_arrows):
+        ae_arrows[ae_arrow_inx] = ae_arrow + datetime.timedelta(hours=12)
+
     # Overlay the Gravity Wave Arrows
     for arrow_dct in gw_arrows:
-        arrow                   = arrow_dct.get('date') + datetime.timedelta(hours=12) # Make arrow plot in middle of day.
+        arrow                   = arrow_dct.get('date')
         aprops['edgecolor']     = arrow_dct['color']
         _arrow  = mpl.dates.date2num(arrow)
 
@@ -555,7 +562,7 @@ def annotate_lstid_ham_all(params,ax_list,sDate,eDate):
     # Overlay the Auroral Electrojet Arrows.
     aprops['edgecolor']     = 'red'
     for arrow in ae_arrows:
-        _arrow  = mpl.dates.date2num(arrow + datetime.timedelta(hours=12)) # Make arrow plot in middle of day.
+        _arrow  = mpl.dates.date2num(arrow)
         adct = {}
         adct['text']        = ''
         adct['xy']          = (_arrow, 0.25)
