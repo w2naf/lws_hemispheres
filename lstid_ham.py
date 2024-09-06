@@ -173,17 +173,37 @@ class LSTID_HAM(object):
         cbar_label      = 'Amplitude [km]'
 
         # Identify LSTID Events above a threshold.
-
         min_amp     = 55
         tf          = df['amplitude_km'] >= min_amp
         df_min_amp  = df[tf].copy()
 
+        # Mark High LSTID days with SME < 200 nT differently:
+		# 15 December 2018 ($SME = 39$ nT, $LSTID = 58$ km)
+		# 22 December 2018 ($SME = 57$ nT, $LSTID = 76$ km)
+		# 24 December 2018 ($SME = 59$ nT, $LSTID = 64$ km)
+		# 25 December 2018 ($SME = 92$ nT, $LSTID = 65$ km)
+		# 11 February 2019 ($SME = 188$ nT, $LSTID = 62$ km)
+        lowSMEhighLSTID_dates	= []
+        lowSMEhighLSTID_dates.append(datetime.datetime(2018,12,15))
+        lowSMEhighLSTID_dates.append(datetime.datetime(2018,12,22))
+        lowSMEhighLSTID_dates.append(datetime.datetime(2018,12,24))
+        lowSMEhighLSTID_dates.append(datetime.datetime(2018,12,25))
+        lowSMEhighLSTID_dates.append(datetime.datetime(2019,2,11))
+
         xx  = df_min_amp['date']+datetime.timedelta(hours=12)
         yy  = df_min_amp['amplitude_km']
         lbl = '{!s} Days '.format(len(df_min_amp)) + '$\geq$'+ ' {!s} km Amplitude'.format(min_amp)
-        hndl    = ax.scatter(xx,yy,marker='*',fc='yellow',ec='black',s=400,zorder=7000,label=lbl)
+
+        df_min_amp['fc']    = 'red'
+        fc                  = df_min_amp['fc']
+        tf = df_min_amp['date'].apply(lambda x: x in lowSMEhighLSTID_dates)
+        df_min_amp.loc[tf,'fc'] = 'yellow'
+        star_dct = {'s':850,'lw':2,'ec':'black','zorder':7000,'marker':'*'}
+        hndl    = ax.scatter(xx,yy,fc=fc,**star_dct)
+        hndl    = ax.scatter(xx,yy,fc='None',label=lbl,**star_dct)
         hndls.append([hndl])
-#        ax.axhline(min_amp,zorder=7000)
+
+		
 
         print(lbl)
         for rinx,row in df_min_amp.iterrows():
