@@ -68,12 +68,15 @@ def rainbowCmap():
     return cmap
 
 class Hovmoller(object):
-    def __init__(self):
+    def __init__(self,sav_name='xt_airs_variance+merra2_vortex_speed_20181101-20190501_50.sav'):
+        
+        self.sav_name   = sav_name
         self.load_data()
     
     def load_data(self):
         data_dir    = os.path.join('data','hovmoller_airs_merra2')
-        sav_name    = 'xt_airs_variance+merra2_vortex_speed_20181101-20190501_50.sav'
+        # sav_name    = 'xt_airs_variance+merra2_vortex_speed_20151201-20160228_50.sav'
+        sav_name    = self.sav_name
         sav_path    = os.path.join(data_dir,sav_name)
         sav_data    = sp.io.readsav(sav_path)
 
@@ -130,7 +133,6 @@ class Hovmoller(object):
         # Default contour and coastline style parameters.
         # Tuned for an IDL-colormap style plot.
 
-        # MERRA2 Wind Speed ############################################################ 
         m2ws = {}  # MERRA2 Wind Stream Parameters
         m2ws['levels']      = [-20, 0, 40, 60]
         m2ws['colors']      = ['0.5', '0.5', 'orange', 'red']
@@ -172,7 +174,7 @@ class Hovmoller(object):
 
         ax.set_ylim(ylim)
         ax.set_xlabel('Longitude')
-
+        
         result  = {}
         result['cbar_pcoll']    = cbar_pcoll
         result['cbar_label']    = cbar_label
@@ -183,9 +185,15 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    hov = Hovmoller()
+    sav_name    = 'xt_airs_variance+merra2_vortex_speed_20151201-20160228_50.sav'
+    ylim        = (datetime.datetime(2016,2,28),datetime.datetime(2015,12,1))
 
-    png_fname   = 'hovmoller.png'
+    # sav_name    = 'xt_airs_variance+merra2_vortex_speed_20181101-20190501_50.sav'
+    # ylim        = (datetime.datetime(2019,3,1),datetime.datetime(2018,12,1))
+
+    hov = Hovmoller(sav_name=sav_name)
+
+    png_fname   = '{}-{}_{}.png'.format(ylim[0].strftime('%Y%m%d'),ylim[1].strftime('%Y%m%d'), sav_name.replace('.sav',''))
     png_fpath   = os.path.join(output_dir,png_fname)
-    hov.plot_figure(png_fpath=png_fpath)
+    hov.plot_figure(ylim=ylim,png_fpath=png_fpath)
     print(png_fpath)
