@@ -130,33 +130,40 @@ class Hovmoller(object):
         # Default contour and coastline style parameters.
         # Tuned for an IDL-colormap style plot.
 
-        m2ws = {} # MERRA2 Wind Stream Parameters
-#        m2ws['levels']      = [-10000,40,60]
-#        m2ws['colors']      = ['white','orange','red']
-
-        m2ws['levels']      = [-20,0,40,60]
-        m2ws['colors']      = ['0.5','0.5','orange','red']
-
-#        m2ws['levels']              = [-20,0,20,50]
-#        m2ws['colors']              = ['0.5','0.5','orange','red']
-        m2ws['linewidths']          = 6
-        m2ws['zorder']              = 1000
+        # MERRA2 Wind Speed ############################################################ 
+        m2ws = {}  # MERRA2 Wind Stream Parameters
+        m2ws['levels']      = [-20, 0, 40, 60]
+        m2ws['colors']      = ['0.5', '0.5', 'orange', 'red']
+        m2ws['linewidths']  = 6
+        m2ws['zorder']      = 1000
         m2ws.update(merra2_windspeed_kw)
 
-        merra2_lons             = sav_data['alon_save']
-        merra2_windspeed        = sav_data['u_lineplot_avg']
-
-        WS = ax.contour(merra2_lons,dates,merra2_windspeed,**m2ws)
-
-		# Override the linestyles based on the levels.
-        for line, lvl in zip(WS.collections, WS.levels):
+        # --- NEW: choose linestyles per level BEFORE calling contour ---
+        def _lvl2ls(lvl):
             if lvl < 0:
-                line.set_linestyle('--')
-            elif lvl == 0:
-                line.set_linestyle(':')
+                return '--'
+            elif np.isclose(lvl, 0):
+                return ':'
             else:
-                # Optional; this is the default.
-                line.set_linestyle('-')
+                return '-'
+
+        # Ensure we have a list of linestyles matching the number of levels
+        _levels = m2ws.get('levels', [])
+        if _levels:
+            m2ws['linestyles'] = [_lvl2ls(l) for l in _levels]
+
+        merra2_lons      = sav_data['alon_save']
+        merra2_windspeed = sav_data['u_lineplot_avg']
+
+        WS = ax.contour(merra2_lons, dates, merra2_windspeed, **m2ws)
+
+        # --- Optional backward-compat tweak for very old mpl (<3.8) where post-setting was common ---
+        if hasattr(WS, "collections"):
+            for coll, lvl in zip(WS.collections, WS.levels):
+                try:
+                    coll.set_linestyle(_lvl2ls(lvl))
+                except Exception:
+                    pass
 
         try:
             ax.clabel(WS,inline=True)
@@ -164,7 +171,6 @@ class Hovmoller(object):
             pass
 
         ax.set_ylim(ylim)
-
         ax.set_xlabel('Longitude')
 
         result  = {}
